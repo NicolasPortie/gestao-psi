@@ -1,0 +1,20 @@
+using GestaoPsi.Api.Shared.Enums;
+
+namespace GestaoPsi.Api.Models;
+
+public class IntegracaoWhatsApp
+{
+    public Guid Id { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public string Provedor { get; set; } = string.Empty;
+    public string UrlBaseBridge { get; set; } = string.Empty;
+    public string TokenCriptografado { get; set; } = string.Empty;
+    public string NumeroWhatsApp { get; set; } = string.Empty;
+    public StatusIntegracao Status { get; set; } = StatusIntegracao.Pendente;
+    public bool Ativo { get; set; } = true;
+    public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? AtualizadoEm { get; set; }
+
+    public ICollection<ConversaWhatsApp> Conversas { get; set; } = [];
+    public ICollection<EventoBridgeWhatsApp> Eventos { get; set; } = [];
+}
