@@ -1,0 +1,167 @@
+<main class="flex min-h-dvh overflow-hidden bg-[#f8f9ff]">
+  <section
+    class="relative hidden min-w-0 flex-1 bg-[#ebeef5] lg:block"
+    aria-label="Consultório acolhedor"
+  >
+    <img
+      class="absolute inset-0 size-full object-cover object-center"
+      src="/assets/login-consultorio.jpg"
+      alt="Consultório de psicologia iluminado, com poltrona e mesa de atendimento"
+    />
+    <div
+      class="pointer-events-none absolute inset-0 bg-[#44664e]/10 mix-blend-multiply"
+      aria-hidden="true"
+    ></div>
+  </section>
+
+  <section
+    class="relative z-10 flex min-h-dvh w-full min-w-0 flex-col bg-white shadow-[-14px_0_40px_rgba(45,49,54,0.08)] lg:w-[480px] lg:flex-none"
+  >
+    <div
+      class="flex flex-1 items-start justify-center px-5 py-12 sm:items-center sm:px-8 sm:py-16 lg:px-12"
+    >
+      <div
+        class="w-full max-w-[400px] [animation:entrada_.5s_ease-out_both] motion-reduce:animate-none"
+      >
+        <header class="mb-9 flex flex-col gap-4 sm:mb-11 sm:gap-5">
+          <img
+            class="h-12 w-fit object-contain object-left"
+            src="/assets/gestaopsi-marca.png"
+            alt="GestãoPsi"
+          />
+
+          <div>
+            <h1
+              class="mb-2 font-sans text-[27px] leading-[34px] font-semibold text-[#181c21] sm:text-[32px] sm:leading-10"
+            >
+              Seu consultório digital.
+            </h1>
+            <p class="text-base leading-6 text-[#43474f]">
+              Entre para gerenciar seus atendimentos.
+            </p>
+          </div>
+        </header>
+
+        <form
+          class="flex flex-col gap-6"
+          [formGroup]="formulario"
+          (ngSubmit)="entrar()"
+          novalidate
+        >
+          <div class="flex flex-col gap-2">
+            <label
+              class="text-sm leading-4 font-semibold text-[#43474f]"
+              for="email"
+            >
+              E-mail
+            </label>
+            <div
+              class="group flex h-12 items-center rounded-lg border border-[#c3c6d1]/50 bg-[#f1f4fb] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-[#44664e] focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(68,102,78,0.15)]"
+            >
+              <i
+                class="pi pi-envelope ml-3 text-xl text-[#737780] transition-colors group-focus-within:text-[#44664e]"
+                aria-hidden="true"
+              ></i>
+              <input
+                class="h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-base text-[#181c21] outline-none placeholder:text-[#737780]/70"
+                id="email"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                placeholder="seu@email.com"
+                formControlName="email"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between px-1">
+              <label
+                class="text-sm leading-4 font-semibold text-[#43474f]"
+                for="senha"
+              >
+                Senha
+              </label>
+              <a
+                class="text-xs leading-[14px] font-medium text-[#44664e] hover:underline"
+                href="#recuperar-senha"
+              >
+                Esqueci minha senha
+              </a>
+            </div>
+
+            <div
+              class="group flex h-12 items-center rounded-lg border border-[#c3c6d1]/50 bg-[#f1f4fb] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-[#44664e] focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(68,102,78,0.15)]"
+            >
+              <i
+                class="pi pi-lock ml-3 text-xl text-[#737780] transition-colors group-focus-within:text-[#44664e]"
+                aria-hidden="true"
+              ></i>
+              <input
+                class="h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-base text-[#181c21] outline-none placeholder:text-[#737780]/70"
+                id="senha"
+                [type]="senhaVisivel() ? 'text' : 'password'"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                formControlName="senha"
+              />
+              <button
+                class="flex size-11 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-[#737780] transition-colors hover:text-[#43474f]"
+                type="button"
+                (click)="alternarVisibilidadeSenha()"
+                [attr.aria-label]="senhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'"
+              >
+                <i
+                  class="pi text-xl"
+                  [class.pi-eye]="!senhaVisivel()"
+                  [class.pi-eye-slash]="senhaVisivel()"
+                  aria-hidden="true"
+                ></i>
+              </button>
+            </div>
+          </div>
+
+          <button
+            pButton
+            class="mt-1 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg !border-0 !bg-[#44664e] !p-0 text-sm font-semibold !text-white shadow-[0_2px_6px_rgba(45,49,54,0.1)] transition-[background-color,box-shadow,transform] duration-200 hover:!bg-[#52765c] hover:shadow-[0_5px_14px_rgba(45,49,54,0.14)] active:scale-[0.985] disabled:cursor-wait disabled:opacity-70"
+            type="submit"
+            [disabled]="enviando()"
+          >
+            <span>{{ enviando() ? 'Entrando...' : 'Entrar' }}</span>
+            <i class="pi pi-arrow-right text-base" aria-hidden="true"></i>
+          </button>
+
+          @if (mensagem()) {
+            <p
+              class="-mt-2 text-center text-xs leading-[18px] text-[#44664e]"
+              role="status"
+            >
+              {{ mensagem() }}
+            </p>
+          }
+        </form>
+
+        <div
+          class="mt-8 flex items-center justify-center gap-1.5 text-xs font-medium text-[#43474f]"
+        >
+          <i
+            class="pi pi-shield text-lg text-[#44664e]/70"
+            aria-hidden="true"
+          ></i>
+          <span>Acesso Seguro e Criptografado</span>
+        </div>
+      </div>
+    </div>
+
+    <footer
+      class="flex flex-col items-center gap-3 border-t border-[#c3c6d1]/20 px-5 py-5 text-center text-[11px] leading-[14px] font-medium text-[#43474f] lg:px-12 lg:py-6"
+    >
+      <p>© 2026 GestãoPsi - Gestão Humanizada para Psicólogos</p>
+      <nav class="flex justify-center gap-[18px] lg:gap-6" aria-label="Links institucionais">
+        <a class="transition-colors hover:text-[#44664e]" href="#suporte">Suporte</a>
+        <a class="transition-colors hover:text-[#44664e]" href="#privacidade">Privacidade</a>
+        <a class="transition-colors hover:text-[#44664e]" href="#termos">Termos de Uso</a>
+      </nav>
+    </footer>
+  </section>
+</main>
