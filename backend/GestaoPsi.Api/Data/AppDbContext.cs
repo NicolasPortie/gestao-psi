@@ -5,6 +5,11 @@ namespace GestaoPsi.Api.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<ContaPsicologo> ContasPsicologo => Set<ContaPsicologo>();
+    public DbSet<PlanoSaas> PlanosSaas => Set<PlanoSaas>();
+    public DbSet<AssinaturaConta> AssinaturasConta => Set<AssinaturaConta>();
+    public DbSet<FaturaAssinatura> FaturasAssinatura => Set<FaturaAssinatura>();
+    public DbSet<ConfiguracaoSegurancaConta> ConfiguracoesSegurancaConta => Set<ConfiguracaoSegurancaConta>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<DadosProfissionaisPsicologo> DadosProfissionaisPsicologo => Set<DadosProfissionaisPsicologo>();
     public DbSet<Paciente> Pacientes => Set<Paciente>();
@@ -15,7 +20,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<BloqueioAgenda> BloqueiosAgenda => Set<BloqueioAgenda>();
     public DbSet<Consulta> Consultas => Set<Consulta>();
     public DbSet<HistoricoConsulta> HistoricosConsulta => Set<HistoricoConsulta>();
+    public DbSet<Prontuario> Prontuarios => Set<Prontuario>();
     public DbSet<RegistroSessao> RegistrosSessao => Set<RegistroSessao>();
+    public DbSet<EvolucaoProntuario> EvolucoesProntuario => Set<EvolucaoProntuario>();
+    public DbSet<DocumentoProntuario> DocumentosProntuario => Set<DocumentoProntuario>();
+    public DbSet<VersaoDocumentoProntuario> VersoesDocumentoProntuario => Set<VersaoDocumentoProntuario>();
+    public DbSet<ModeloDocumentoPsicologico> ModelosDocumentoPsicologico => Set<ModeloDocumentoPsicologico>();
+    public DbSet<RegraDocumentoPsicologico> RegrasDocumentoPsicologico => Set<RegraDocumentoPsicologico>();
+    public DbSet<ProtocoloEntregaDocumento> ProtocolosEntregaDocumento => Set<ProtocoloEntregaDocumento>();
     public DbSet<RetificacaoRegistroSessao> RetificacoesRegistroSessao => Set<RetificacaoRegistroSessao>();
     public DbSet<Pagamento> Pagamentos => Set<Pagamento>();
     public DbSet<Lembrete> Lembretes => Set<Lembrete>();
@@ -39,10 +51,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         base.OnModelCreating(modelBuilder);
 
+        ConfigurarContas(modelBuilder);
+        ConfigurarAssinaturas(modelBuilder);
+        ConfigurarConfiguracoesSeguranca(modelBuilder);
         ConfigurarUsuarios(modelBuilder);
         ConfigurarPacientes(modelBuilder);
         ConfigurarAgenda(modelBuilder);
         ConfigurarConsultas(modelBuilder);
+        ConfigurarProntuarios(modelBuilder);
+        ConfigurarDocumentosPsicologicos(modelBuilder);
         ConfigurarSessoes(modelBuilder);
         ConfigurarPagamentos(modelBuilder);
         ConfigurarLembretes(modelBuilder);
@@ -51,8 +68,128 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         ConfigurarAuditoria(modelBuilder);
     }
 
+    private static void ConfigurarContas(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ContaPsicologo>(entity =>
+        {
+            entity.ToTable("ContasPsicologo");
+            entity.HasKey(conta => conta.Id);
+            entity.Property(conta => conta.NomeConta).HasMaxLength(180).IsRequired();
+            entity.HasIndex(conta => conta.Status);
+        });
+    }
+
+    private static void ConfigurarAssinaturas(ModelBuilder modelBuilder)
+    {
+        ConfigurarEntidadeDaConta<AssinaturaConta>(modelBuilder);
+        ConfigurarEntidadeDaConta<FaturaAssinatura>(modelBuilder);
+
+        modelBuilder.Entity<PlanoSaas>(entity =>
+        {
+            entity.ToTable("PlanosSaas", table =>
+            {
+                table.HasCheckConstraint("CK_PlanosSaas_ValorMensal", "[ValorMensal] >= 0");
+                table.HasCheckConstraint("CK_PlanosSaas_ValorAnual", "[ValorAnual] IS NULL OR [ValorAnual] >= 0");
+                table.HasCheckConstraint("CK_PlanosSaas_LimitePacientesAtivos", "[LimitePacientesAtivos] IS NULL OR [LimitePacientesAtivos] > 0");
+                table.HasCheckConstraint("CK_PlanosSaas_LimiteMensagensWhatsAppMes", "[LimiteMensagensWhatsAppMes] IS NULL OR [LimiteMensagensWhatsAppMes] > 0");
+                table.HasCheckConstraint("CK_PlanosSaas_LimiteDocumentosMes", "[LimiteDocumentosMes] IS NULL OR [LimiteDocumentosMes] > 0");
+            });
+
+            entity.HasKey(plano => plano.Id);
+            entity.Property(plano => plano.Codigo).HasMaxLength(80).IsRequired();
+            entity.Property(plano => plano.Nome).HasMaxLength(120).IsRequired();
+            entity.Property(plano => plano.Descricao).HasMaxLength(1000);
+            entity.Property(plano => plano.ValorMensal).HasPrecision(12, 2);
+            entity.Property(plano => plano.ValorAnual).HasPrecision(12, 2);
+
+            entity.HasIndex(plano => plano.Codigo).IsUnique();
+            entity.HasIndex(plano => plano.Status);
+        });
+
+        modelBuilder.Entity<AssinaturaConta>(entity =>
+        {
+            entity.ToTable("AssinaturasConta");
+            entity.HasKey(assinatura => assinatura.Id);
+
+            entity.Property(assinatura => assinatura.MotivoCancelamento).HasMaxLength(1000);
+            entity.Property(assinatura => assinatura.ProvedorPagamento).HasMaxLength(120);
+            entity.Property(assinatura => assinatura.AssinaturaExternaId).HasMaxLength(180);
+
+            entity.HasIndex(assinatura => new { assinatura.ContaPsicologoId, assinatura.Status });
+            entity.HasIndex(assinatura => new { assinatura.ContaPsicologoId, assinatura.PlanoSaasId });
+            entity.HasIndex(assinatura => new { assinatura.ProvedorPagamento, assinatura.AssinaturaExternaId })
+                .IsUnique()
+                .HasFilter("[ProvedorPagamento] IS NOT NULL AND [AssinaturaExternaId] IS NOT NULL");
+
+            entity.HasOne(assinatura => assinatura.PlanoSaas)
+                .WithMany(plano => plano.Assinaturas)
+                .HasForeignKey(assinatura => assinatura.PlanoSaasId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<FaturaAssinatura>(entity =>
+        {
+            entity.ToTable("FaturasAssinatura", table =>
+            {
+                table.HasCheckConstraint("CK_FaturasAssinatura_Valor", "[Valor] >= 0");
+            });
+
+            entity.HasKey(fatura => fatura.Id);
+
+            entity.Property(fatura => fatura.Valor).HasPrecision(12, 2);
+            entity.Property(fatura => fatura.ProvedorPagamento).HasMaxLength(120);
+            entity.Property(fatura => fatura.FaturaExternaId).HasMaxLength(180);
+            entity.Property(fatura => fatura.UrlPagamento).HasMaxLength(1000);
+
+            entity.HasIndex(fatura => new { fatura.ContaPsicologoId, fatura.AssinaturaContaId, fatura.VencimentoEm });
+            entity.HasIndex(fatura => new { fatura.ContaPsicologoId, fatura.Status, fatura.VencimentoEm });
+            entity.HasIndex(fatura => new { fatura.ProvedorPagamento, fatura.FaturaExternaId })
+                .IsUnique()
+                .HasFilter("[ProvedorPagamento] IS NOT NULL AND [FaturaExternaId] IS NOT NULL");
+
+            entity.HasOne(fatura => fatura.AssinaturaConta)
+                .WithMany(assinatura => assinatura.Faturas)
+                .HasPrincipalKey(assinatura => new { assinatura.ContaPsicologoId, assinatura.Id })
+                .HasForeignKey(fatura => new { fatura.ContaPsicologoId, fatura.AssinaturaContaId })
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigurarConfiguracoesSeguranca(ModelBuilder modelBuilder)
+    {
+        ConfigurarEntidadeDaConta<ConfiguracaoSegurancaConta>(modelBuilder);
+
+        modelBuilder.Entity<ConfiguracaoSegurancaConta>(entity =>
+        {
+            entity.ToTable("ConfiguracoesSegurancaConta", table =>
+            {
+                table.HasCheckConstraint("CK_ConfiguracoesSegurancaConta_MaximoTentativasInvalidas", "[MaximoTentativasInvalidas] > 0");
+                table.HasCheckConstraint("CK_ConfiguracoesSegurancaConta_RetencaoLogsAuditoriaDias", "[RetencaoLogsAuditoriaDias] >= 365");
+                table.HasCheckConstraint("CK_ConfiguracoesSegurancaConta_RetencaoProntuarioAnos", "[RetencaoProntuarioAnos] >= 5");
+            });
+
+            entity.HasKey(configuracao => configuracao.Id);
+            entity.HasIndex(configuracao => configuracao.ContaPsicologoId).IsUnique();
+        });
+    }
+
+    private static void ConfigurarEntidadeDaConta<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : EntidadeDaConta
+    {
+        modelBuilder.Entity<TEntity>().HasAlternateKey("ContaPsicologoId", "Id");
+        modelBuilder.Entity<TEntity>().HasIndex(entidade => entidade.ContaPsicologoId);
+        modelBuilder.Entity<TEntity>()
+            .HasOne(entidade => entidade.ContaPsicologo)
+            .WithMany()
+            .HasForeignKey(entidade => entidade.ContaPsicologoId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
     private static void ConfigurarUsuarios(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<Usuario>(modelBuilder);
+        ConfigurarEntidadeDaConta<DadosProfissionaisPsicologo>(modelBuilder);
+
         modelBuilder.Entity<Usuario>(entity =>
         {
             entity.ToTable("Usuarios");
@@ -64,6 +201,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(usuario => usuario.Telefone).HasMaxLength(30);
 
             entity.HasIndex(usuario => usuario.Email).IsUnique();
+            entity.HasIndex(usuario => new { usuario.ContaPsicologoId, usuario.Perfil, usuario.Status });
         });
 
         modelBuilder.Entity<DadosProfissionaisPsicologo>(entity =>
@@ -72,48 +210,55 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(dados => dados.Id);
 
             entity.Property(dados => dados.Crp).HasMaxLength(30).IsRequired();
+            entity.Property(dados => dados.CrpHash).HasMaxLength(128).IsRequired();
             entity.Property(dados => dados.NomeProfissional).HasMaxLength(180).IsRequired();
             entity.Property(dados => dados.Bio).HasMaxLength(2000);
             entity.Property(dados => dados.EmailProfissional).HasMaxLength(180);
             entity.Property(dados => dados.TelefoneProfissional).HasMaxLength(30);
 
-            entity.HasIndex(dados => dados.UsuarioId).IsUnique();
-            entity.HasIndex(dados => dados.Crp).IsUnique();
-            entity.HasIndex(dados => dados.Status)
-                .IsUnique()
-                .HasFilter("[Status] = 'Ativo'");
+            entity.HasIndex(dados => new { dados.ContaPsicologoId, dados.UsuarioId }).IsUnique();
+            entity.HasIndex(dados => new { dados.ContaPsicologoId, dados.CrpHash }).IsUnique();
+            entity.HasIndex(dados => new { dados.ContaPsicologoId, dados.Status });
 
             entity.HasOne(dados => dados.Usuario)
                 .WithOne(usuario => usuario.DadosProfissionaisPsicologo)
-                .HasForeignKey<DadosProfissionaisPsicologo>(dados => dados.UsuarioId)
+                .HasPrincipalKey<Usuario>(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey<DadosProfissionaisPsicologo>(dados => new { dados.ContaPsicologoId, dados.UsuarioId })
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
     private static void ConfigurarPacientes(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<Paciente>(modelBuilder);
+        ConfigurarEntidadeDaConta<ContatoPaciente>(modelBuilder);
+
         modelBuilder.Entity<Paciente>(entity =>
         {
             entity.ToTable("Pacientes");
             entity.HasKey(paciente => paciente.Id);
 
             entity.Property(paciente => paciente.NomeCompleto).HasMaxLength(180).IsRequired();
-            entity.Property(paciente => paciente.Cpf).HasMaxLength(14);
-            entity.Property(paciente => paciente.Telefone).HasMaxLength(30);
-            entity.Property(paciente => paciente.Email).HasMaxLength(180);
+            entity.Property(paciente => paciente.Cpf).HasMaxLength(500);
+            entity.Property(paciente => paciente.CpfHash).HasMaxLength(128);
+            entity.Property(paciente => paciente.Telefone).HasMaxLength(500);
+            entity.Property(paciente => paciente.Email).HasMaxLength(500);
             entity.Property(paciente => paciente.ObservacaoAdministrativa).HasMaxLength(2000);
 
-            entity.HasIndex(paciente => paciente.Cpf)
+            entity.HasIndex(paciente => new { paciente.ContaPsicologoId, paciente.CpfHash })
                 .IsUnique()
-                .HasFilter("[Cpf] IS NOT NULL");
+                .HasFilter("[CpfHash] IS NOT NULL");
 
-            entity.HasIndex(paciente => paciente.UsuarioId)
+            entity.HasIndex(paciente => new { paciente.ContaPsicologoId, paciente.UsuarioId })
                 .IsUnique()
                 .HasFilter("[UsuarioId] IS NOT NULL");
 
+            entity.HasIndex(paciente => new { paciente.ContaPsicologoId, paciente.Status, paciente.NomeCompleto });
+
             entity.HasOne(paciente => paciente.Usuario)
                 .WithOne(usuario => usuario.Paciente)
-                .HasForeignKey<Paciente>(paciente => paciente.UsuarioId)
+                .HasPrincipalKey<Usuario>(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey<Paciente>(paciente => new { paciente.ContaPsicologoId, paciente.UsuarioId })
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -122,30 +267,35 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.ToTable("ContatosPaciente");
             entity.HasKey(contato => contato.Id);
 
-            entity.Property(contato => contato.Valor).HasMaxLength(180).IsRequired();
+            entity.Property(contato => contato.Valor).HasMaxLength(500).IsRequired();
+            entity.Property(contato => contato.ValorHash).HasMaxLength(128).IsRequired();
 
-            entity.HasIndex(contato => new { contato.PacienteId, contato.TipoContato, contato.Valor });
+            entity.HasIndex(contato => new { contato.ContaPsicologoId, contato.PacienteId, contato.TipoContato, contato.ValorHash });
 
             entity.HasOne(contato => contato.Paciente)
                 .WithMany(paciente => paciente.Contatos)
-                .HasForeignKey(contato => contato.PacienteId)
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(contato => new { contato.ContaPsicologoId, contato.PacienteId })
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
     private static void ConfigurarAgenda(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<ConfiguracaoAtendimento>(modelBuilder);
+        ConfigurarEntidadeDaConta<TipoAtendimento>(modelBuilder);
+        ConfigurarEntidadeDaConta<HorarioDisponivel>(modelBuilder);
+        ConfigurarEntidadeDaConta<BloqueioAgenda>(modelBuilder);
+
         modelBuilder.Entity<ConfiguracaoAtendimento>(entity =>
         {
             entity.ToTable("ConfiguracoesAtendimento", table =>
             {
-                table.HasCheckConstraint(
-                    "CK_ConfiguracoesAtendimento_DuracaoPadraoMinutos",
-                    "[DuracaoPadraoMinutos] > 0");
+                table.HasCheckConstraint("CK_ConfiguracoesAtendimento_DuracaoPadraoMinutos", "[DuracaoPadraoMinutos] > 0");
             });
 
             entity.HasKey(configuracao => configuracao.Id);
-            entity.HasIndex(configuracao => configuracao.Ativo)
+            entity.HasIndex(configuracao => new { configuracao.ContaPsicologoId, configuracao.Ativo })
                 .IsUnique()
                 .HasFilter("[Ativo] = 1");
         });
@@ -164,7 +314,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(tipo => tipo.Descricao).HasMaxLength(1000);
             entity.Property(tipo => tipo.ValorPadrao).HasPrecision(12, 2);
 
-            entity.HasIndex(tipo => tipo.Nome).IsUnique();
+            entity.HasIndex(tipo => new { tipo.ContaPsicologoId, tipo.Nome }).IsUnique();
         });
 
         modelBuilder.Entity<HorarioDisponivel>(entity =>
@@ -175,7 +325,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             });
 
             entity.HasKey(horario => horario.Id);
-            entity.HasIndex(horario => new { horario.DiaSemana, horario.HoraInicio, horario.HoraFim });
+            entity.HasIndex(horario => new { horario.ContaPsicologoId, horario.DiaSemana, horario.HoraInicio, horario.HoraFim });
         });
 
         modelBuilder.Entity<BloqueioAgenda>(entity =>
@@ -190,12 +340,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(bloqueio => bloqueio.Titulo).HasMaxLength(160).IsRequired();
             entity.Property(bloqueio => bloqueio.Descricao).HasMaxLength(1000);
 
-            entity.HasIndex(bloqueio => new { bloqueio.InicioEm, bloqueio.FimEm });
+            entity.HasIndex(bloqueio => new { bloqueio.ContaPsicologoId, bloqueio.InicioEm, bloqueio.FimEm });
         });
     }
 
     private static void ConfigurarConsultas(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<Consulta>(modelBuilder);
+        ConfigurarEntidadeDaConta<HistoricoConsulta>(modelBuilder);
+
         modelBuilder.Entity<Consulta>(entity =>
         {
             entity.ToTable("Consultas", table =>
@@ -210,21 +363,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(consulta => consulta.ObservacaoAdministrativa).HasMaxLength(2000);
             entity.Property(consulta => consulta.JustificativaCancelamento).HasMaxLength(1000);
 
-            entity.HasIndex(consulta => new { consulta.InicioEm, consulta.FimEm });
-            entity.HasIndex(consulta => consulta.InicioEm)
+            entity.HasIndex(consulta => new { consulta.ContaPsicologoId, consulta.InicioEm, consulta.FimEm });
+            entity.HasIndex(consulta => new { consulta.ContaPsicologoId, consulta.InicioEm })
                 .IsUnique()
                 .HasFilter("[Status] IN ('AguardandoConfirmacao', 'Agendada', 'Confirmada', 'Realizada', 'NaoCompareceu')");
 
-            entity.HasIndex(consulta => new { consulta.PacienteId, consulta.InicioEm });
+            entity.HasIndex(consulta => new { consulta.ContaPsicologoId, consulta.PacienteId, consulta.InicioEm });
 
             entity.HasOne(consulta => consulta.Paciente)
                 .WithMany(paciente => paciente.Consultas)
-                .HasForeignKey(consulta => consulta.PacienteId)
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(consulta => new { consulta.ContaPsicologoId, consulta.PacienteId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(consulta => consulta.TipoAtendimento)
                 .WithMany(tipo => tipo.Consultas)
-                .HasForeignKey(consulta => consulta.TipoAtendimentoId)
+                .HasPrincipalKey(tipo => new { tipo.ContaPsicologoId, tipo.Id })
+                .HasForeignKey(consulta => new { consulta.ContaPsicologoId, consulta.TipoAtendimentoId })
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -237,18 +392,205 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
             entity.HasOne(historico => historico.Consulta)
                 .WithMany(consulta => consulta.Historicos)
-                .HasForeignKey(historico => historico.ConsultaId)
+                .HasPrincipalKey(consulta => new { consulta.ContaPsicologoId, consulta.Id })
+                .HasForeignKey(historico => new { historico.ContaPsicologoId, historico.ConsultaId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(historico => historico.Usuario)
                 .WithMany(usuario => usuario.HistoricosConsulta)
-                .HasForeignKey(historico => historico.UsuarioId)
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(historico => new { historico.ContaPsicologoId, historico.UsuarioId })
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigurarProntuarios(ModelBuilder modelBuilder)
+    {
+        ConfigurarEntidadeDaConta<Prontuario>(modelBuilder);
+        ConfigurarEntidadeDaConta<EvolucaoProntuario>(modelBuilder);
+
+        modelBuilder.Entity<Prontuario>(entity =>
+        {
+            entity.ToTable("Prontuarios");
+            entity.HasKey(prontuario => prontuario.Id);
+
+            entity.HasIndex(prontuario => new { prontuario.ContaPsicologoId, prontuario.PacienteId }).IsUnique();
+            entity.HasIndex(prontuario => new { prontuario.ContaPsicologoId, prontuario.Status });
+
+            entity.HasOne(prontuario => prontuario.Paciente)
+                .WithOne(paciente => paciente.Prontuario)
+                .HasPrincipalKey<Paciente>(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey<Prontuario>(prontuario => new { prontuario.ContaPsicologoId, prontuario.PacienteId })
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<EvolucaoProntuario>(entity =>
+        {
+            entity.ToTable("EvolucoesProntuario");
+            entity.HasKey(evolucao => evolucao.Id);
+
+            entity.Property(evolucao => evolucao.Conteudo).HasMaxLength(8000).IsRequired();
+
+            entity.HasIndex(evolucao => new { evolucao.ContaPsicologoId, evolucao.PacienteId, evolucao.DataEvolucao });
+            entity.HasIndex(evolucao => new { evolucao.ContaPsicologoId, evolucao.ProntuarioId, evolucao.DataEvolucao });
+
+            entity.HasOne(evolucao => evolucao.Prontuario)
+                .WithMany(prontuario => prontuario.Evolucoes)
+                .HasPrincipalKey(prontuario => new { prontuario.ContaPsicologoId, prontuario.Id })
+                .HasForeignKey(evolucao => new { evolucao.ContaPsicologoId, evolucao.ProntuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(evolucao => evolucao.Paciente)
+                .WithMany()
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(evolucao => new { evolucao.ContaPsicologoId, evolucao.PacienteId })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(evolucao => evolucao.RegistroSessao)
+                .WithMany(registro => registro.Evolucoes)
+                .HasPrincipalKey(registro => new { registro.ContaPsicologoId, registro.Id })
+                .HasForeignKey(evolucao => new { evolucao.ContaPsicologoId, evolucao.RegistroSessaoId })
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(evolucao => evolucao.CriadoPorUsuario)
+                .WithMany()
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(evolucao => new { evolucao.ContaPsicologoId, evolucao.CriadoPorUsuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigurarDocumentosPsicologicos(ModelBuilder modelBuilder)
+    {
+        ConfigurarEntidadeDaConta<DocumentoProntuario>(modelBuilder);
+        ConfigurarEntidadeDaConta<VersaoDocumentoProntuario>(modelBuilder);
+        ConfigurarEntidadeDaConta<ModeloDocumentoPsicologico>(modelBuilder);
+        ConfigurarEntidadeDaConta<ProtocoloEntregaDocumento>(modelBuilder);
+
+        modelBuilder.Entity<DocumentoProntuario>(entity =>
+        {
+            entity.ToTable("DocumentosProntuario");
+            entity.HasKey(documento => documento.Id);
+
+            entity.Property(documento => documento.Titulo).HasMaxLength(180).IsRequired();
+            entity.Property(documento => documento.Finalidade).HasMaxLength(1000);
+            entity.Property(documento => documento.Solicitante).HasMaxLength(180);
+            entity.Property(documento => documento.ConteudoAtualJson).HasMaxLength(12000);
+            entity.Property(documento => documento.HashConteudoFinal).HasMaxLength(128);
+
+            entity.HasIndex(documento => new { documento.ContaPsicologoId, documento.PacienteId, documento.CriadoEm });
+            entity.HasIndex(documento => new { documento.ContaPsicologoId, documento.ProntuarioId, documento.Tipo, documento.Status });
+            entity.HasIndex(documento => new { documento.ContaPsicologoId, documento.Status, documento.FinalizadoEm });
+
+            entity.HasOne(documento => documento.Prontuario)
+                .WithMany(prontuario => prontuario.Documentos)
+                .HasPrincipalKey(prontuario => new { prontuario.ContaPsicologoId, prontuario.Id })
+                .HasForeignKey(documento => new { documento.ContaPsicologoId, documento.ProntuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(documento => documento.Paciente)
+                .WithMany()
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(documento => new { documento.ContaPsicologoId, documento.PacienteId })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(documento => documento.CriadoPorUsuario)
+                .WithMany()
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(documento => new { documento.ContaPsicologoId, documento.CriadoPorUsuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(documento => documento.FinalizadoPorUsuario)
+                .WithMany()
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(documento => new { documento.ContaPsicologoId, documento.FinalizadoPorUsuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<VersaoDocumentoProntuario>(entity =>
+        {
+            entity.ToTable("VersoesDocumentoProntuario", table =>
+            {
+                table.HasCheckConstraint("CK_VersoesDocumentoProntuario_NumeroVersao", "[NumeroVersao] > 0");
+            });
+
+            entity.HasKey(versao => versao.Id);
+
+            entity.Property(versao => versao.ConteudoJson).HasMaxLength(12000).IsRequired();
+            entity.Property(versao => versao.MotivoAlteracao).HasMaxLength(1000);
+            entity.Property(versao => versao.HashConteudo).HasMaxLength(128).IsRequired();
+
+            entity.HasIndex(versao => new { versao.ContaPsicologoId, versao.DocumentoProntuarioId, versao.NumeroVersao }).IsUnique();
+            entity.HasIndex(versao => new { versao.ContaPsicologoId, versao.CriadoEm });
+
+            entity.HasOne(versao => versao.DocumentoProntuario)
+                .WithMany(documento => documento.Versoes)
+                .HasPrincipalKey(documento => new { documento.ContaPsicologoId, documento.Id })
+                .HasForeignKey(versao => new { versao.ContaPsicologoId, versao.DocumentoProntuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(versao => versao.CriadoPorUsuario)
+                .WithMany()
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(versao => new { versao.ContaPsicologoId, versao.CriadoPorUsuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ModeloDocumentoPsicologico>(entity =>
+        {
+            entity.ToTable("ModelosDocumentoPsicologico");
+            entity.HasKey(modelo => modelo.Id);
+
+            entity.Property(modelo => modelo.Nome).HasMaxLength(160).IsRequired();
+            entity.Property(modelo => modelo.EstruturaJson).HasMaxLength(12000).IsRequired();
+
+            entity.HasIndex(modelo => new { modelo.ContaPsicologoId, modelo.Tipo, modelo.Nome }).IsUnique();
+            entity.HasIndex(modelo => new { modelo.ContaPsicologoId, modelo.Tipo, modelo.Ativo });
+        });
+
+        modelBuilder.Entity<RegraDocumentoPsicologico>(entity =>
+        {
+            entity.ToTable("RegrasDocumentoPsicologico");
+            entity.HasKey(regra => regra.Id);
+
+            entity.Property(regra => regra.Nome).HasMaxLength(160).IsRequired();
+            entity.Property(regra => regra.Descricao).HasMaxLength(2000).IsRequired();
+            entity.Property(regra => regra.RegraJson).HasMaxLength(12000).IsRequired();
+
+            entity.HasIndex(regra => new { regra.Tipo, regra.Nome }).IsUnique();
+            entity.HasIndex(regra => new { regra.Tipo, regra.Ativa });
+        });
+
+        modelBuilder.Entity<ProtocoloEntregaDocumento>(entity =>
+        {
+            entity.ToTable("ProtocolosEntregaDocumento");
+            entity.HasKey(protocolo => protocolo.Id);
+
+            entity.Property(protocolo => protocolo.Destinatario).HasMaxLength(180);
+            entity.Property(protocolo => protocolo.Observacao).HasMaxLength(1000);
+
+            entity.HasIndex(protocolo => new { protocolo.ContaPsicologoId, protocolo.DocumentoProntuarioId, protocolo.EntregueEm });
+            entity.HasIndex(protocolo => new { protocolo.ContaPsicologoId, protocolo.Status, protocolo.EntregueEm });
+
+            entity.HasOne(protocolo => protocolo.DocumentoProntuario)
+                .WithMany(documento => documento.ProtocolosEntrega)
+                .HasPrincipalKey(documento => new { documento.ContaPsicologoId, documento.Id })
+                .HasForeignKey(protocolo => new { protocolo.ContaPsicologoId, protocolo.DocumentoProntuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(protocolo => protocolo.RegistradoPorUsuario)
+                .WithMany()
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(protocolo => new { protocolo.ContaPsicologoId, protocolo.RegistradoPorUsuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
     private static void ConfigurarSessoes(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<RegistroSessao>(modelBuilder);
+        ConfigurarEntidadeDaConta<RetificacaoRegistroSessao>(modelBuilder);
+
         modelBuilder.Entity<RegistroSessao>(entity =>
         {
             entity.ToTable("RegistrosSessao");
@@ -258,27 +600,38 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(registro => registro.Evolucao).HasMaxLength(8000);
             entity.Property(registro => registro.Encaminhamentos).HasMaxLength(4000);
 
-            entity.HasIndex(registro => registro.ConsultaId).IsUnique();
-            entity.HasIndex(registro => new { registro.PacienteId, registro.DataSessao });
+            entity.HasIndex(registro => new { registro.ContaPsicologoId, registro.ConsultaId }).IsUnique();
+            entity.HasIndex(registro => new { registro.ContaPsicologoId, registro.PacienteId, registro.DataSessao });
+            entity.HasIndex(registro => new { registro.ContaPsicologoId, registro.ProntuarioId, registro.DataSessao });
+
+            entity.HasOne(registro => registro.Prontuario)
+                .WithMany(prontuario => prontuario.RegistrosSessao)
+                .HasPrincipalKey(prontuario => new { prontuario.ContaPsicologoId, prontuario.Id })
+                .HasForeignKey(registro => new { registro.ContaPsicologoId, registro.ProntuarioId })
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(registro => registro.Paciente)
                 .WithMany(paciente => paciente.RegistrosSessao)
-                .HasForeignKey(registro => registro.PacienteId)
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(registro => new { registro.ContaPsicologoId, registro.PacienteId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(registro => registro.Consulta)
                 .WithOne(consulta => consulta.RegistroSessao)
-                .HasForeignKey<RegistroSessao>(registro => registro.ConsultaId)
+                .HasPrincipalKey<Consulta>(consulta => new { consulta.ContaPsicologoId, consulta.Id })
+                .HasForeignKey<RegistroSessao>(registro => new { registro.ContaPsicologoId, registro.ConsultaId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(registro => registro.TipoAtendimento)
                 .WithMany(tipo => tipo.RegistrosSessao)
-                .HasForeignKey(registro => registro.TipoAtendimentoId)
+                .HasPrincipalKey(tipo => new { tipo.ContaPsicologoId, tipo.Id })
+                .HasForeignKey(registro => new { registro.ContaPsicologoId, registro.TipoAtendimentoId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(registro => registro.CriadoPorUsuario)
                 .WithMany(usuario => usuario.RegistrosSessaoCriados)
-                .HasForeignKey(registro => registro.CriadoPorUsuarioId)
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(registro => new { registro.ContaPsicologoId, registro.CriadoPorUsuarioId })
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -294,18 +647,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
             entity.HasOne(retificacao => retificacao.RegistroSessao)
                 .WithMany(registro => registro.Retificacoes)
-                .HasForeignKey(retificacao => retificacao.RegistroSessaoId)
+                .HasPrincipalKey(registro => new { registro.ContaPsicologoId, registro.Id })
+                .HasForeignKey(retificacao => new { retificacao.ContaPsicologoId, retificacao.RegistroSessaoId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(retificacao => retificacao.Usuario)
                 .WithMany(usuario => usuario.RetificacoesRegistroSessao)
-                .HasForeignKey(retificacao => retificacao.UsuarioId)
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(retificacao => new { retificacao.ContaPsicologoId, retificacao.UsuarioId })
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
     private static void ConfigurarPagamentos(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<Pagamento>(modelBuilder);
+
         modelBuilder.Entity<Pagamento>(entity =>
         {
             entity.ToTable("Pagamentos", table =>
@@ -318,23 +675,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(pagamento => pagamento.Valor).HasPrecision(12, 2);
             entity.Property(pagamento => pagamento.Observacao).HasMaxLength(1000);
 
-            entity.HasIndex(pagamento => new { pagamento.PacienteId, pagamento.Status });
-            entity.HasIndex(pagamento => pagamento.ConsultaId);
+            entity.HasIndex(pagamento => new { pagamento.ContaPsicologoId, pagamento.PacienteId, pagamento.Status });
+            entity.HasIndex(pagamento => new { pagamento.ContaPsicologoId, pagamento.ConsultaId });
 
             entity.HasOne(pagamento => pagamento.Paciente)
                 .WithMany(paciente => paciente.Pagamentos)
-                .HasForeignKey(pagamento => pagamento.PacienteId)
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(pagamento => new { pagamento.ContaPsicologoId, pagamento.PacienteId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(pagamento => pagamento.Consulta)
                 .WithMany(consulta => consulta.Pagamentos)
-                .HasForeignKey(pagamento => pagamento.ConsultaId)
+                .HasPrincipalKey(consulta => new { consulta.ContaPsicologoId, consulta.Id })
+                .HasForeignKey(pagamento => new { pagamento.ContaPsicologoId, pagamento.ConsultaId })
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }
 
     private static void ConfigurarLembretes(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<Lembrete>(modelBuilder);
+        ConfigurarEntidadeDaConta<ModeloMensagem>(modelBuilder);
+        ConfigurarEntidadeDaConta<ListaEspera>(modelBuilder);
+
         modelBuilder.Entity<Lembrete>(entity =>
         {
             entity.ToTable("Lembretes");
@@ -343,21 +706,24 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(lembrete => lembrete.Mensagem).HasMaxLength(2000);
             entity.Property(lembrete => lembrete.ErroEnvio).HasMaxLength(2000);
 
-            entity.HasIndex(lembrete => new { lembrete.AgendadoPara, lembrete.Status });
+            entity.HasIndex(lembrete => new { lembrete.ContaPsicologoId, lembrete.AgendadoPara, lembrete.Status });
 
             entity.HasOne(lembrete => lembrete.Consulta)
                 .WithMany(consulta => consulta.Lembretes)
-                .HasForeignKey(lembrete => lembrete.ConsultaId)
+                .HasPrincipalKey(consulta => new { consulta.ContaPsicologoId, consulta.Id })
+                .HasForeignKey(lembrete => new { lembrete.ContaPsicologoId, lembrete.ConsultaId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(lembrete => lembrete.Paciente)
                 .WithMany()
-                .HasForeignKey(lembrete => lembrete.PacienteId)
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(lembrete => new { lembrete.ContaPsicologoId, lembrete.PacienteId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(lembrete => lembrete.ModeloMensagem)
                 .WithMany(modelo => modelo.Lembretes)
-                .HasForeignKey(lembrete => lembrete.ModeloMensagemId)
+                .HasPrincipalKey(modelo => new { modelo.ContaPsicologoId, modelo.Id })
+                .HasForeignKey(lembrete => new { lembrete.ContaPsicologoId, lembrete.ModeloMensagemId })
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -369,7 +735,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(modelo => modelo.Nome).HasMaxLength(120).IsRequired();
             entity.Property(modelo => modelo.Conteudo).HasMaxLength(4000).IsRequired();
 
-            entity.HasIndex(modelo => new { modelo.Tipo, modelo.Canal, modelo.Ativo });
+            entity.HasIndex(modelo => new { modelo.ContaPsicologoId, modelo.Tipo, modelo.Canal, modelo.Ativo });
         });
 
         modelBuilder.Entity<ListaEspera>(entity =>
@@ -385,22 +751,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
             entity.Property(item => item.ObservacaoAdministrativa).HasMaxLength(1000);
 
-            entity.HasIndex(item => new { item.Status, item.CriadoEm });
+            entity.HasIndex(item => new { item.ContaPsicologoId, item.Status, item.CriadoEm });
 
             entity.HasOne(item => item.Paciente)
                 .WithMany(paciente => paciente.ListaEspera)
-                .HasForeignKey(item => item.PacienteId)
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(item => new { item.ContaPsicologoId, item.PacienteId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(item => item.TipoAtendimento)
                 .WithMany(tipo => tipo.ListaEspera)
-                .HasForeignKey(item => item.TipoAtendimentoId)
+                .HasPrincipalKey(tipo => new { tipo.ContaPsicologoId, tipo.Id })
+                .HasForeignKey(item => new { item.ContaPsicologoId, item.TipoAtendimentoId })
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }
 
     private static void ConfigurarWhatsApp(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<IntegracaoWhatsApp>(modelBuilder);
+        ConfigurarEntidadeDaConta<ConversaWhatsApp>(modelBuilder);
+        ConfigurarEntidadeDaConta<MensagemWhatsApp>(modelBuilder);
+        ConfigurarEntidadeDaConta<EventoBridgeWhatsApp>(modelBuilder);
+
         modelBuilder.Entity<IntegracaoWhatsApp>(entity =>
         {
             entity.ToTable("IntegracoesWhatsApp");
@@ -411,6 +784,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(integracao => integracao.UrlBaseBridge).HasMaxLength(500).IsRequired();
             entity.Property(integracao => integracao.TokenCriptografado).HasMaxLength(1000).IsRequired();
             entity.Property(integracao => integracao.NumeroWhatsApp).HasMaxLength(30).IsRequired();
+
+            entity.HasIndex(integracao => new { integracao.ContaPsicologoId, integracao.Ativo });
         });
 
         modelBuilder.Entity<ConversaWhatsApp>(entity =>
@@ -418,21 +793,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.ToTable("ConversasWhatsApp");
             entity.HasKey(conversa => conversa.Id);
 
-            entity.Property(conversa => conversa.Telefone).HasMaxLength(30).IsRequired();
+            entity.Property(conversa => conversa.Telefone).HasMaxLength(500).IsRequired();
             entity.Property(conversa => conversa.NomeContato).HasMaxLength(180);
             entity.Property(conversa => conversa.MotivoAtendimentoHumano).HasMaxLength(1000);
 
-            entity.HasIndex(conversa => new { conversa.IntegracaoWhatsAppId, conversa.Telefone });
-            entity.HasIndex(conversa => new { conversa.Status, conversa.UltimaMensagemEm });
+            entity.HasIndex(conversa => new { conversa.ContaPsicologoId, conversa.IntegracaoWhatsAppId, conversa.Telefone });
+            entity.HasIndex(conversa => new { conversa.ContaPsicologoId, conversa.Status, conversa.UltimaMensagemEm });
 
             entity.HasOne(conversa => conversa.IntegracaoWhatsApp)
                 .WithMany(integracao => integracao.Conversas)
-                .HasForeignKey(conversa => conversa.IntegracaoWhatsAppId)
+                .HasPrincipalKey(integracao => new { integracao.ContaPsicologoId, integracao.Id })
+                .HasForeignKey(conversa => new { conversa.ContaPsicologoId, conversa.IntegracaoWhatsAppId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(conversa => conversa.Paciente)
                 .WithMany(paciente => paciente.ConversasWhatsApp)
-                .HasForeignKey(conversa => conversa.PacienteId)
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(conversa => new { conversa.ContaPsicologoId, conversa.PacienteId })
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -445,13 +822,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(mensagem => mensagem.Conteudo).HasMaxLength(8000);
             entity.Property(mensagem => mensagem.ErroEnvio).HasMaxLength(2000);
 
-            entity.HasIndex(mensagem => new { mensagem.ConversaWhatsAppId, mensagem.MensagemExternaId })
+            entity.HasIndex(mensagem => new { mensagem.ContaPsicologoId, mensagem.ConversaWhatsAppId, mensagem.MensagemExternaId })
                 .IsUnique()
                 .HasFilter("[MensagemExternaId] IS NOT NULL");
 
             entity.HasOne(mensagem => mensagem.ConversaWhatsApp)
                 .WithMany(conversa => conversa.Mensagens)
-                .HasForeignKey(mensagem => mensagem.ConversaWhatsAppId)
+                .HasPrincipalKey(conversa => new { conversa.ContaPsicologoId, conversa.Id })
+                .HasForeignKey(mensagem => new { mensagem.ContaPsicologoId, mensagem.ConversaWhatsAppId })
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -466,23 +844,26 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(evento => evento.PayloadJson).IsRequired();
             entity.Property(evento => evento.ErroProcessamento).HasMaxLength(2000);
 
-            entity.HasIndex(evento => new { evento.IntegracaoWhatsAppId, evento.EventoExternoId })
+            entity.HasIndex(evento => new { evento.ContaPsicologoId, evento.IntegracaoWhatsAppId, evento.EventoExternoId })
                 .IsUnique()
                 .HasFilter("[EventoExternoId] IS NOT NULL");
 
-            entity.HasIndex(evento => new { evento.IntegracaoWhatsAppId, evento.PayloadHash })
+            entity.HasIndex(evento => new { evento.ContaPsicologoId, evento.IntegracaoWhatsAppId, evento.PayloadHash })
                 .IsUnique()
                 .HasFilter("[PayloadHash] IS NOT NULL");
 
             entity.HasOne(evento => evento.IntegracaoWhatsApp)
                 .WithMany(integracao => integracao.Eventos)
-                .HasForeignKey(evento => evento.IntegracaoWhatsAppId)
+                .HasPrincipalKey(integracao => new { integracao.ContaPsicologoId, integracao.Id })
+                .HasForeignKey(evento => new { evento.ContaPsicologoId, evento.IntegracaoWhatsAppId })
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
     private static void ConfigurarBot(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<SessaoBot>(modelBuilder);
+
         modelBuilder.Entity<SessaoBot>(entity =>
         {
             entity.ToTable("SessoesBot");
@@ -492,19 +873,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(sessao => sessao.EtapaAtual).HasMaxLength(120);
             entity.Property(sessao => sessao.DadosTemporariosJson).HasMaxLength(4000);
 
-            entity.HasIndex(sessao => new { sessao.ConversaWhatsAppId, sessao.Status });
-            entity.HasIndex(sessao => sessao.ConversaWhatsAppId)
+            entity.HasIndex(sessao => new { sessao.ContaPsicologoId, sessao.ConversaWhatsAppId, sessao.Status });
+            entity.HasIndex(sessao => new { sessao.ContaPsicologoId, sessao.ConversaWhatsAppId })
                 .IsUnique()
                 .HasFilter("[Status] = 'Aberta'");
 
             entity.HasOne(sessao => sessao.ConversaWhatsApp)
                 .WithMany(conversa => conversa.SessoesBot)
-                .HasForeignKey(sessao => sessao.ConversaWhatsAppId)
+                .HasPrincipalKey(conversa => new { conversa.ContaPsicologoId, conversa.Id })
+                .HasForeignKey(sessao => new { sessao.ContaPsicologoId, sessao.ConversaWhatsAppId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(sessao => sessao.Paciente)
                 .WithMany(paciente => paciente.SessoesBot)
-                .HasForeignKey(sessao => sessao.PacienteId)
+                .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
+                .HasForeignKey(sessao => new { sessao.ContaPsicologoId, sessao.PacienteId })
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -521,6 +904,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     private static void ConfigurarAuditoria(ModelBuilder modelBuilder)
     {
+        ConfigurarEntidadeDaConta<LogAuditoria>(modelBuilder);
+        ConfigurarEntidadeDaConta<Notificacao>(modelBuilder);
+
         modelBuilder.Entity<LogAuditoria>(entity =>
         {
             entity.ToTable("LogsAuditoria");
@@ -534,12 +920,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(log => log.DadosAntesJson).HasMaxLength(8000);
             entity.Property(log => log.DadosDepoisJson).HasMaxLength(8000);
 
-            entity.HasIndex(log => new { log.Entidade, log.EntidadeId });
-            entity.HasIndex(log => log.CriadoEm);
+            entity.HasIndex(log => new { log.ContaPsicologoId, log.Entidade, log.EntidadeId });
+            entity.HasIndex(log => new { log.ContaPsicologoId, log.CriadoEm });
 
             entity.HasOne(log => log.Usuario)
                 .WithMany(usuario => usuario.LogsAuditoria)
-                .HasForeignKey(log => log.UsuarioId)
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(log => new { log.ContaPsicologoId, log.UsuarioId })
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -552,11 +939,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(notificacao => notificacao.Mensagem).HasMaxLength(2000).IsRequired();
             entity.Property(notificacao => notificacao.Tipo).HasMaxLength(120).IsRequired();
 
-            entity.HasIndex(notificacao => new { notificacao.UsuarioId, notificacao.Lida, notificacao.CriadoEm });
+            entity.HasIndex(notificacao => new { notificacao.ContaPsicologoId, notificacao.UsuarioId, notificacao.Lida, notificacao.CriadoEm });
 
             entity.HasOne(notificacao => notificacao.Usuario)
                 .WithMany(usuario => usuario.Notificacoes)
-                .HasForeignKey(notificacao => notificacao.UsuarioId)
+                .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
+                .HasForeignKey(notificacao => new { notificacao.ContaPsicologoId, notificacao.UsuarioId })
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

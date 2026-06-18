@@ -1,6 +1,6 @@
 namespace GestaoPsi.Api.Models;
 
-public class ConfiguracaoAtendimento
+public class ConfiguracaoAtendimento : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public int DuracaoPadraoMinutos { get; set; } = 50;

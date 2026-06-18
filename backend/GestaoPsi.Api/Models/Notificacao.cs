@@ -1,6 +1,6 @@
 namespace GestaoPsi.Api.Models;
 
-public class Notificacao
+public class Notificacao : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid UsuarioId { get; set; }

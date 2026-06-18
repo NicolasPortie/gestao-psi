@@ -2,7 +2,7 @@ using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
 
-public class ConversaWhatsApp
+public class ConversaWhatsApp : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid IntegracaoWhatsAppId { get; set; }

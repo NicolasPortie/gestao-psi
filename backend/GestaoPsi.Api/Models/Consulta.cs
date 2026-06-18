@@ -2,7 +2,7 @@ using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
 
-public class Consulta
+public class Consulta : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid PacienteId { get; set; }

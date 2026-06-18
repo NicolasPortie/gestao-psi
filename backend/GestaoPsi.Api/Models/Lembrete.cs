@@ -2,7 +2,7 @@ using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
 
-public class Lembrete
+public class Lembrete : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid ConsultaId { get; set; }

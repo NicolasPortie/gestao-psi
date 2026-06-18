@@ -1,6 +1,6 @@
 namespace GestaoPsi.Api.Models;
 
-public class EventoBridgeWhatsApp
+public class EventoBridgeWhatsApp : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid IntegracaoWhatsAppId { get; set; }

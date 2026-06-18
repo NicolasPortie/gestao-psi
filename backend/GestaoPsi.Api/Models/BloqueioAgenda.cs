@@ -1,6 +1,6 @@
 namespace GestaoPsi.Api.Models;
 
-public class BloqueioAgenda
+public class BloqueioAgenda : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public string Titulo { get; set; } = string.Empty;

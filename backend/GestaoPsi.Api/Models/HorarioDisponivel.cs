@@ -2,7 +2,7 @@ using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
 
-public class HorarioDisponivel
+public class HorarioDisponivel : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public DiaSemana DiaSemana { get; set; }

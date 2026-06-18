@@ -2,7 +2,7 @@ using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
 
-public class ModeloMensagem
+public class ModeloMensagem : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public string Nome { get; set; } = string.Empty;

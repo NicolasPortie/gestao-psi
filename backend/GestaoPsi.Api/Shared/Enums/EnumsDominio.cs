@@ -1,5 +1,44 @@
 namespace GestaoPsi.Api.Shared.Enums;
 
+public enum StatusContaPsicologo
+{
+    Ativa = 1,
+    Inativa = 2,
+    Bloqueada = 3,
+    Cancelada = 4
+}
+
+public enum StatusPlanoSaas
+{
+    Ativo = 1,
+    Inativo = 2,
+    Arquivado = 3
+}
+
+public enum CicloAssinatura
+{
+    Mensal = 1,
+    Anual = 2
+}
+
+public enum StatusAssinaturaConta
+{
+    Teste = 1,
+    Ativa = 2,
+    PastDue = 3,
+    Cancelada = 4,
+    Suspensa = 5
+}
+
+public enum StatusFaturaAssinatura
+{
+    Aberta = 1,
+    Paga = 2,
+    Vencida = 3,
+    Cancelada = 4,
+    Reembolsada = 5
+}
+
 public enum PerfilUsuario
 {
     Psicologo = 1,
@@ -76,6 +115,65 @@ public enum StatusRegistroSessao
     Finalizado = 2,
     Retificado = 3,
     Arquivado = 4
+}
+
+public enum StatusProntuario
+{
+    Ativo = 1,
+    Arquivado = 2,
+    Bloqueado = 3
+}
+
+public enum TipoEvolucaoProntuario
+{
+    ObservacaoClinica = 1,
+    MarcoEvolutivo = 2,
+    HipoteseClinica = 3,
+    PlanoTerapeutico = 4,
+    Encaminhamento = 5,
+    RevisaoCaso = 6
+}
+
+public enum TipoDocumentoPsicologico
+{
+    Declaracao = 1,
+    AtestadoPsicologico = 2,
+    RelatorioPsicologico = 3,
+    RelatorioMultiprofissional = 4,
+    LaudoPsicologico = 5,
+    ParecerPsicologico = 6,
+    Encaminhamento = 7,
+    ResumoAcompanhamento = 8,
+    Devolutiva = 9,
+    InformePsicologico = 10,
+    Outro = 99
+}
+
+public enum StatusDocumentoProntuario
+{
+    Rascunho = 1,
+    EmRevisao = 2,
+    Finalizado = 3,
+    Entregue = 4,
+    Retificado = 5,
+    Arquivado = 6,
+    Cancelado = 7
+}
+
+public enum TipoEntregaDocumento
+{
+    Presencial = 1,
+    Email = 2,
+    WhatsApp = 3,
+    PortalPaciente = 4,
+    Outro = 99
+}
+
+public enum StatusEntregaDocumento
+{
+    Registrada = 1,
+    Confirmada = 2,
+    Cancelada = 3
 }
 
 public enum StatusPagamento

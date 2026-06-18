@@ -2,13 +2,14 @@ using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
 
-public class Paciente
+public class Paciente : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid? UsuarioId { get; set; }
     public string NomeCompleto { get; set; } = string.Empty;
     public DateOnly? DataNascimento { get; set; }
     public string? Cpf { get; set; }
+    public string? CpfHash { get; set; }
     public string? Telefone { get; set; }
     public string? Email { get; set; }
     public StatusPaciente Status { get; set; } = StatusPaciente.Ativo;
@@ -17,6 +18,7 @@ public class Paciente
     public DateTimeOffset? AtualizadoEm { get; set; }
 
     public Usuario? Usuario { get; set; }
+    public Prontuario? Prontuario { get; set; }
     public ICollection<ContatoPaciente> Contatos { get; set; } = [];
     public ICollection<Consulta> Consultas { get; set; } = [];
     public ICollection<RegistroSessao> RegistrosSessao { get; set; } = [];

@@ -1,6 +1,6 @@
 namespace GestaoPsi.Api.Models;
 
-public class RetificacaoRegistroSessao
+public class RetificacaoRegistroSessao : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid RegistroSessaoId { get; set; }

@@ -1,12 +1,10 @@
-# Documentos Markdown locais
-*.md
-*.MD
+# Documentos Markdown locais na raiz
+/*.md
+/*.MD
 
-# Documentos locais de planejamento
-PLANEJAMENTO.MD
-FRONTEND_STACK_E_ARQUITETURA.md
-BACKEND_STACK_E_ARQUITETURA.md
-CONVENCOES_NOMENCLATURA.md
+# Documentacao oficial do projeto
+!/docs/**/*.md
+!/frontend/README.md
 
 # .NET
 bin/

@@ -1,6 +1,6 @@
 namespace GestaoPsi.Api.Models;
 
-public class LogAuditoria
+public class LogAuditoria : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid? UsuarioId { get; set; }
