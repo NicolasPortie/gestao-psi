@@ -1,0 +1,100 @@
+<app-layout-autenticacao
+  destaqueTitulo="Gestão clínica com propósito."
+  destaqueDescricao="Gerencie seus prontuários, agenda e administrativo em um só lugar, com foco total no cuidado aos seus pacientes."
+>
+  <header class="mb-10 flex flex-col items-center text-center">
+    <img
+      class="mb-5 h-16 w-fit object-contain"
+      src="/assets/gestaopsi-marca.png"
+      alt="GestãoPsi"
+    />
+    <h1 class="text-2xl leading-8 font-semibold text-[#30568b]">
+      Recuperar Acesso
+    </h1>
+    <p class="mt-1 max-w-[380px] text-sm leading-5 text-[#43474f]">
+      Informe seu e-mail cadastrado para receber as instruções de recuperação de senha.
+    </p>
+  </header>
+
+  @if (enviado()) {
+    <div
+      class="mb-6 flex gap-3 rounded-lg border border-[#abcfb2] bg-[#c6eccd]/30 p-4 text-sm leading-5 text-[#2d4e37]"
+      role="status"
+    >
+      <i class="pi pi-check-circle mt-0.5 text-lg" aria-hidden="true"></i>
+      <p>
+        Se o e-mail informado estiver em nossa base, você receberá um link em instantes.
+      </p>
+    </div>
+  }
+
+  <form
+    class="flex flex-col gap-6"
+    [formGroup]="formulario"
+    (ngSubmit)="enviarLink()"
+    novalidate
+  >
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-semibold text-[#43474f]" for="email-recuperacao">
+        E-mail profissional
+      </label>
+      <div
+        class="group flex h-12 items-center rounded-lg border border-[#c3c6d1] bg-[#f1f4fb] transition-[border-color,box-shadow,background-color] focus-within:border-[#30568b] focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(48,86,139,0.2)]"
+      >
+        <i
+          class="pi pi-envelope ml-3 text-xl text-[#737780] group-focus-within:text-[#30568b]"
+          aria-hidden="true"
+        ></i>
+        <input
+          class="h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-base text-[#181c21] outline-none placeholder:text-[#737780]/70"
+          id="email-recuperacao"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          placeholder="nome@exemplo.com.br"
+          formControlName="email"
+        />
+      </div>
+      @if (mensagemErro()) {
+        <p class="text-xs text-[#ba1a1a]" role="alert">{{ mensagemErro() }}</p>
+      }
+    </div>
+
+    <button
+      pButton
+      class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg !border-0 !bg-[#30568b] !p-0 text-sm font-semibold !text-white shadow-[0_4px_14px_rgba(48,86,139,0.2)] hover:!bg-[#4a6fa5] active:scale-[0.985] disabled:cursor-wait disabled:opacity-70"
+      type="submit"
+      [disabled]="enviando()"
+    >
+      <span>
+        {{ enviando() ? 'Enviando...' : enviado() ? 'Reenviar link' : 'Enviar link de recuperação' }}
+      </span>
+      <i
+        class="pi text-base"
+        [class.pi-arrow-right]="!enviado()"
+        [class.pi-refresh]="enviado()"
+        aria-hidden="true"
+      ></i>
+    </button>
+
+    <a
+      class="flex items-center justify-center gap-2 border-t border-[#c3c6d1] pt-6 text-sm font-semibold text-[#30568b] hover:underline"
+      routerLink="/login"
+    >
+      <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      Voltar para o Login
+    </a>
+  </form>
+
+  <div
+    class="mt-10 flex items-start gap-3 rounded-lg border border-[#c3c6d1]/30 bg-[#f1f4fb]/60 p-4"
+  >
+    <i class="pi pi-shield mt-0.5 text-lg text-[#737780]" aria-hidden="true"></i>
+    <div>
+      <p class="text-xs font-bold text-[#43474f]">Segurança Profissional</p>
+      <p class="mt-1 text-xs leading-5 text-[#43474f]/80">
+        Por segurança, a confirmação não revela se existe uma conta associada ao e-mail.
+      </p>
+    </div>
+  </div>
+</app-layout-autenticacao>

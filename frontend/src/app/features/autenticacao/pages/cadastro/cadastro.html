@@ -1,0 +1,190 @@
+<app-layout-autenticacao
+  [painelAmplo]="true"
+  destaqueTitulo="Seu consultório, organizado desde o primeiro atendimento."
+  destaqueDescricao="Crie sua conta profissional e prepare um espaço privado para agenda, pacientes, prontuários e documentos."
+>
+  <header class="mb-7">
+    <img
+      class="mb-4 h-11 w-fit object-contain object-left"
+      src="/assets/gestaopsi-marca.png"
+      alt="GestãoPsi"
+    />
+    <h1 class="text-[27px] leading-[34px] font-semibold text-[#181c21]">
+      Crie seu consultório digital.
+    </h1>
+    <p class="mt-1 text-sm leading-5 text-[#43474f]">
+      Comece com os dados do psicólogo responsável pela conta.
+    </p>
+  </header>
+
+  @if (concluido()) {
+    <div
+      class="rounded-lg border border-[#abcfb2] bg-[#c6eccd]/30 p-5 text-[#2d4e37]"
+      role="status"
+    >
+      <div class="flex items-start gap-3">
+        <i class="pi pi-check-circle mt-0.5 text-xl" aria-hidden="true"></i>
+        <div>
+          <h2 class="font-semibold">Cadastro recebido</h2>
+          <p class="mt-1 text-sm leading-5">
+            Sua conta profissional está pronta para ser conectada ao fluxo de ativação.
+          </p>
+          <a
+            class="mt-4 inline-flex items-center gap-2 text-sm font-semibold hover:underline"
+            routerLink="/login"
+          >
+            Ir para o Login
+            <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <form
+      class="grid grid-cols-1 gap-4 sm:grid-cols-2"
+      [formGroup]="formulario"
+      (ngSubmit)="criarConta()"
+      novalidate
+    >
+      <div class="flex flex-col gap-1.5 sm:col-span-2">
+        <label class="text-sm font-semibold text-[#43474f]" for="nome-completo">
+          Nome completo
+        </label>
+        <div class="campo-autenticacao">
+          <i class="pi pi-user ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
+          <input
+            class="entrada-autenticacao"
+            id="nome-completo"
+            type="text"
+            autocomplete="name"
+            placeholder="Seu nome completo"
+            formControlName="nomeCompleto"
+          />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1.5 sm:col-span-2">
+        <label class="text-sm font-semibold text-[#43474f]" for="email-cadastro">
+          E-mail profissional
+        </label>
+        <div class="campo-autenticacao">
+          <i class="pi pi-envelope ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
+          <input
+            class="entrada-autenticacao"
+            id="email-cadastro"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            placeholder="nome@exemplo.com.br"
+            formControlName="email"
+          />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1.5 sm:col-span-2">
+        <label class="text-sm font-semibold text-[#43474f]" for="crp">
+          CRP
+        </label>
+        <div class="campo-autenticacao">
+          <i class="pi pi-id-card ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
+          <input
+            class="entrada-autenticacao"
+            id="crp"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="00/000000"
+            formControlName="crp"
+          />
+        </div>
+        <p class="text-[11px] leading-4 text-[#737780]">Formato: região/número</p>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-semibold text-[#43474f]" for="senha-cadastro">
+          Senha
+        </label>
+        <div class="campo-autenticacao">
+          <i class="pi pi-lock ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
+          <input
+            class="entrada-autenticacao"
+            id="senha-cadastro"
+            [type]="senhaVisivel() ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="Mínimo de 8 caracteres"
+            formControlName="senha"
+          />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-semibold text-[#43474f]" for="confirmar-senha">
+            Confirmar senha
+          </label>
+          <button
+            class="cursor-pointer border-0 bg-transparent text-xs text-[#44664e]"
+            type="button"
+            (click)="alternarVisibilidadeSenha()"
+          >
+            {{ senhaVisivel() ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+        <div class="campo-autenticacao">
+          <i class="pi pi-lock ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
+          <input
+            class="entrada-autenticacao"
+            id="confirmar-senha"
+            [type]="senhaVisivel() ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="Repita sua senha"
+            formControlName="confirmarSenha"
+          />
+        </div>
+      </div>
+
+      <label
+        class="flex cursor-pointer items-start gap-3 text-xs leading-5 text-[#43474f] sm:col-span-2"
+      >
+        <p-checkbox
+          inputId="aceitou-termos"
+          formControlName="aceitouTermos"
+          [binary]="true"
+        />
+        <span>
+          Li e aceito os
+          <a class="font-semibold text-[#44664e] hover:underline" href="#termos">
+            Termos de Uso
+          </a>
+          e a
+          <a class="font-semibold text-[#44664e] hover:underline" href="#privacidade">
+            Política de Privacidade
+          </a>.
+        </span>
+      </label>
+
+      @if (mensagemErro()) {
+        <p class="text-xs text-[#ba1a1a] sm:col-span-2" role="alert">
+          {{ mensagemErro() }}
+        </p>
+      }
+
+      <button
+        pButton
+        class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg !border-0 !bg-[#44664e] !p-0 text-sm font-semibold !text-white shadow-[0_2px_6px_rgba(45,49,54,0.1)] hover:!bg-[#52765c] active:scale-[0.985] disabled:cursor-wait disabled:opacity-70 sm:col-span-2"
+        type="submit"
+        [disabled]="enviando()"
+      >
+        <span>{{ enviando() ? 'Criando sua conta...' : 'Criar minha conta' }}</span>
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
+      </button>
+    </form>
+
+    <p class="mt-5 text-center text-sm text-[#43474f]">
+      Já possui uma conta?
+      <a class="font-semibold text-[#44664e] hover:underline" routerLink="/login">
+        Entrar
+      </a>
+    </p>
+  }
+</app-layout-autenticacao>

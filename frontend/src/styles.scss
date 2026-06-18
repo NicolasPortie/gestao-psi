@@ -25,6 +25,41 @@ input {
   font-family: inherit;
 }
 
+.campo-autenticacao {
+  align-items: center;
+  background: #f1f4fb;
+  border: 1px solid rgb(195 198 209 / 50%);
+  border-radius: 8px;
+  display: flex;
+  height: 44px;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.campo-autenticacao:focus-within {
+  background: #fff;
+  border-color: #44664e;
+  box-shadow: 0 0 0 2px rgb(68 102 78 / 15%);
+}
+
+.entrada-autenticacao {
+  background: transparent;
+  border: 0;
+  color: #181c21;
+  flex: 1;
+  font-size: 14px;
+  height: 100%;
+  min-width: 0;
+  outline: 0;
+  padding: 0 12px;
+}
+
+.entrada-autenticacao::placeholder {
+  color: rgb(115 119 128 / 70%);
+}
+
 :focus-visible {
   outline: 2px solid #30568b;
   outline-offset: 2px;

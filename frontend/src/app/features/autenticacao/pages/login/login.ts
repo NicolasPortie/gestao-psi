@@ -5,7 +5,9 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { LayoutAutenticacao } from '../../../../shared/components/layout-autenticacao/layout-autenticacao';
 
 interface FormularioLogin {
   email: FormControl<string>;
@@ -14,7 +16,7 @@ interface FormularioLogin {
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, ButtonModule],
+  imports: [ReactiveFormsModule, RouterLink, ButtonModule, LayoutAutenticacao],
   templateUrl: './login.html',
 })
 export class Login {
