@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import {
   AbstractControl,
   FormControl,
@@ -10,6 +10,8 @@ import {
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { finalize } from 'rxjs';
+import { AutenticacaoService } from '../../../../core/autenticacao/autenticacao.service';
 import { LayoutAutenticacao } from '../../../../shared/components/layout-autenticacao/layout-autenticacao';
 
 interface FormularioCadastro {
@@ -39,6 +41,8 @@ function senhasIguais(controle: AbstractControl): ValidationErrors | null {
   templateUrl: './cadastro.html',
 })
 export class Cadastro {
+  private readonly autenticacaoService = inject(AutenticacaoService);
+
   protected readonly senhaVisivel = signal(false);
   protected readonly enviando = signal(false);
   protected readonly concluido = signal(false);
@@ -81,16 +85,21 @@ export class Cadastro {
   protected criarConta(): void {
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
-      this.mensagemErro.set('Revise os dados obrigatórios para criar sua conta.');
+      this.mensagemErro.set('Revise os dados obrigatorios para criar sua conta.');
       return;
     }
 
     this.enviando.set(true);
     this.mensagemErro.set('');
 
-    window.setTimeout(() => {
-      this.enviando.set(false);
-      this.concluido.set(true);
-    }, 750);
+    const { confirmarSenha: _, ...request } = this.formulario.getRawValue();
+
+    this.autenticacaoService
+      .criarConta(request)
+      .pipe(finalize(() => this.enviando.set(false)))
+      .subscribe({
+        next: () => this.concluido.set(true),
+        error: (erro: Error) => this.mensagemErro.set(erro.message),
+      });
   }
 }

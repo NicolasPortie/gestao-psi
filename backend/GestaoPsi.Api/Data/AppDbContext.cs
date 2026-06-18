@@ -199,6 +199,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(usuario => usuario.Email).HasMaxLength(180).IsRequired();
             entity.Property(usuario => usuario.SenhaHash).HasMaxLength(500).IsRequired();
             entity.Property(usuario => usuario.Telefone).HasMaxLength(30);
+            entity.Property(usuario => usuario.VersaoTermosAceitos).HasMaxLength(40);
 
             entity.HasIndex(usuario => usuario.Email).IsUnique();
             entity.HasIndex(usuario => new { usuario.ContaPsicologoId, usuario.Perfil, usuario.Status });
@@ -209,7 +210,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.ToTable("DadosProfissionaisPsicologo");
             entity.HasKey(dados => dados.Id);
 
-            entity.Property(dados => dados.Crp).HasMaxLength(30).IsRequired();
+            entity.Property(dados => dados.Crp).HasMaxLength(500).IsRequired();
             entity.Property(dados => dados.CrpHash).HasMaxLength(128).IsRequired();
             entity.Property(dados => dados.NomeProfissional).HasMaxLength(180).IsRequired();
             entity.Property(dados => dados.Bio).HasMaxLength(2000);
@@ -259,7 +260,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithOne(usuario => usuario.Paciente)
                 .HasPrincipalKey<Usuario>(usuario => new { usuario.ContaPsicologoId, usuario.Id })
                 .HasForeignKey<Paciente>(paciente => new { paciente.ContaPsicologoId, paciente.UsuarioId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ContatoPaciente>(entity =>
@@ -400,7 +401,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(usuario => usuario.HistoricosConsulta)
                 .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
                 .HasForeignKey(historico => new { historico.ContaPsicologoId, historico.UsuarioId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -450,7 +451,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(registro => registro.Evolucoes)
                 .HasPrincipalKey(registro => new { registro.ContaPsicologoId, registro.Id })
                 .HasForeignKey(evolucao => new { evolucao.ContaPsicologoId, evolucao.RegistroSessaoId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(evolucao => evolucao.CriadoPorUsuario)
                 .WithMany()
@@ -688,7 +689,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(consulta => consulta.Pagamentos)
                 .HasPrincipalKey(consulta => new { consulta.ContaPsicologoId, consulta.Id })
                 .HasForeignKey(pagamento => new { pagamento.ContaPsicologoId, pagamento.ConsultaId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -724,7 +725,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(modelo => modelo.Lembretes)
                 .HasPrincipalKey(modelo => new { modelo.ContaPsicologoId, modelo.Id })
                 .HasForeignKey(lembrete => new { lembrete.ContaPsicologoId, lembrete.ModeloMensagemId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ModeloMensagem>(entity =>
@@ -763,7 +764,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(tipo => tipo.ListaEspera)
                 .HasPrincipalKey(tipo => new { tipo.ContaPsicologoId, tipo.Id })
                 .HasForeignKey(item => new { item.ContaPsicologoId, item.TipoAtendimentoId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -810,7 +811,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(paciente => paciente.ConversasWhatsApp)
                 .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
                 .HasForeignKey(conversa => new { conversa.ContaPsicologoId, conversa.PacienteId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<MensagemWhatsApp>(entity =>
@@ -888,7 +889,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(paciente => paciente.SessoesBot)
                 .HasPrincipalKey(paciente => new { paciente.ContaPsicologoId, paciente.Id })
                 .HasForeignKey(sessao => new { sessao.ContaPsicologoId, sessao.PacienteId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<IntencaoBot>(entity =>
@@ -927,7 +928,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(usuario => usuario.LogsAuditoria)
                 .HasPrincipalKey(usuario => new { usuario.ContaPsicologoId, usuario.Id })
                 .HasForeignKey(log => new { log.ContaPsicologoId, log.UsuarioId })
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Notificacao>(entity =>

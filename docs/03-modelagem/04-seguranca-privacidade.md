@@ -153,6 +153,29 @@ Regras:
 - arquivos temporarios expiram;
 - exclusao de conta nao deve apagar prontuario sem regra clara de guarda.
 
+## Redis e Autenticacao
+
+Redis deve armazenar apenas estado temporario com expiracao definida:
+
+- contadores de tentativas de login;
+- bloqueios temporarios;
+- tokens de recuperacao armazenados somente como hash;
+- refresh tokens armazenados somente como hash;
+- indices de revogacao de sessoes;
+- chaveiro compartilhado de Data Protection.
+
+Regras:
+
+- nunca armazenar senha no Redis;
+- nunca armazenar token bruto no Redis;
+- usar TTL em todas as chaves de autenticacao;
+- tokens de recuperacao e refresh tokens devem ser de uso unico ou rotacionados;
+- redefinir senha deve revogar sessoes anteriores;
+- Redis deve exigir autenticacao e conexao protegida em producao;
+- chaves Redis nao devem conter e-mail, CRP, CPF ou outro dado pessoal em texto aberto.
+
+Para desenvolvimento local, o estado temporario de autenticacao pode rodar em memoria quando Redis nao estiver configurado. Esse modo nao e distribuido, nao sobrevive a reinicio da API e existe apenas para facilitar o desenvolvimento sem infraestrutura local adicional.
+
 ## MFA
 
 MFA/2FA e altamente recomendado para psicologos.

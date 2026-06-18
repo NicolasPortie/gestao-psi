@@ -17,7 +17,7 @@ namespace GestaoPsi.Api.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -482,8 +482,8 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Crp")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("CrpHash")
                         .IsRequired()
@@ -1993,8 +1993,15 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<DateTimeOffset?>("TermosAceitosEm")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<DateTimeOffset?>("UltimoAcessoEm")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("VersaoTermosAceitos")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
 
                     b.HasKey("Id");
 
@@ -2182,7 +2189,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany("ConversasWhatsApp")
                         .HasForeignKey("ContaPsicologoId", "PacienteId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ContaPsicologo");
 
@@ -2310,7 +2317,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany("Evolucoes")
                         .HasForeignKey("ContaPsicologoId", "RegistroSessaoId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ContaPsicologo");
 
@@ -2362,7 +2369,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany("HistoricosConsulta")
                         .HasForeignKey("ContaPsicologoId", "UsuarioId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Consulta");
 
@@ -2412,7 +2419,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany("Lembretes")
                         .HasForeignKey("ContaPsicologoId", "ModeloMensagemId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("GestaoPsi.Api.Models.Paciente", "Paciente")
                         .WithMany()
@@ -2449,7 +2456,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany("ListaEspera")
                         .HasForeignKey("ContaPsicologoId", "TipoAtendimentoId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ContaPsicologo");
 
@@ -2470,7 +2477,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany("LogsAuditoria")
                         .HasForeignKey("ContaPsicologoId", "UsuarioId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ContaPsicologo");
 
@@ -2551,7 +2558,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithOne("Paciente")
                         .HasForeignKey("GestaoPsi.Api.Models.Paciente", "ContaPsicologoId", "UsuarioId")
                         .HasPrincipalKey("GestaoPsi.Api.Models.Usuario", "ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ContaPsicologo");
 
@@ -2570,7 +2577,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany("Pagamentos")
                         .HasForeignKey("ContaPsicologoId", "ConsultaId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("GestaoPsi.Api.Models.Paciente", "Paciente")
                         .WithMany("Pagamentos")
@@ -2739,7 +2746,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany("SessoesBot")
                         .HasForeignKey("ContaPsicologoId", "PacienteId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ContaPsicologo");
 

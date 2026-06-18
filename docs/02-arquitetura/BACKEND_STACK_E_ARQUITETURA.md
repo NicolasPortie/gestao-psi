@@ -696,6 +696,41 @@ DDD pesado
 
 Esses padrões podem ser úteis em alguns cenários, mas não são necessários para a primeira fase do GestãoPsi.
 
+## Redis e Estado Temporario Distribuido
+
+O Redis faz parte da stack obrigatoria do back-end.
+
+Usar Redis para:
+
+- tentativas de login e bloqueios temporarios;
+- tokens de recuperacao de senha com expiracao e uso unico;
+- refresh tokens e revogacao de sessoes;
+- chaveiro compartilhado do ASP.NET Core Data Protection;
+- cache distribuido quando houver ganho real;
+- rate limiting distribuido em fluxos sensiveis.
+
+Nao usar Redis como fonte principal de dados duraveis do consultorio. Contas, usuarios, pacientes, prontuarios, documentos, auditoria e configuracoes permanecem no SQL Server.
+
+Em ambiente `Development`, enquanto o produto ainda esta em construcao local, a API pode usar uma implementacao em memoria para esse estado temporario quando `ConnectionStrings:Redis` nao estiver configurada. Esse fallback existe apenas para ergonomia de desenvolvimento e nao deve ser usado em homologacao ou producao.
+
+Em ambientes fora de `Development`, ausencia de Redis configurado deve impedir a inicializacao da API.
+
+## Regra de Negocio no Back-end
+
+Toda regra de negocio, seguranca, autorizacao e validacao de dominio deve ser executada no back-end.
+
+O front-end pode validar formato e campos obrigatorios para melhorar a experiencia, mas nao pode decidir:
+
+- se uma conta pode ser criada;
+- se um CRP ou e-mail esta disponivel;
+- qual conta o usuario acessa;
+- se o usuario esta bloqueado;
+- se uma senha ou token e valido;
+- quais permissoes ou modulos estao ativos;
+- se uma operacao clinica ou administrativa pode ser concluida.
+
+O front-end nao deve simular sucesso para operacoes que dependem da API.
+
 ## Decisao Atual
 
 A stack oficial do back-end do GestãoPsi será:

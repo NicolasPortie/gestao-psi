@@ -657,7 +657,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "PacienteId" },
                 principalTable: "Pacientes",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_DadosProfissionaisPsicologo_Usuarios_ContaPsicologoId_UsuarioId",
@@ -729,7 +729,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "RegistroSessaoId" },
                 principalTable: "RegistrosSessao",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_EvolucoesProntuario_Usuarios_ContaPsicologoId_CriadoPorUsuarioId",
@@ -761,7 +761,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "UsuarioId" },
                 principalTable: "Usuarios",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Lembretes_Consultas_ContaPsicologoId_ConsultaId",
@@ -777,7 +777,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "ModeloMensagemId" },
                 principalTable: "ModelosMensagem",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Lembretes_Pacientes_ContaPsicologoId_PacienteId",
@@ -801,7 +801,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "TipoAtendimentoId" },
                 principalTable: "TiposAtendimento",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_LogsAuditoria_Usuarios_ContaPsicologoId_UsuarioId",
@@ -809,7 +809,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "UsuarioId" },
                 principalTable: "Usuarios",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_MensagensWhatsApp_ConversasWhatsApp_ContaPsicologoId_ConversaWhatsAppId",
@@ -833,7 +833,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "UsuarioId" },
                 principalTable: "Usuarios",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Pagamentos_Consultas_ContaPsicologoId_ConsultaId",
@@ -841,7 +841,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "ConsultaId" },
                 principalTable: "Consultas",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Pagamentos_Pacientes_ContaPsicologoId_PacienteId",
@@ -945,7 +945,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 columns: new[] { "ContaPsicologoId", "PacienteId" },
                 principalTable: "Pacientes",
                 principalColumns: new[] { "ContaPsicologoId", "Id" },
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_VersoesDocumentoProntuario_DocumentosProntuario_ContaPsicologoId_DocumentoProntuarioId",
@@ -1609,7 +1609,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "PacienteId",
                 principalTable: "Pacientes",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_DadosProfissionaisPsicologo_Usuarios_UsuarioId",
@@ -1681,7 +1681,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "RegistroSessaoId",
                 principalTable: "RegistrosSessao",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_EvolucoesProntuario_Usuarios_CriadoPorUsuarioId",
@@ -1713,7 +1713,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "UsuarioId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Lembretes_Consultas_ConsultaId",
@@ -1729,7 +1729,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "ModeloMensagemId",
                 principalTable: "ModelosMensagem",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Lembretes_Pacientes_PacienteId",
@@ -1753,7 +1753,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "TipoAtendimentoId",
                 principalTable: "TiposAtendimento",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_LogsAuditoria_Usuarios_UsuarioId",
@@ -1761,7 +1761,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "UsuarioId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_MensagensWhatsApp_ConversasWhatsApp_ConversaWhatsAppId",
@@ -1785,7 +1785,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "UsuarioId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Pagamentos_Consultas_ConsultaId",
@@ -1793,7 +1793,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "ConsultaId",
                 principalTable: "Consultas",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Pagamentos_Pacientes_PacienteId",
@@ -1897,7 +1897,7 @@ namespace GestaoPsi.Api.Data.Migrations
                 column: "PacienteId",
                 principalTable: "Pacientes",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_VersoesDocumentoProntuario_DocumentosProntuario_DocumentoProntuarioId",

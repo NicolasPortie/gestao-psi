@@ -10,6 +10,7 @@
 bin/
 obj/
 TestResults/
+*.log
 *.user
 *.suo
 *.userosscache
@@ -18,6 +19,7 @@ TestResults/
 # ASP.NET
 appsettings.Development.local.json
 appsettings.Local.json
+backend/GestaoPsi.Api/.gestaopsi-dev/
 
 # Node / Angular
 node_modules/

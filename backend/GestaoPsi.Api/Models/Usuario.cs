@@ -11,6 +11,8 @@ public class Usuario : EntidadeDaConta
     public string? Telefone { get; set; }
     public PerfilUsuario Perfil { get; set; }
     public StatusUsuario Status { get; set; } = StatusUsuario.Ativo;
+    public DateTimeOffset? TermosAceitosEm { get; set; }
+    public string? VersaoTermosAceitos { get; set; }
     public DateTimeOffset? UltimoAcessoEm { get; set; }
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? AtualizadoEm { get; set; }
