@@ -1,0 +1,27 @@
+@if (alerta.rota) {
+<a class="group flex gap-3 rounded-2xl p-2 transition-colors hover:bg-[#f1f4fb]" [routerLink]="alerta.rota">
+  <div class="flex size-8 flex-none items-center justify-center rounded-full" [class]="tom()">
+    <i class="pi text-sm" [ngClass]="icone()" aria-hidden="true"></i>
+  </div>
+  <div class="min-w-0">
+    <h3 class="truncate text-xs font-bold text-[#1f1b16] group-hover:text-[#44664e]">
+      {{ alerta.titulo }}
+    </h3>
+    <p class="mt-1 line-clamp-2 text-[11px] leading-4 text-[#5a554f]">
+      {{ alerta.mensagem }}
+    </p>
+  </div>
+</a>
+} @else {
+<article class="flex gap-3 rounded-2xl p-2">
+  <div class="flex size-8 flex-none items-center justify-center rounded-full" [class]="tom()">
+    <i class="pi text-sm" [ngClass]="icone()" aria-hidden="true"></i>
+  </div>
+  <div class="min-w-0">
+    <h3 class="truncate text-xs font-bold text-[#1f1b16]">{{ alerta.titulo }}</h3>
+    <p class="mt-1 line-clamp-2 text-[11px] leading-4 text-[#5a554f]">
+      {{ alerta.mensagem }}
+    </p>
+  </div>
+</article>
+}

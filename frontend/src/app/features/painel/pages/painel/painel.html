@@ -1,0 +1,298 @@
+@if (resumo(); as dados) {
+  <app-shell
+    [nomeUsuario]="dados.usuario.nomeCompleto"
+    [perfil]="dados.usuario.perfil"
+    [notificacoesNaoLidas]="dados.indicadores.notificacoesNaoLidas"
+  >
+    <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div
+        class="overflow-hidden rounded-2xl border border-[#eae1d9]/80 bg-[#fdfbf7] shadow-[0_18px_55px_-34px_rgba(68,102,78,0.55)]"
+      >
+        <div class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div class="p-5 sm:p-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#44664e]">
+                  Consultorio privado
+                </p>
+                <h1 class="mt-2 text-2xl font-bold tracking-tight text-[#1f1b16] sm:text-3xl">
+                  {{ saudacao() }}, {{ dados.usuario.primeiroNome }}
+                </h1>
+                <p class="mt-2 max-w-2xl text-sm leading-6 text-[#5a554f]">
+                  {{ focoDoDia() }}
+                </p>
+              </div>
+
+              <div class="flex flex-wrap gap-2" aria-label="Funcionalidades em preparacao">
+                <span
+                  class="inline-flex h-10 cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-[#d8cdc3] bg-white px-3 text-sm font-bold text-[#5a554f]/60"
+                  aria-disabled="true"
+                  title="Disponivel em breve"
+                >
+                  <i class="pi pi-calendar text-sm" aria-hidden="true"></i>
+                  Agenda
+                </span>
+                <span
+                  class="inline-flex h-10 cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-[#44664e]/45 px-3 text-sm font-bold text-[#fbf7f1]"
+                  aria-disabled="true"
+                  title="Disponivel em breve"
+                >
+                  <i class="pi pi-plus text-sm" aria-hidden="true"></i>
+                  Nova consulta
+                </span>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-3 sm:grid-cols-3">
+              <div class="rounded-xl border border-[#eae1d9] bg-white p-4">
+                <p class="text-3xl font-bold leading-none text-[#1f1b16]">
+                  {{ dados.indicadores.consultasHoje }}
+                </p>
+                <p class="mt-2 text-xs font-bold uppercase tracking-wide text-[#5a554f]">
+                  Consultas hoje
+                </p>
+              </div>
+              <div class="rounded-xl border border-[#eae1d9] bg-white p-4">
+                <p class="text-3xl font-bold leading-none text-[#1f1b16]">
+                  {{ dados.indicadores.pacientesAtivos }}
+                </p>
+                <p class="mt-2 text-xs font-bold uppercase tracking-wide text-[#5a554f]">
+                  Pacientes ativos
+                </p>
+              </div>
+              <div class="rounded-xl border border-[#eae1d9] bg-white p-4">
+                <p class="text-3xl font-bold leading-none text-[#1f1b16]">
+                  {{ dados.indicadores.conversasWhatsappAtendimentoHumano }}
+                </p>
+                <p class="mt-2 text-xs font-bold uppercase tracking-wide text-[#5a554f]">
+                  WhatsApp humano
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <aside class="border-t border-[#eae1d9]/80 bg-[#f1f4fb]/60 p-5 lg:border-l lg:border-t-0">
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#5a554f]">
+              Privacidade
+            </p>
+            <div class="mt-5 space-y-4">
+              <div class="flex gap-3">
+                <span
+                  class="flex size-9 flex-none items-center justify-center rounded-full bg-[#44664e] text-[#fbf7f1]"
+                >
+                  <i class="pi pi-lock text-sm" aria-hidden="true"></i>
+                </span>
+                <div>
+                  <h2 class="text-sm font-bold text-[#1f1b16]">
+                    Informacoes protegidas
+                  </h2>
+                  <p class="mt-1 text-xs leading-5 text-[#5a554f]">
+                    Prontuarios e documentos permanecem em areas reservadas do
+                    consultorio.
+                  </p>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-[#d8cdc3] bg-white/70 p-3">
+                <div class="mb-2 flex items-end justify-between">
+                  <span class="text-xs font-bold text-[#1f1b16]">Progresso mensal</span>
+                  <span class="text-sm font-bold text-[#44664e]">
+                    {{ dados.indicadores.progressoMensalPercentual }}%
+                  </span>
+                </div>
+                <div class="h-2 overflow-hidden rounded-full bg-[#eae1d9]">
+                  <div
+                    class="h-full rounded-full bg-[#44664e]"
+                    [style.width.%]="dados.indicadores.progressoMensalPercentual"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <section class="rounded-2xl border border-[#eae1d9]/80 bg-white p-5">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#44664e]">
+              Fila de atencao
+            </p>
+            <h2 class="mt-1 text-lg font-bold text-[#1f1b16]">Prioridades</h2>
+          </div>
+          <span class="rounded-full bg-[#eae1d9]/70 px-3 py-1 text-xs font-bold text-[#5a554f]">
+            {{ dados.prioridades.length }}
+          </span>
+        </div>
+
+        <div class="mt-4 space-y-3">
+          @for (prioridade of dados.prioridades; track prioridade.titulo) {
+            <article
+              class="block rounded-xl border p-3"
+              [ngClass]="classePrioridade(prioridade.tom)"
+            >
+              <div class="flex items-start gap-3">
+                <i class="pi mt-0.5 text-base" [ngClass]="prioridade.icone" aria-hidden="true"></i>
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-sm font-bold text-[#1f1b16]">{{ prioridade.titulo }}</h3>
+                  <p class="mt-1 text-xs leading-5 text-[#5a554f]">{{ prioridade.mensagem }}</p>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    </section>
+
+    <section class="grid min-h-0 grid-cols-1 gap-5 xl:grid-cols-12">
+      <div class="flex min-h-0 flex-col gap-5 xl:col-span-8">
+        <section class="overflow-hidden rounded-2xl border border-[#eae1d9]/80 bg-white">
+          <header
+            class="flex flex-wrap items-center justify-between gap-3 border-b border-[#eae1d9]/80 bg-[#fcfaf7] px-4 py-4 sm:px-5"
+          >
+            <div class="min-w-0">
+              <h2 class="text-lg font-bold text-[#1f1b16]">Agenda de hoje</h2>
+              <p class="text-xs text-[#5a554f]">{{ hoje | date: 'EEEE, dd/MM' }}</p>
+            </div>
+            <span class="rounded-full bg-[#c6eccd]/45 px-3 py-1 text-xs font-bold text-[#44664e]">
+              {{ dados.indicadores.consultasRestantesHoje }} restantes
+            </span>
+          </header>
+
+          <div class="min-h-[380px] p-3 sm:p-4">
+            @if (dados.consultasHoje.length > 0) {
+              <div class="space-y-2">
+                @for (consulta of dados.consultasHoje; track consulta.id) {
+                  <app-consulta-hoje-item [consulta]="consulta" />
+                }
+              </div>
+            } @else {
+              <div
+                class="flex min-h-80 flex-col items-center justify-center rounded-xl border border-dashed border-[#d8cdc3] bg-[#fcfaf7] p-8 text-center"
+              >
+                <i class="pi pi-calendar-times text-3xl text-[#44664e]/55"></i>
+                <h3 class="mt-4 text-base font-bold text-[#1f1b16]">
+                  Sem consultas para hoje
+                </h3>
+                <p class="mt-1 max-w-sm text-sm leading-6 text-[#5a554f]">
+                  Aproveite este momento para organizar os proximos atendimentos.
+                </p>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="rounded-2xl border border-[#eae1d9]/80 bg-white p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold text-[#1f1b16]">Mapa da semana</h2>
+              <p class="text-xs text-[#5a554f]">Proximos quatro dias da agenda.</p>
+            </div>
+            <span class="text-xs font-bold text-[#5a554f]/60">Agenda completa em breve</span>
+          </div>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            @for (dia of dados.visaoSemana; track dia.data) {
+              <article class="rounded-xl border border-[#eae1d9] bg-[#fcfaf7] p-4">
+                <div class="flex items-baseline justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-wide text-[#5a554f]">
+                      {{ dia.rotulo }}
+                    </p>
+                    <p class="mt-1 text-2xl font-bold text-[#1f1b16]">
+                      {{ dia.data | date: 'dd/MM' }}
+                    </p>
+                  </div>
+                  <p class="text-sm font-bold text-[#44664e]">{{ dia.consultas }}</p>
+                </div>
+                <div class="mt-4 h-2 overflow-hidden rounded-full bg-[#eae1d9]">
+                  <div
+                    class="h-full rounded-full bg-[#44664e]"
+                    [style.width.%]="larguraDiaSemana(dia.consultas)"
+                  ></div>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      </div>
+
+      <aside class="flex min-h-0 flex-col gap-5 xl:col-span-4">
+        <section class="rounded-2xl border border-[#eae1d9]/80 bg-white p-5">
+          <h2 class="text-lg font-bold text-[#1f1b16]">Atalhos do consultorio</h2>
+          <p class="mt-1 text-xs leading-5 text-[#5a554f]">
+            Recursos que estao sendo preparados para o consultorio.
+          </p>
+          <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            @for (acao of dados.acoesRapidas; track acao.rota) {
+              <app-acao-rapida-card [acao]="acao" />
+            }
+          </div>
+        </section>
+
+        <section class="rounded-2xl border border-[#eae1d9]/80 bg-white p-5">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-lg font-bold text-[#1f1b16]">Alertas recentes</h2>
+            <span class="rounded-full bg-[#eae1d9]/70 px-2.5 py-1 text-xs font-bold text-[#5a554f]">
+              {{ dados.alertas.length }}
+            </span>
+          </div>
+
+          @if (dados.alertas.length > 0) {
+            <div class="mt-4 space-y-1">
+              @for (alerta of dados.alertas; track alerta.criadoEm + alerta.titulo) {
+                <app-alerta-painel-item [alerta]="alerta" />
+              }
+            </div>
+          } @else {
+            <div
+              class="mt-4 rounded-xl border border-dashed border-[#d8cdc3] bg-[#fcfaf7] p-6 text-center"
+            >
+              <i class="pi pi-check-circle text-2xl text-[#44664e]/60"></i>
+              <h3 class="mt-3 text-sm font-bold text-[#1f1b16]">Sem alertas pendentes</h3>
+              <p class="mt-1 text-xs leading-5 text-[#5a554f]">
+                Falhas, mensagens sensiveis e notificacoes importantes aparecem aqui.
+              </p>
+            </div>
+          }
+        </section>
+
+        <section class="rounded-2xl border border-[#eae1d9]/80 bg-[#fcfaf7] p-5">
+          <h2 class="text-lg font-bold text-[#1f1b16]">Resumo financeiro</h2>
+          <p class="mt-1 text-xs leading-5 text-[#5a554f]">
+            Valores que ainda precisam de acompanhamento.
+          </p>
+          <div class="mt-4 rounded-xl bg-white p-4">
+            <p class="text-2xl font-bold text-[#1f1b16]">
+              {{ (dados.indicadores.pagamentosPendentes | currency: 'BRL') ?? 'R$ 0,00' }}
+            </p>
+            <p class="mt-1 text-xs font-bold uppercase tracking-wide text-[#ba1a1a]">
+              Pagamentos pendentes
+            </p>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </app-shell>
+} @else {
+  <div class="flex min-h-dvh items-center justify-center bg-[#fcfaf7] p-6">
+    <div class="w-full max-w-md rounded-2xl border border-[#eae1d9] bg-white p-8 text-center">
+      @if (carregando()) {
+        <i class="pi pi-spin pi-spinner text-3xl text-[#44664e]" aria-hidden="true"></i>
+        <p class="mt-4 text-sm font-bold text-[#5a554f]">Carregando painel...</p>
+      } @else {
+        <i class="pi pi-exclamation-circle text-3xl text-[#ba1a1a]" aria-hidden="true"></i>
+        <h1 class="mt-4 text-lg font-bold text-[#1f1b16]">Nao foi possivel abrir o painel</h1>
+        <p class="mt-2 text-sm leading-6 text-[#5a554f]">{{ erro() }}</p>
+        <button
+          pButton
+          class="mt-5 h-11 rounded-xl !border-0 !bg-[#44664e] px-5 text-sm font-bold !text-white"
+          type="button"
+          (click)="carregarResumo()"
+        >
+          Tentar novamente
+        </button>
+      }
+    </div>
+  </div>
+}

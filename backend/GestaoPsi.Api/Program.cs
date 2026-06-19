@@ -5,6 +5,7 @@ using GestaoPsi.Api.Middlewares;
 using GestaoPsi.Api.Models;
 using GestaoPsi.Api.Services.Autenticacao;
 using GestaoPsi.Api.Services.Comunicacao;
+using GestaoPsi.Api.Services.Painel;
 using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Respostas;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -159,6 +160,7 @@ builder.Services.AddCors(opcoes =>
 
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
+builder.Services.AddScoped<IPainelService, PainelService>();
 builder.Services.AddScoped<IProtecaoDadosService, ProtecaoDadosService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailTransacionalService, EmailTransacionalService>();

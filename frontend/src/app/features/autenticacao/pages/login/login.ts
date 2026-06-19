@@ -5,7 +5,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { finalize } from 'rxjs';
 import { AutenticacaoService } from '../../../../core/autenticacao/autenticacao.service';
@@ -23,6 +23,7 @@ interface FormularioLogin {
 })
 export class Login {
   private readonly autenticacaoService = inject(AutenticacaoService);
+  private readonly router = inject(Router);
 
   protected readonly senhaVisivel = signal(false);
   protected readonly enviando = signal(false);
@@ -43,6 +44,11 @@ export class Login {
     this.senhaVisivel.update((visivel) => !visivel);
   }
 
+  protected navegarParaCadastro(evento?: Event): void {
+    evento?.preventDefault();
+    void this.router.navigate(['/cadastro']);
+  }
+
   protected entrar(): void {
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
@@ -57,7 +63,7 @@ export class Login {
       .login(this.formulario.getRawValue())
       .pipe(finalize(() => this.enviando.set(false)))
       .subscribe({
-        next: () => this.mensagem.set('Login realizado com sucesso.'),
+        next: () => void this.router.navigate(['/painel']),
         error: (erro: Error) => this.mensagem.set(erro.message),
       });
   }

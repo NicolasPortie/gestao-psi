@@ -1,19 +1,19 @@
 <app-layout-autenticacao
   [painelAmplo]="true"
-  destaqueTitulo="Seu consultório, organizado desde o primeiro atendimento."
-  destaqueDescricao="Crie sua conta profissional e prepare um espaço privado para agenda, pacientes, prontuários e documentos."
+  destaqueTitulo="Seu consultorio, organizado desde o primeiro atendimento."
+  destaqueDescricao="Crie sua conta profissional e prepare um espaco privado para agenda, pacientes, prontuarios e documentos."
 >
   <header class="mb-7">
     <img
       class="mb-4 h-11 w-fit object-contain object-left"
       src="/assets/gestaopsi-marca.png"
-      alt="GestãoPsi"
+      alt="GestaoPsi"
     />
     <h1 class="text-[27px] leading-[34px] font-semibold text-[#181c21]">
-      Crie seu consultório digital.
+      Crie seu consultorio digital.
     </h1>
     <p class="mt-1 text-sm leading-5 text-[#43474f]">
-      Comece com os dados do psicólogo responsável pela conta.
+      Comece com os dados do psicologo responsavel pela conta.
     </p>
   </header>
 
@@ -27,7 +27,7 @@
         <div>
           <h2 class="font-semibold">Cadastro recebido</h2>
           <p class="mt-1 text-sm leading-5">
-            Sua conta profissional está pronta para ser conectada ao fluxo de ativação.
+            Sua conta profissional esta pronta para ser conectada ao fluxo de ativacao.
           </p>
           <a
             class="mt-4 inline-flex items-center gap-2 text-sm font-semibold hover:underline"
@@ -50,7 +50,10 @@
         <label class="text-sm font-semibold text-[#43474f]" for="nome-completo">
           Nome completo
         </label>
-        <div class="campo-autenticacao">
+        <div
+          class="campo-autenticacao"
+          [class.campo-autenticacao-invalido]="campoInvalido('nomeCompleto')"
+        >
           <i class="pi pi-user ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
           <input
             class="entrada-autenticacao"
@@ -61,13 +64,21 @@
             formControlName="nomeCompleto"
           />
         </div>
+        @if (campoInvalido('nomeCompleto')) {
+          <p class="text-xs leading-4 text-[#ba1a1a]" role="alert">
+            Informe seu nome completo.
+          </p>
+        }
       </div>
 
       <div class="flex flex-col gap-1.5 sm:col-span-2">
         <label class="text-sm font-semibold text-[#43474f]" for="email-cadastro">
           E-mail profissional
         </label>
-        <div class="campo-autenticacao">
+        <div
+          class="campo-autenticacao"
+          [class.campo-autenticacao-invalido]="campoInvalido('email')"
+        >
           <i class="pi pi-envelope ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
           <input
             class="entrada-autenticacao"
@@ -79,13 +90,21 @@
             formControlName="email"
           />
         </div>
+        @if (campoInvalido('email')) {
+          <p class="text-xs leading-4 text-[#ba1a1a]" role="alert">
+            Informe um e-mail profissional valido.
+          </p>
+        }
       </div>
 
       <div class="flex flex-col gap-1.5 sm:col-span-2">
         <label class="text-sm font-semibold text-[#43474f]" for="crp">
           CRP
         </label>
-        <div class="campo-autenticacao">
+        <div
+          class="campo-autenticacao"
+          [class.campo-autenticacao-invalido]="campoInvalido('crp')"
+        >
           <i class="pi pi-id-card ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
           <input
             class="entrada-autenticacao"
@@ -97,24 +116,37 @@
             formControlName="crp"
           />
         </div>
-        <p class="text-[11px] leading-4 text-[#737780]">Formato: região/número</p>
+        <p class="text-[11px] leading-4 text-[#737780]">Formato: regiao/numero</p>
+        @if (campoInvalido('crp')) {
+          <p class="text-xs leading-4 text-[#ba1a1a]" role="alert">
+            Informe o CRP no formato 00/000000.
+          </p>
+        }
       </div>
 
       <div class="flex flex-col gap-1.5">
         <label class="text-sm font-semibold text-[#43474f]" for="senha-cadastro">
           Senha
         </label>
-        <div class="campo-autenticacao">
+        <div
+          class="campo-autenticacao"
+          [class.campo-autenticacao-invalido]="campoInvalido('senha')"
+        >
           <i class="pi pi-lock ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
           <input
             class="entrada-autenticacao"
             id="senha-cadastro"
             [type]="senhaVisivel() ? 'text' : 'password'"
             autocomplete="new-password"
-            placeholder="Mínimo de 8 caracteres"
+            placeholder="Minimo de 8 caracteres"
             formControlName="senha"
           />
         </div>
+        @if (campoInvalido('senha')) {
+          <p class="text-xs leading-4 text-[#ba1a1a]" role="alert">
+            A senha deve ter pelo menos 8 caracteres.
+          </p>
+        }
       </div>
 
       <div class="flex flex-col gap-1.5">
@@ -130,7 +162,10 @@
             {{ senhaVisivel() ? 'Ocultar' : 'Mostrar' }}
           </button>
         </div>
-        <div class="campo-autenticacao">
+        <div
+          class="campo-autenticacao"
+          [class.campo-autenticacao-invalido]="campoInvalido('confirmarSenha') || senhasDiferentes()"
+        >
           <i class="pi pi-lock ml-3 text-lg text-[#737780]" aria-hidden="true"></i>
           <input
             class="entrada-autenticacao"
@@ -141,6 +176,11 @@
             formControlName="confirmarSenha"
           />
         </div>
+        @if (campoInvalido('confirmarSenha') || senhasDiferentes()) {
+          <p class="text-xs leading-4 text-[#ba1a1a]" role="alert">
+            Confirme a senha usando o mesmo valor.
+          </p>
+        }
       </div>
 
       <label
@@ -158,10 +198,16 @@
           </a>
           e a
           <a class="font-semibold text-[#44664e] hover:underline" href="#privacidade">
-            Política de Privacidade
+            Politica de Privacidade
           </a>.
         </span>
       </label>
+
+      @if (campoInvalido('aceitouTermos')) {
+        <p class="-mt-2 text-xs leading-4 text-[#ba1a1a] sm:col-span-2" role="alert">
+          Aceite os termos para continuar.
+        </p>
+      }
 
       @if (mensagemErro()) {
         <p class="text-xs text-[#ba1a1a] sm:col-span-2" role="alert">
@@ -172,7 +218,8 @@
       <button
         pButton
         class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg !border-0 !bg-[#44664e] !p-0 text-sm font-semibold !text-white shadow-[0_2px_6px_rgba(45,49,54,0.1)] hover:!bg-[#52765c] active:scale-[0.985] disabled:cursor-wait disabled:opacity-70 sm:col-span-2"
-        type="submit"
+        type="button"
+        (click)="criarConta()"
         [disabled]="enviando()"
       >
         <span>{{ enviando() ? 'Criando sua conta...' : 'Criar minha conta' }}</span>
@@ -181,7 +228,7 @@
     </form>
 
     <p class="mt-5 text-center text-sm text-[#43474f]">
-      Já possui uma conta?
+      Ja possui uma conta?
       <a class="font-semibold text-[#44664e] hover:underline" routerLink="/login">
         Entrar
       </a>

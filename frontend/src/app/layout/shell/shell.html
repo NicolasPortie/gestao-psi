@@ -1,0 +1,85 @@
+<div class="min-h-dvh bg-[#fcfaf7] text-[#1f1b16]">
+  <header
+    class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#eae1d9]/70 bg-white/80 px-4 backdrop-blur-xl sm:px-6 lg:px-8"
+  >
+    <div class="flex min-w-0 items-center gap-8">
+      <a class="flex items-center gap-2" routerLink="/painel" aria-label="GestaoPsi">
+        <span
+          class="flex size-8 items-center justify-center rounded-lg bg-[#44664e] text-white"
+        >
+          <i class="pi pi-sparkles text-sm" aria-hidden="true"></i>
+        </span>
+        <span class="text-lg font-bold tracking-tight text-[#44664e]">GestaoPsi</span>
+      </a>
+
+      <nav class="hidden items-center gap-1 md:flex" aria-label="Menu principal">
+        <a
+          class="border-b-2 border-transparent px-3 py-5 text-sm font-semibold text-[#5a554f] transition-colors hover:text-[#44664e]"
+          routerLink="/painel"
+          routerLinkActive="!border-[#44664e] !text-[#44664e]"
+        >
+          Painel
+        </a>
+        <span
+          class="cursor-not-allowed px-3 py-5 text-sm font-medium text-[#5a554f]/40"
+          aria-disabled="true"
+          title="Disponivel em breve"
+        >
+          Agenda
+        </span>
+        <span
+          class="cursor-not-allowed px-3 py-5 text-sm font-medium text-[#5a554f]/40"
+          aria-disabled="true"
+          title="Disponivel em breve"
+        >
+          Pacientes
+        </span>
+        <span
+          class="cursor-not-allowed px-3 py-5 text-sm font-medium text-[#5a554f]/40"
+          aria-disabled="true"
+          title="Disponivel em breve"
+        >
+          Financeiro
+        </span>
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button
+        class="relative flex size-9 cursor-not-allowed items-center justify-center rounded-full text-[#5a554f]/40"
+        type="button"
+        disabled
+        aria-label="Notificacoes"
+        title="Disponivel em breve"
+      >
+        <i class="pi pi-bell text-sm" aria-hidden="true"></i>
+        @if (notificacoesNaoLidas > 0) {
+          <span
+            class="absolute right-1 top-1 size-2 rounded-full bg-[#ba1a1a]"
+            aria-hidden="true"
+          ></span>
+        }
+      </button>
+
+      <div class="hidden text-right sm:block">
+        <p class="max-w-44 truncate text-xs font-bold leading-none text-[#1f1b16]">
+          {{ nomeUsuario }}
+        </p>
+        <p class="mt-1 text-[10px] font-medium text-[#5a554f]">{{ perfil }}</p>
+      </div>
+
+      <button
+        class="flex size-9 items-center justify-center rounded-full bg-[#f1f4fb] text-[#44664e] transition-colors hover:bg-[#c6eccd]/50"
+        type="button"
+        (click)="sair()"
+        aria-label="Sair"
+      >
+        <i class="pi pi-sign-out text-sm" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto flex w-full max-w-[1600px] flex-col gap-5 p-4 sm:p-6">
+    <ng-content />
+  </main>
+</div>

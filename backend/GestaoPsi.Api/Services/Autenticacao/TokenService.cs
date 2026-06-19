@@ -19,6 +19,7 @@ public sealed class TokenService(IOptions<JwtConfiguracao> configuracao) : IToke
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim("conta_psicologo_id", usuario.ContaPsicologoId.ToString()),

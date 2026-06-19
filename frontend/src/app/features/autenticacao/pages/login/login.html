@@ -3,14 +3,14 @@
     <img
       class="h-12 w-fit object-contain object-left"
       src="/assets/gestaopsi-marca.png"
-      alt="GestãoPsi"
+      alt="GestaoPsi"
     />
 
     <div>
       <h1
         class="mb-2 text-[27px] leading-[34px] font-semibold text-[#181c21] sm:text-[32px] sm:leading-10"
       >
-        Seu consultório digital.
+        Seu consultorio digital.
       </h1>
       <p class="text-base leading-6 text-[#43474f]">
         Entre para gerenciar seus atendimentos.
@@ -36,7 +36,7 @@
           aria-hidden="true"
         ></i>
         <input
-          class="h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-base text-[#181c21] outline-none placeholder:text-[#737780]/70"
+          class="campo-autenticacao-tailwind h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-base text-[#181c21] outline-none placeholder:text-[#737780]/70 focus:shadow-none focus:outline-none focus-visible:shadow-none focus-visible:outline-none"
           id="email"
           type="email"
           inputmode="email"
@@ -68,11 +68,11 @@
           aria-hidden="true"
         ></i>
         <input
-          class="h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-base text-[#181c21] outline-none placeholder:text-[#737780]/70"
+          class="campo-autenticacao-tailwind h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-base text-[#181c21] outline-none placeholder:text-[#737780]/70 focus:shadow-none focus:outline-none focus-visible:shadow-none focus-visible:outline-none"
           id="senha"
           [type]="senhaVisivel() ? 'text' : 'password'"
           autocomplete="current-password"
-          placeholder="••••••••"
+          placeholder="********"
           formControlName="senha"
         />
         <button
@@ -115,10 +115,16 @@
     <span>Acesso Seguro e Criptografado</span>
   </div>
 
-  <p class="mt-6 text-center text-sm text-[#43474f]">
-    Ainda não usa o GestãoPsi?
-    <a class="font-semibold text-[#44664e] hover:underline" routerLink="/cadastro">
-      Criar minha conta
+  <div class="mt-6 flex flex-col items-center justify-center gap-2 text-center">
+    <p class="text-sm text-[#43474f]">Ainda nao usa o GestaoPsi?</p>
+    <a
+      class="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#44664e]/20 bg-[#eef4ef] px-4 py-2 text-sm font-semibold text-[#44664e] transition-[background-color,border-color,box-shadow] duration-200 hover:border-[#44664e]/35 hover:bg-[#e5eee7] hover:shadow-[0_4px_12px_rgba(68,102,78,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#44664e]"
+      href="/cadastro"
+      routerLink="/cadastro"
+      (click)="navegarParaCadastro($event)"
+    >
+      <span>Criar minha conta</span>
+      <i class="pi pi-user-plus text-base" aria-hidden="true"></i>
     </a>
-  </p>
+  </div>
 </app-layout-autenticacao>

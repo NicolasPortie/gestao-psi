@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { catchError, map, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, tap, throwError } from 'rxjs';
 
 import { API_URL_BASE } from '../api/api.config';
 import { RespostaApi } from '../api/resposta-api.model';
@@ -18,6 +18,10 @@ export class AutenticacaoService {
 
   readonly usuarioAtual = signal<AutenticacaoResponse | null>(null);
 
+  obterAccessToken(): string | null {
+    return this.usuarioAtual()?.accessToken ?? null;
+  }
+
   login(request: LoginRequest): Observable<AutenticacaoResponse> {
     return this.http
       .post<RespostaApi<AutenticacaoResponse>>(
@@ -27,10 +31,7 @@ export class AutenticacaoService {
       )
       .pipe(
         map((resposta) => this.extrairDados(resposta)),
-        map((autenticacao) => {
-          this.usuarioAtual.set(autenticacao);
-          return autenticacao;
-        }),
+        tap((autenticacao) => this.usuarioAtual.set(autenticacao)),
         catchError((erro) => this.tratarErro(erro)),
       );
   }
@@ -44,11 +45,41 @@ export class AutenticacaoService {
       )
       .pipe(
         map((resposta) => this.extrairDados(resposta)),
-        map((autenticacao) => {
-          this.usuarioAtual.set(autenticacao);
-          return autenticacao;
-        }),
+        tap((autenticacao) => this.usuarioAtual.set(autenticacao)),
         catchError((erro) => this.tratarErro(erro)),
+      );
+  }
+
+  renovarToken(): Observable<AutenticacaoResponse> {
+    return this.http
+      .post<RespostaApi<AutenticacaoResponse>>(
+        `${this.apiUrlBase}/autenticacao/token/renovar`,
+        {},
+        { withCredentials: true },
+      )
+      .pipe(
+        map((resposta) => this.extrairDados(resposta)),
+        tap((autenticacao) => this.usuarioAtual.set(autenticacao)),
+        catchError((erro) => {
+          this.usuarioAtual.set(null);
+          return this.tratarErro(erro);
+        }),
+      );
+  }
+
+  sair(): Observable<void> {
+    return this.http
+      .post<void>(
+        `${this.apiUrlBase}/autenticacao/sair`,
+        {},
+        { withCredentials: true },
+      )
+      .pipe(
+        tap(() => this.usuarioAtual.set(null)),
+        catchError((erro) => {
+          this.usuarioAtual.set(null);
+          return this.tratarErro(erro);
+        }),
       );
   }
 

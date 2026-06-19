@@ -44,6 +44,15 @@ input {
   box-shadow: 0 0 0 2px rgb(68 102 78 / 15%);
 }
 
+.campo-autenticacao.campo-autenticacao-invalido {
+  border-color: #ba1a1a;
+}
+
+.campo-autenticacao.campo-autenticacao-invalido:focus-within {
+  border-color: #ba1a1a;
+  box-shadow: 0 0 0 2px rgb(186 26 26 / 12%);
+}
+
 .entrada-autenticacao {
   background: transparent;
   border: 0;
@@ -56,8 +65,42 @@ input {
   padding: 0 12px;
 }
 
+.entrada-autenticacao:focus,
+.entrada-autenticacao:focus-visible {
+  box-shadow: none;
+  outline: 0;
+}
+
 .entrada-autenticacao::placeholder {
   color: rgb(115 119 128 / 70%);
+}
+
+.entrada-autenticacao:-webkit-autofill,
+.entrada-autenticacao:-webkit-autofill:hover,
+.entrada-autenticacao:-webkit-autofill:focus,
+.entrada-autenticacao:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #f1f4fb inset;
+  -webkit-text-fill-color: #181c21;
+  caret-color: #181c21;
+  transition: background-color 9999s ease-out;
+}
+
+.campo-autenticacao:focus-within .entrada-autenticacao:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+}
+
+.campo-autenticacao-tailwind:-webkit-autofill,
+.campo-autenticacao-tailwind:-webkit-autofill:hover,
+.campo-autenticacao-tailwind:-webkit-autofill:focus,
+.campo-autenticacao-tailwind:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #f1f4fb inset;
+  -webkit-text-fill-color: #181c21;
+  caret-color: #181c21;
+  transition: background-color 9999s ease-out;
+}
+
+.campo-autenticacao-tailwind:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
 }
 
 :focus-visible {

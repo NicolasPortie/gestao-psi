@@ -7,7 +7,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { finalize } from 'rxjs';
@@ -22,6 +22,8 @@ interface FormularioCadastro {
   confirmarSenha: FormControl<string>;
   aceitouTermos: FormControl<boolean>;
 }
+
+type CampoCadastro = keyof FormularioCadastro;
 
 function senhasIguais(controle: AbstractControl): ValidationErrors | null {
   const senha = controle.get('senha')?.value;
@@ -42,6 +44,7 @@ function senhasIguais(controle: AbstractControl): ValidationErrors | null {
 })
 export class Cadastro {
   private readonly autenticacaoService = inject(AutenticacaoService);
+  private readonly router = inject(Router);
 
   protected readonly senhaVisivel = signal(false);
   protected readonly enviando = signal(false);
@@ -82,10 +85,25 @@ export class Cadastro {
     this.senhaVisivel.update((visivel) => !visivel);
   }
 
+  protected campoInvalido(campo: CampoCadastro): boolean {
+    const controle = this.formulario.controls[campo];
+    return controle.invalid && (controle.touched || controle.dirty);
+  }
+
+  protected senhasDiferentes(): boolean {
+    const confirmarSenha = this.formulario.controls.confirmarSenha;
+    return (
+      this.formulario.hasError('senhasDiferentes') &&
+      (confirmarSenha.touched || confirmarSenha.dirty)
+    );
+  }
+
   protected criarConta(): void {
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
-      this.mensagemErro.set('Revise os dados obrigatorios para criar sua conta.');
+      this.mensagemErro.set(
+        'Revise os campos destacados para criar sua conta.',
+      );
       return;
     }
 
@@ -98,7 +116,10 @@ export class Cadastro {
       .criarConta(request)
       .pipe(finalize(() => this.enviando.set(false)))
       .subscribe({
-        next: () => this.concluido.set(true),
+        next: () => {
+          this.concluido.set(true);
+          void this.router.navigate(['/painel']);
+        },
         error: (erro: Error) => this.mensagemErro.set(erro.message),
       });
   }

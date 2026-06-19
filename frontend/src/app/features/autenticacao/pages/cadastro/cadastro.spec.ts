@@ -1,5 +1,5 @@
-import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { API_URL_BASE } from '../../../../core/api/api.config';
 import { Cadastro } from './cadastro';
@@ -22,8 +22,26 @@ describe('Cadastro', () => {
 
     const elemento = fixture.nativeElement as HTMLElement;
     expect(elemento.querySelector('h1')?.textContent).toContain(
-      'Crie seu consultório digital',
+      'Crie seu consultorio digital',
     );
     expect(elemento.querySelector('input[formControlName="crp"]')).toBeTruthy();
+  });
+
+  it('deve exibir validacoes ao tentar criar conta incompleta', async () => {
+    const fixture = TestBed.createComponent(Cadastro);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const elemento = fixture.nativeElement as HTMLElement;
+    const botaoCriarConta = Array.from(
+      elemento.querySelectorAll<HTMLButtonElement>('button[type="button"]'),
+    ).find((botao) => botao.textContent?.includes('Criar minha conta'));
+
+    botaoCriarConta?.click();
+    fixture.detectChanges();
+
+    expect(elemento.textContent).toContain('Revise os campos destacados');
+    expect(elemento.textContent).toContain('Aceite os termos para continuar');
+    expect(elemento.querySelector('.campo-autenticacao-invalido')).toBeTruthy();
   });
 });
