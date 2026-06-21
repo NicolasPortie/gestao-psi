@@ -1,17 +1,18 @@
 import { Routes } from '@angular/router';
 import { autenticadoGuard } from './core/guards/autenticado.guard';
+import { naoAutenticadoGuard } from './core/guards/nao-autenticado.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
+    canActivate: [naoAutenticadoGuard],
     title: 'Login | GestãoPsi',
     loadComponent: () =>
-      import('./features/autenticacao/pages/login/login').then(
-        (componente) => componente.Login,
-      ),
+      import('./features/autenticacao/pages/login/login').then((componente) => componente.Login),
   },
   {
     path: 'cadastro',
+    canActivate: [naoAutenticadoGuard],
     title: 'Criar conta | GestãoPsi',
     loadComponent: () =>
       import('./features/autenticacao/pages/cadastro/cadastro').then(
@@ -20,20 +21,19 @@ export const routes: Routes = [
   },
   {
     path: 'recuperar-senha',
+    canActivate: [naoAutenticadoGuard],
     title: 'Recuperar senha | GestãoPsi',
     loadComponent: () =>
-      import(
-        './features/autenticacao/pages/recuperar-senha/recuperar-senha'
-      ).then((componente) => componente.RecuperarSenha),
+      import('./features/autenticacao/pages/recuperar-senha/recuperar-senha').then(
+        (componente) => componente.RecuperarSenha,
+      ),
   },
   {
     path: 'painel',
     title: 'Painel | GestaoPsi',
     canActivate: [autenticadoGuard],
     loadComponent: () =>
-      import('./features/painel/pages/painel/painel').then(
-        (componente) => componente.Painel,
-      ),
+      import('./features/painel/pages/painel/painel').then((componente) => componente.Painel),
   },
   {
     path: 'agenda',
@@ -81,28 +81,27 @@ export const routes: Routes = [
     path: 'pacientes',
     title: 'Pacientes | GestaoPsi',
     canActivate: [autenticadoGuard],
-    data: {
-      titulo: 'Pacientes',
-      icone: 'pi-users',
-      etiqueta: 'Pacientes',
-    },
     loadComponent: () =>
-      import('./features/modulos/pages/modulo-operacional/modulo-operacional').then(
-        (componente) => componente.ModuloOperacional,
+      import('./features/pacientes/pages/lista-pacientes/lista-pacientes').then(
+        (componente) => componente.ListaPacientes,
       ),
   },
   {
     path: 'pacientes/novo',
     title: 'Novo paciente | GestaoPsi',
     canActivate: [autenticadoGuard],
-    data: {
-      titulo: 'Cadastrar paciente',
-      icone: 'pi-user-plus',
-      etiqueta: 'Pacientes',
-    },
     loadComponent: () =>
-      import('./features/modulos/pages/modulo-operacional/modulo-operacional').then(
-        (componente) => componente.ModuloOperacional,
+      import('./features/pacientes/pages/formulario-paciente/formulario-paciente').then(
+        (componente) => componente.FormularioPacienteComponent,
+      ),
+  },
+  {
+    path: 'pacientes/:id',
+    title: 'Editar paciente | GestaoPsi',
+    canActivate: [autenticadoGuard],
+    loadComponent: () =>
+      import('./features/pacientes/pages/formulario-paciente/formulario-paciente').then(
+        (componente) => componente.FormularioPacienteComponent,
       ),
   },
   {

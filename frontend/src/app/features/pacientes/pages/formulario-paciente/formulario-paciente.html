@@ -1,0 +1,281 @@
+<app-shell
+  [nomeUsuario]="usuario()?.nomeCompleto ?? 'GestaoPsi'"
+  [perfil]="usuario()?.perfil ?? 'Conta autenticada'"
+  [notificacoesNaoLidas]="0"
+>
+  <section class="mx-auto flex w-full max-w-7xl flex-col gap-5">
+    <header class="flex flex-col gap-4 rounded-lg border border-white/70 bg-white/70 p-5 shadow-[0_18px_50px_-36px_rgba(68,102,78,0.45)] backdrop-blur md:flex-row md:items-center md:justify-between">
+      <div class="flex items-start gap-3">
+        <a
+          class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#eae1d9] bg-white text-[#5a554f] transition-colors hover:bg-[#f4f0ea]"
+          routerLink="/pacientes"
+          aria-label="Voltar para pacientes"
+        >
+          <i class="pi pi-arrow-left text-xs" aria-hidden="true"></i>
+        </a>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#1f1b16]">
+            {{ editando() ? 'Editar paciente' : 'Cadastro de paciente' }}
+          </h1>
+          <p class="mt-1 text-sm leading-6 text-[#5a554f]">
+            Preencha apenas dados administrativos do paciente.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <a
+          class="inline-flex h-10 items-center justify-center rounded-lg border border-[#eae1d9] bg-white px-4 text-xs font-bold text-[#43474f] transition-colors hover:bg-[#f4f0ea]"
+          routerLink="/pacientes"
+        >
+          Cancelar
+        </a>
+        <button
+          class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#44664e] px-4 text-xs font-bold text-white transition-colors hover:bg-[#52765c] disabled:cursor-wait disabled:opacity-70"
+          type="submit"
+          form="formulario-paciente"
+          [disabled]="salvando() || carregando()"
+        >
+          <i class="pi pi-check text-xs" aria-hidden="true"></i>
+          {{ salvando() ? 'Salvando...' : 'Salvar paciente' }}
+        </button>
+      </div>
+    </header>
+
+    @if (erro()) {
+      <p class="rounded-lg border border-[#ffdad6] bg-[#fff4f2] p-3 text-sm text-[#ba1a1a]" role="alert">
+        {{ erro() }}
+      </p>
+    }
+
+    @if (mensagem()) {
+      <p class="rounded-lg border border-[#abcfb2] bg-[#eef8f0] p-3 text-sm text-[#2d4e37]" role="status">
+        {{ mensagem() }}
+      </p>
+    }
+
+    <form
+      id="formulario-paciente"
+      class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_420px]"
+      [formGroup]="formulario"
+      (ngSubmit)="salvar()"
+      novalidate
+    >
+      <section class="rounded-lg border border-[#eae1d9] bg-white p-5 shadow-[0_18px_50px_-36px_rgba(68,102,78,0.45)]">
+        <h2 class="flex items-center gap-2 border-b border-[#eae1d9] pb-3 text-sm font-bold text-[#1f1b16]">
+          <i class="pi pi-user text-[#44664e]" aria-hidden="true"></i>
+          Informacoes pessoais
+        </h2>
+
+        <div class="mt-5 grid grid-cols-1 gap-4 rounded-lg border border-[#eae1d9] bg-[#fcfaf7] p-4 md:grid-cols-2">
+          <label class="flex flex-col gap-1.5 md:col-span-2">
+            <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+              Nome completo
+            </span>
+            <span
+              class="flex h-11 items-center rounded-lg border border-[#d8cdc3] bg-white px-3 focus-within:border-[#44664e] focus-within:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]"
+              [class.!border-[#ba1a1a]]="campoInvalido('nomeCompleto')"
+            >
+              <input
+                class="h-full min-w-0 flex-1 border-0 bg-transparent text-sm outline-none placeholder:text-[#737780]/70"
+                type="text"
+                autocomplete="name"
+                placeholder="Ex: Ana Luiza Silveira"
+                formControlName="nomeCompleto"
+              />
+            </span>
+            @if (campoInvalido('nomeCompleto')) {
+              <span class="text-xs text-[#ba1a1a]">Informe o nome completo.</span>
+            }
+          </label>
+
+          <label class="flex flex-col gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+              CPF opcional
+            </span>
+            <span class="flex h-11 items-center rounded-lg border border-[#d8cdc3] bg-white px-3 focus-within:border-[#44664e] focus-within:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]">
+              <input
+                class="h-full min-w-0 flex-1 border-0 bg-transparent text-sm outline-none placeholder:text-[#737780]/70"
+                type="text"
+                inputmode="numeric"
+                maxlength="14"
+                placeholder="000.000.000-00"
+                formControlName="cpf"
+                (input)="formatarCpf($event)"
+              />
+            </span>
+          </label>
+
+          <label class="flex flex-col gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+              Data de nascimento
+            </span>
+            <span class="flex h-11 items-center rounded-lg border border-[#d8cdc3] bg-white px-3 focus-within:border-[#44664e] focus-within:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]">
+              <input
+                class="h-full min-w-0 flex-1 border-0 bg-transparent text-sm outline-none"
+                type="date"
+                formControlName="dataNascimento"
+              />
+            </span>
+          </label>
+
+          @if (editando()) {
+            <label class="flex flex-col gap-1.5 md:col-span-2">
+              <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                Status
+              </span>
+              <select
+                class="h-11 rounded-lg border border-[#d8cdc3] bg-white px-3 text-sm text-[#1f1b16] outline-none focus:border-[#44664e] focus:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]"
+                formControlName="status"
+              >
+                <option value="Ativo">Ativo</option>
+                <option value="Inativo">Inativo</option>
+                <option value="Arquivado">Arquivado</option>
+              </select>
+            </label>
+          }
+
+          <label class="flex flex-col gap-1.5 md:col-span-2">
+            <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+              Observacao administrativa
+            </span>
+            <textarea
+              class="min-h-28 resize-y rounded-lg border border-[#d8cdc3] bg-white px-3 py-3 text-sm text-[#1f1b16] outline-none placeholder:text-[#737780]/70 focus:border-[#44664e] focus:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]"
+              maxlength="2000"
+              placeholder="Notas internas administrativas sobre o paciente."
+              formControlName="observacaoAdministrativa"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <div class="flex flex-col gap-5">
+        <section class="rounded-lg border border-[#eae1d9] bg-white p-5 shadow-[0_18px_50px_-36px_rgba(68,102,78,0.45)]">
+          <h2 class="flex items-center gap-2 border-b border-[#eae1d9] pb-3 text-sm font-bold text-[#1f1b16]">
+            <i class="pi pi-address-book text-[#44664e]" aria-hidden="true"></i>
+            Contatos principais
+          </h2>
+
+          <div class="mt-5 space-y-4 rounded-lg border border-[#eae1d9] bg-[#fcfaf7] p-4">
+            <label class="flex flex-col gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                Telefone
+              </span>
+              <input
+                class="h-11 rounded-lg border border-[#d8cdc3] bg-white px-3 text-sm outline-none placeholder:text-[#737780]/70 focus:border-[#44664e] focus:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]"
+                type="tel"
+                inputmode="tel"
+                maxlength="15"
+                placeholder="(00) 00000-0000"
+                formControlName="telefone"
+                (input)="formatarTelefone('telefone', $event)"
+              />
+            </label>
+
+            <label class="flex flex-col gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                WhatsApp
+              </span>
+              <input
+                class="h-11 rounded-lg border border-[#d8cdc3] bg-white px-3 text-sm outline-none placeholder:text-[#737780]/70 focus:border-[#44664e] focus:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]"
+                type="tel"
+                inputmode="tel"
+                maxlength="15"
+                placeholder="(00) 00000-0000"
+                formControlName="whatsApp"
+                (input)="formatarTelefone('whatsApp', $event)"
+              />
+            </label>
+
+            <label class="flex flex-col gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                E-mail
+              </span>
+              <input
+                class="h-11 rounded-lg border border-[#d8cdc3] bg-white px-3 text-sm outline-none placeholder:text-[#737780]/70 focus:border-[#44664e] focus:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                placeholder="paciente@email.com"
+                formControlName="email"
+              />
+              @if (campoInvalido('email')) {
+                <span class="text-xs text-[#ba1a1a]">Informe um e-mail valido.</span>
+              }
+            </label>
+          </div>
+        </section>
+
+        <section class="rounded-lg border border-[#eae1d9] bg-white p-5 shadow-[0_18px_50px_-36px_rgba(68,102,78,0.45)]">
+          <h2 class="flex items-center gap-2 border-b border-[#eae1d9] pb-3 text-sm font-bold text-[#1f1b16]">
+            <i class="pi pi-user-plus text-[#44664e]" aria-hidden="true"></i>
+            Contatos adicionais
+          </h2>
+
+          <div class="mt-5 space-y-3" formArrayName="contatosAdicionais">
+            @for (contato of contatosAdicionais.controls; track $index) {
+              <div
+                class="grid gap-2 rounded-lg border border-[#eae1d9] bg-[#fcfaf7] p-3 sm:grid-cols-[120px_minmax(0,1fr)_auto_auto]"
+                [formGroupName]="$index"
+              >
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-[10px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                    Tipo
+                  </span>
+                  <select
+                    class="h-9 rounded-lg border border-[#d8cdc3] bg-white px-2 text-xs outline-none focus:border-[#44664e]"
+                    formControlName="tipoContato"
+                  >
+                    @for (tipo of tiposContato; track tipo) {
+                      <option [value]="tipo">{{ tipo }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="flex min-w-0 flex-col gap-1.5">
+                  <span class="text-[10px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                    Valor
+                  </span>
+                  <input
+                    class="h-9 rounded-lg border border-[#d8cdc3] bg-white px-2 text-xs outline-none placeholder:text-[#737780]/70 focus:border-[#44664e]"
+                    type="text"
+                    [placeholder]="placeholderContato(contato.controls.tipoContato.value)"
+                    formControlName="valor"
+                    (input)="formatarContatoAdicional($index, $event)"
+                  />
+                </label>
+
+                <label class="flex items-center gap-2 self-end pb-2 text-[10px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                  <input
+                    class="size-4 rounded border-[#d8cdc3] text-[#44664e]"
+                    type="checkbox"
+                    formControlName="principal"
+                  />
+                  Principal
+                </label>
+
+                <button
+                  class="inline-flex size-9 items-center justify-center self-end rounded-lg text-[#ba1a1a] transition-colors hover:bg-[#ffdad6]/40"
+                  type="button"
+                  (click)="removerContato($index)"
+                  aria-label="Remover contato"
+                >
+                  <i class="pi pi-trash text-xs" aria-hidden="true"></i>
+                </button>
+              </div>
+            }
+
+            <button
+              class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#d8cdc3] bg-white text-xs font-bold text-[#5a554f] transition-colors hover:bg-[#f4f0ea]"
+              type="button"
+              (click)="adicionarContato()"
+            >
+              <i class="pi pi-plus text-xs" aria-hidden="true"></i>
+              Adicionar contato
+            </button>
+          </div>
+        </section>
+      </div>
+    </form>
+  </section>
+</app-shell>

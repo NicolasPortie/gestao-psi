@@ -1,9 +1,5 @@
 import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors,
-} from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localePt from '@angular/common/locales/pt';
 import { provideRouter } from '@angular/router';
@@ -23,7 +19,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     {
       provide: API_URL_BASE,
-      useValue: 'http://localhost:5178/api/v1',
+      useValue: '/api/v1',
     },
     {
       provide: LOCALE_ID,

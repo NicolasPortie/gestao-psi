@@ -1,10 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { finalize } from 'rxjs';
@@ -63,7 +58,7 @@ export class Login {
       .login(this.formulario.getRawValue())
       .pipe(finalize(() => this.enviando.set(false)))
       .subscribe({
-        next: () => void this.router.navigate(['/painel']),
+        next: () => void this.router.navigateByUrl('/painel', { replaceUrl: true }),
         error: (erro: Error) => this.mensagem.set(erro.message),
       });
   }

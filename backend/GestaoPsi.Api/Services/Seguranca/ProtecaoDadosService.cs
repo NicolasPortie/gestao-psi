@@ -21,6 +21,8 @@ public sealed class ProtecaoDadosService : IProtecaoDadosService
 
     public string Proteger(string valor) => _protetor.Protect(valor);
 
+    public string Desproteger(string valorProtegido) => _protetor.Unprotect(valorProtegido);
+
     public string HashDeterministico(string valor)
     {
         using var hmac = new HMACSHA256(_chaveHash);

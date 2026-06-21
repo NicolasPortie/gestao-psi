@@ -33,13 +33,7 @@ function senhasIguais(controle: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-cadastro',
-  imports: [
-    ReactiveFormsModule,
-    RouterLink,
-    ButtonModule,
-    CheckboxModule,
-    LayoutAutenticacao,
-  ],
+  imports: [ReactiveFormsModule, RouterLink, ButtonModule, CheckboxModule, LayoutAutenticacao],
   templateUrl: './cadastro.html',
 })
 export class Cadastro {
@@ -111,9 +105,7 @@ export class Cadastro {
   protected criarConta(): void {
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
-      this.mensagemErro.set(
-        'Revise os campos destacados para criar sua conta.',
-      );
+      this.mensagemErro.set('Revise os campos destacados para criar sua conta.');
       return;
     }
 
@@ -128,7 +120,7 @@ export class Cadastro {
       .subscribe({
         next: () => {
           this.concluido.set(true);
-          void this.router.navigate(['/painel']);
+          void this.router.navigateByUrl('/painel', { replaceUrl: true });
         },
         error: (erro: Error) => this.mensagemErro.set(erro.message),
       });

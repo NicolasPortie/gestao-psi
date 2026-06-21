@@ -1,0 +1,153 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using GestaoPsi.Api.DTOs.Pacientes;
+using GestaoPsi.Api.Services.Pacientes;
+using GestaoPsi.Api.Shared.Enums;
+using GestaoPsi.Api.Shared.Excecoes;
+using GestaoPsi.Api.Shared.Respostas;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace GestaoPsi.Api.Controllers;
+
+[ApiController]
+[Authorize]
+[Route("api/v1/pacientes")]
+public sealed class PacientesController(IPacientesService pacientesService) : ControllerBase
+{
+    [HttpGet]
+    [ProducesResponseType<RespostaApi<PacientesListagemResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Listar(
+        [FromQuery] string? busca,
+        [FromQuery] StatusPaciente? status,
+        [FromQuery] int pagina = 1,
+        [FromQuery] int tamanhoPagina = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var resposta = await pacientesService.ListarAsync(
+            ObterUsuarioId(),
+            ObterContaPsicologoId(),
+            new ListarPacientesRequest(busca, status, pagina, tamanhoPagina),
+            cancellationToken);
+
+        return Ok(RespostaApi<PacientesListagemResponse>.ComSucesso(resposta));
+    }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType<RespostaApi<PacienteDetalheResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObterPorId(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var resposta = await pacientesService.ObterPorIdAsync(
+            ObterContaPsicologoId(),
+            id,
+            cancellationToken);
+
+        return Ok(RespostaApi<PacienteDetalheResponse>.ComSucesso(resposta));
+    }
+
+    [HttpPost]
+    [ProducesResponseType<RespostaApi<PacienteDetalheResponse>>(StatusCodes.Status201Created)]
+    public async Task<IActionResult> Criar(
+        [FromBody] CriarPacienteRequest request,
+        CancellationToken cancellationToken)
+    {
+        var resposta = await pacientesService.CriarAsync(
+            ObterUsuarioId(),
+            ObterContaPsicologoId(),
+            request,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+
+        return CreatedAtAction(
+            nameof(ObterPorId),
+            new { id = resposta.Id },
+            RespostaApi<PacienteDetalheResponse>.ComSucesso(
+                resposta,
+                "Paciente cadastrado com sucesso."));
+    }
+
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType<RespostaApi<PacienteDetalheResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Atualizar(
+        Guid id,
+        [FromBody] AtualizarPacienteRequest request,
+        CancellationToken cancellationToken)
+    {
+        var resposta = await pacientesService.AtualizarAsync(
+            ObterUsuarioId(),
+            ObterContaPsicologoId(),
+            id,
+            request,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+
+        return Ok(RespostaApi<PacienteDetalheResponse>.ComSucesso(
+            resposta,
+            "Paciente atualizado com sucesso."));
+    }
+
+    [HttpPatch("{id:guid}/ativar")]
+    [ProducesResponseType<RespostaApi<PacienteDetalheResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Ativar(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var resposta = await pacientesService.AlterarStatusAsync(
+            ObterUsuarioId(),
+            ObterContaPsicologoId(),
+            id,
+            ativar: true,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+
+        return Ok(RespostaApi<PacienteDetalheResponse>.ComSucesso(
+            resposta,
+            "Paciente ativado com sucesso."));
+    }
+
+    [HttpPatch("{id:guid}/inativar")]
+    [ProducesResponseType<RespostaApi<PacienteDetalheResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Inativar(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var resposta = await pacientesService.AlterarStatusAsync(
+            ObterUsuarioId(),
+            ObterContaPsicologoId(),
+            id,
+            ativar: false,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+
+        return Ok(RespostaApi<PacienteDetalheResponse>.ComSucesso(
+            resposta,
+            "Paciente inativado com sucesso."));
+    }
+
+    private Guid ObterUsuarioId() =>
+        ObterGuidClaim(JwtRegisteredClaimNames.Sub, ClaimTypes.NameIdentifier);
+
+    private Guid ObterContaPsicologoId() =>
+        ObterGuidClaim("conta_psicologo_id");
+
+    private Guid ObterGuidClaim(params string[] tipos)
+    {
+        var valor = tipos
+            .Select(tipo => User.FindFirstValue(tipo))
+            .FirstOrDefault(item => !string.IsNullOrWhiteSpace(item));
+        if (!Guid.TryParse(valor, out var id))
+        {
+            throw new RegraNegocioException(
+                "Sessao invalida ou expirada.",
+                StatusCodes.Status401Unauthorized);
+        }
+
+        return id;
+    }
+}

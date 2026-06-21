@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using GestaoPsi.Api.Configuracoes;
 using GestaoPsi.Api.Data;
 using GestaoPsi.Api.Middlewares;
@@ -6,6 +7,7 @@ using GestaoPsi.Api.Models;
 using GestaoPsi.Api.Services.Autenticacao;
 using GestaoPsi.Api.Services.Comunicacao;
 using GestaoPsi.Api.Services.Painel;
+using GestaoPsi.Api.Services.Pacientes;
 using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Respostas;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -98,7 +100,11 @@ else
     throw new InvalidOperationException("ConnectionStrings:Redis nao configurada.");
 }
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.Configure<ApiBehaviorOptions>(opcoes =>
 {
     opcoes.InvalidModelStateResponseFactory = contexto =>
@@ -161,6 +167,7 @@ builder.Services.AddCors(opcoes =>
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
 builder.Services.AddScoped<IPainelService, PainelService>();
+builder.Services.AddScoped<IPacientesService, PacientesService>();
 builder.Services.AddScoped<IProtecaoDadosService, ProtecaoDadosService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailTransacionalService, EmailTransacionalService>();

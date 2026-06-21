@@ -248,6 +248,9 @@ public sealed class AutenticacaoServiceTests
     private sealed class ProtecaoDadosFake : IProtecaoDadosService
     {
         public string Proteger(string valor) => $"protegido:{valor}";
+        public string Desproteger(string valorProtegido) =>
+            valorProtegido.Replace("protegido:", string.Empty);
+
         public string HashDeterministico(string valor) => $"hash:{valor}";
         public string HashToken(string token) => $"hash:{token}";
         public string GerarTokenSeguro() => "token-seguro";

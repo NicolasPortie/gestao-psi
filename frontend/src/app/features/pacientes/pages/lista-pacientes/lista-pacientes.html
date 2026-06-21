@@ -1,0 +1,343 @@
+<app-shell
+  [nomeUsuario]="usuario()?.nomeCompleto ?? 'GestaoPsi'"
+  [perfil]="usuario()?.perfil ?? 'Conta autenticada'"
+  [notificacoesNaoLidas]="0"
+>
+  <section class="mx-auto flex w-full max-w-7xl flex-col gap-4 lg:h-[calc(100vh-7rem)] lg:min-h-[640px]">
+    @if (erro()) {
+      <p class="rounded-lg border border-[#ffdad6] bg-[#fff4f2] p-3 text-sm text-[#ba1a1a]" role="alert">
+        {{ erro() }}
+      </p>
+    }
+
+    @if (mensagem()) {
+      <p class="rounded-lg border border-[#abcfb2] bg-[#eef8f0] p-3 text-sm text-[#2d4e37]" role="status">
+        {{ mensagem() }}
+      </p>
+    }
+
+    <div class="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
+      <aside class="flex min-h-0 flex-col rounded-lg border border-white/70 bg-white/70 p-4 shadow-[0_18px_50px_-36px_rgba(68,102,78,0.45)] backdrop-blur">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-[#1f1b16]">Pacientes</h1>
+            <p class="mt-1 text-xs font-semibold text-[#5a554f]">
+              {{ listagem()?.total ?? 0 }} cadastrados
+            </p>
+          </div>
+
+          <a
+            class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#44664e] px-3 text-xs font-bold text-white transition-colors hover:bg-[#52765c]"
+            routerLink="/pacientes/novo"
+          >
+            <i class="pi pi-plus text-xs" aria-hidden="true"></i>
+            Novo Paciente
+          </a>
+        </div>
+
+        <form class="mt-4 grid grid-cols-1 gap-3" (ngSubmit)="carregar()">
+          <label class="flex flex-col gap-1.5">
+            <span class="sr-only">Buscar paciente</span>
+            <span class="flex h-10 items-center rounded-lg border border-[#eae1d9] bg-white px-3 focus-within:border-[#44664e] focus-within:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]">
+              <i class="pi pi-search text-xs text-[#737780]" aria-hidden="true"></i>
+              <input
+                class="h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-xs outline-none placeholder:text-[#737780]/70"
+                type="search"
+                placeholder="Buscar por nome, CPF..."
+                [formControl]="busca"
+              />
+            </span>
+          </label>
+
+          <div class="grid grid-cols-[1fr_auto_auto] gap-2">
+            <label>
+              <span class="sr-only">Status</span>
+              <select
+                class="h-10 w-full rounded-lg border border-[#eae1d9] bg-white px-3 text-xs font-semibold text-[#43474f] outline-none focus:border-[#44664e] focus:shadow-[0_0_0_2px_rgba(68,102,78,0.12)]"
+                [formControl]="status"
+              >
+                <option value="">Todos</option>
+                <option value="Ativo">Ativos</option>
+                <option value="Inativo">Inativos</option>
+                <option value="Arquivado">Arquivados</option>
+              </select>
+            </label>
+
+            <button
+              class="inline-flex size-10 items-center justify-center rounded-lg bg-[#44664e] text-white transition-colors hover:bg-[#52765c] disabled:cursor-wait disabled:opacity-70"
+              type="submit"
+              [disabled]="carregando()"
+              aria-label="Filtrar pacientes"
+            >
+              <i class="pi pi-filter text-xs" aria-hidden="true"></i>
+            </button>
+
+            <button
+              class="inline-flex size-10 items-center justify-center rounded-lg border border-[#eae1d9] bg-white text-[#43474f] transition-colors hover:bg-[#f4f0ea]"
+              type="button"
+              (click)="limparFiltros()"
+              aria-label="Limpar filtros"
+            >
+              <i class="pi pi-times text-xs" aria-hidden="true"></i>
+            </button>
+          </div>
+        </form>
+
+        <div class="mt-4 grid grid-cols-3 gap-2">
+          <article class="rounded-lg border border-[#eae1d9] bg-white p-3">
+            <p class="text-[11px] font-semibold text-[#5a554f]">Ativos</p>
+            <p class="mt-1 text-lg font-bold text-[#2d4e37]">{{ listagem()?.resumo?.ativos ?? 0 }}</p>
+          </article>
+          <article class="rounded-lg border border-[#eae1d9] bg-white p-3">
+            <p class="text-[11px] font-semibold text-[#5a554f]">Inativos</p>
+            <p class="mt-1 text-lg font-bold text-[#6b541b]">{{ listagem()?.resumo?.inativos ?? 0 }}</p>
+          </article>
+          <article class="rounded-lg border border-[#eae1d9] bg-white p-3">
+            <p class="text-[11px] font-semibold text-[#5a554f]">Arquivo</p>
+            <p class="mt-1 text-lg font-bold text-[#5a554f]">{{ listagem()?.resumo?.arquivados ?? 0 }}</p>
+          </article>
+        </div>
+
+        <div class="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+          @if (carregando()) {
+            <div class="rounded-lg border border-[#eae1d9] bg-white p-4 text-sm font-semibold text-[#737780]">
+              Carregando pacientes...
+            </div>
+          }
+
+          @for (paciente of pacientes(); track paciente.id) {
+            <button
+              class="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors"
+              type="button"
+              [ngClass]="classeCartaoPaciente(paciente)"
+              (click)="selecionarPaciente(paciente)"
+            >
+              <span
+                class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-sm font-bold"
+                [ngClass]="classeAvatarPaciente(paciente)"
+              >
+                {{ iniciais(paciente.nomeCompleto) }}
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-bold text-[#1f1b16]">
+                  {{ paciente.nomeCompleto }}
+                </span>
+                <span class="mt-0.5 block truncate text-xs text-[#5a554f]">
+                  {{ paciente.status }} - {{ resumoUltimaConsulta(paciente) }}
+                </span>
+              </span>
+              <i class="pi pi-chevron-right text-xs text-[#737780]" aria-hidden="true"></i>
+            </button>
+          } @empty {
+            @if (!carregando()) {
+              <div class="grid min-h-72 place-items-center rounded-lg border border-dashed border-[#d8cdc3] bg-white p-6 text-center">
+                <div>
+                  <i class="pi pi-users text-2xl text-[#44664e]" aria-hidden="true"></i>
+                  <h2 class="mt-3 text-base font-bold text-[#1f1b16]">Nenhum paciente encontrado</h2>
+                  <p class="mt-2 text-sm leading-6 text-[#5a554f]">
+                    Cadastre o primeiro paciente para iniciar a gestao administrativa.
+                  </p>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </aside>
+
+      <section class="min-h-0 overflow-hidden rounded-lg border border-[#eae1d9] bg-white shadow-[0_18px_50px_-36px_rgba(68,102,78,0.45)]">
+        @if (pacienteSelecionado(); as paciente) {
+          <div class="flex h-full min-h-0 flex-col">
+            <header class="flex flex-col gap-5 border-b border-[#eae1d9] bg-[#fcfaf7] p-5 md:flex-row md:items-start">
+              <span class="inline-flex size-20 shrink-0 items-center justify-center rounded-lg bg-[#44664e] text-2xl font-bold text-white">
+                {{ iniciais(paciente.nomeCompleto) }}
+              </span>
+
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <h2 class="truncate text-2xl font-bold tracking-tight text-[#1f1b16]">
+                      {{ paciente.nomeCompleto }}
+                    </h2>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                      <span
+                        class="inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em]"
+                        [ngClass]="classeStatus(paciente.status)"
+                      >
+                        {{ rotuloStatusDetalhe(paciente.status) }}
+                      </span>
+                      <span class="text-xs font-semibold text-[#5a554f]">
+                        CPF: {{ paciente.cpfMascarado ?? 'Nao informado' }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-2">
+                    <a
+                      class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#eae1d9] bg-white px-3 text-xs font-bold text-[#43474f] transition-colors hover:bg-[#f4f0ea]"
+                      [routerLink]="['/pacientes', paciente.id]"
+                    >
+                      <i class="pi pi-pencil text-xs" aria-hidden="true"></i>
+                      Editar Perfil
+                    </a>
+                    <button
+                      class="inline-flex size-10 items-center justify-center rounded-lg border border-[#eae1d9] bg-white text-[#43474f] transition-colors hover:bg-[#f4f0ea]"
+                      type="button"
+                      (click)="alternarStatus(paciente)"
+                      [attr.aria-label]="paciente.status === 'Ativo' ? 'Inativar paciente' : 'Ativar paciente'"
+                    >
+                      <i
+                        class="pi text-xs"
+                        [ngClass]="paciente.status === 'Ativo' ? 'pi-user-minus' : 'pi-user-plus'"
+                        aria-hidden="true"
+                      ></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <div class="min-h-0 flex-1 overflow-y-auto p-5">
+              <div class="grid gap-6 xl:grid-cols-2">
+                <div class="space-y-6">
+                  <section>
+                    <h3 class="mb-3 flex items-center gap-2 text-sm font-bold text-[#1f1b16]">
+                      <i class="pi pi-address-book text-[#44664e]" aria-hidden="true"></i>
+                      Contatos
+                    </h3>
+                    <div class="space-y-4 rounded-lg border border-[#eae1d9] bg-[#fcfaf7] p-4">
+                      <div>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                          Celular / WhatsApp
+                        </p>
+                        <p class="mt-1 text-sm font-bold text-[#1f1b16]">
+                          {{ contatoPrincipal(paciente) }}
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                          E-mail
+                        </p>
+                        <p class="mt-1 break-all text-sm font-bold text-[#1f1b16]">
+                          {{ paciente.email ?? 'Sem e-mail' }}
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                          Telefone alternativo
+                        </p>
+                        <p class="mt-1 text-sm font-bold text-[#1f1b16]">
+                          {{ paciente.telefone ?? 'Sem telefone alternativo' }}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 class="mb-3 flex items-center gap-2 text-sm font-bold text-[#1f1b16]">
+                      <i class="pi pi-calendar text-[#44664e]" aria-hidden="true"></i>
+                      Agenda
+                    </h3>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <article class="rounded-lg border border-[#eae1d9] bg-white p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                          Ultima consulta
+                        </p>
+                        <p class="mt-2 text-sm font-bold text-[#1f1b16]">
+                          @if (paciente.ultimaConsulta) {
+                            {{ paciente.ultimaConsulta | date: 'dd/MM/yyyy HH:mm' }}
+                          } @else {
+                            Sem registro
+                          }
+                        </p>
+                      </article>
+                      <article class="rounded-lg border border-[#eae1d9] bg-white p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a554f]">
+                          Proxima consulta
+                        </p>
+                        <p class="mt-2 text-sm font-bold text-[#1f1b16]">
+                          @if (paciente.proximaConsulta) {
+                            {{ paciente.proximaConsulta | date: 'dd/MM/yyyy HH:mm' }}
+                          } @else {
+                            Sem registro
+                          }
+                        </p>
+                      </article>
+                    </div>
+                  </section>
+                </div>
+
+                <div class="space-y-6">
+                  <section>
+                    <h3 class="mb-3 flex items-center gap-2 text-sm font-bold text-[#1f1b16]">
+                      <i class="pi pi-history text-[#44664e]" aria-hidden="true"></i>
+                      Historico Recente
+                    </h3>
+                    <div class="space-y-3">
+                      @if (paciente.ultimaConsulta) {
+                        <article class="flex items-center gap-4 rounded-lg border border-[#eae1d9] bg-white p-4">
+                          <div class="flex size-14 shrink-0 flex-col items-center justify-center rounded-lg border border-[#abcfb2] bg-[#eef8f0] text-[#2d4e37]">
+                            <span class="text-[10px] font-bold uppercase">
+                              {{ paciente.ultimaConsulta | date: 'MMM' }}
+                            </span>
+                            <span class="text-lg font-bold leading-none">
+                              {{ paciente.ultimaConsulta | date: 'dd' }}
+                            </span>
+                          </div>
+                          <div class="min-w-0 flex-1">
+                            <p class="text-sm font-bold text-[#1f1b16]">Consulta realizada</p>
+                            <p class="mt-1 text-xs text-[#5a554f]">
+                              Registro administrativo da agenda
+                            </p>
+                          </div>
+                          <span class="rounded-full bg-[#eef8f0] px-2.5 py-1 text-[10px] font-bold text-[#2d4e37]">
+                            REALIZADA
+                          </span>
+                        </article>
+                      } @else {
+                        <article class="rounded-lg border border-dashed border-[#d8cdc3] bg-[#fcfaf7] p-5 text-sm text-[#5a554f]">
+                          Ainda nao ha consultas registradas para este paciente.
+                        </article>
+                      }
+
+                      @if (paciente.proximaConsulta) {
+                        <article class="flex items-center gap-4 rounded-lg border border-[#eae1d9] bg-white p-4">
+                          <div class="flex size-14 shrink-0 flex-col items-center justify-center rounded-lg border border-[#d8cdc3] bg-[#f4f0ea] text-[#5a554f]">
+                            <span class="text-[10px] font-bold uppercase">
+                              {{ paciente.proximaConsulta | date: 'MMM' }}
+                            </span>
+                            <span class="text-lg font-bold leading-none">
+                              {{ paciente.proximaConsulta | date: 'dd' }}
+                            </span>
+                          </div>
+                          <div class="min-w-0 flex-1">
+                            <p class="text-sm font-bold text-[#1f1b16]">Consulta agendada</p>
+                            <p class="mt-1 text-xs text-[#5a554f]">
+                              Proximo atendimento administrativo
+                            </p>
+                          </div>
+                          <span class="rounded-full bg-[#f4f0ea] px-2.5 py-1 text-[10px] font-bold text-[#5a554f]">
+                            AGENDADA
+                          </span>
+                        </article>
+                      }
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="grid h-full min-h-[420px] place-items-center p-8 text-center">
+            <div>
+              <i class="pi pi-users text-3xl text-[#44664e]" aria-hidden="true"></i>
+              <h2 class="mt-4 text-lg font-bold text-[#1f1b16]">Selecione um paciente</h2>
+              <p class="mt-2 max-w-md text-sm leading-6 text-[#5a554f]">
+                A listagem administrativa exibe contatos, status e agenda do paciente selecionado.
+              </p>
+            </div>
+          </div>
+        }
+      </section>
+    </div>
+  </section>
+</app-shell>

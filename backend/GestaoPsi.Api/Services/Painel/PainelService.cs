@@ -257,9 +257,9 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .Take(2)
             .Select(conversa => new PainelAlertaResponse(
                 "whatsapp",
-                "Atendimento humano necessario",
+                "Mensagem para revisar",
                 conversa.MotivoAtendimentoHumano ??
-                "Uma conversa do WhatsApp precisa de acompanhamento humano.",
+                "Uma conversa do WhatsApp aguarda sua revisao.",
                 conversa.UltimaMensagemEm ?? conversa.CriadoEm,
                 null))
             .ToListAsync(cancellationToken);
@@ -301,8 +301,11 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         if (conversasAtendimentoHumano > 0)
         {
             prioridades.Add(new PainelPrioridadeResponse(
-                "WhatsApp precisa de voce",
-                $"{conversasAtendimentoHumano} conversa(s) pedem atendimento humano.",
+                "Mensagens para revisar",
+                FormatarQuantidade(
+                    conversasAtendimentoHumano,
+                    "conversa do WhatsApp aguarda sua revisao.",
+                    "conversas do WhatsApp aguardam sua revisao."),
                 "pi-whatsapp",
                 "alerta",
                 "/integracoes/whatsapp/conversas",
@@ -313,7 +316,10 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         {
             prioridades.Add(new PainelPrioridadeResponse(
                 "Lembretes com falha",
-                $"{lembretesFalhosHoje} lembrete(s) nao foram enviados hoje.",
+                FormatarQuantidade(
+                    lembretesFalhosHoje,
+                    "lembrete nao foi enviado hoje.",
+                    "lembretes nao foram enviados hoje."),
                 "pi-send",
                 "erro",
                 "/lembretes",
@@ -324,7 +330,10 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         {
             prioridades.Add(new PainelPrioridadeResponse(
                 "Confirmacoes pendentes",
-                $"{consultasAguardando} consulta(s) ainda aguardam confirmacao.",
+                FormatarQuantidade(
+                    consultasAguardando,
+                    "consulta ainda aguarda confirmacao.",
+                    "consultas ainda aguardam confirmacao."),
                 "pi-calendar-clock",
                 "atencao",
                 "/agenda",
@@ -346,7 +355,10 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         {
             prioridades.Add(new PainelPrioridadeResponse(
                 "Notificacoes nao lidas",
-                $"{notificacoesNaoLidas} notificacao(oes) precisam de leitura.",
+                FormatarQuantidade(
+                    notificacoesNaoLidas,
+                    "notificacao precisa de leitura.",
+                    "notificacoes precisam de leitura."),
                 "pi-bell",
                 "neutro",
                 "/notificacoes",
@@ -374,8 +386,11 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         new("Nova consulta", "Agende um novo atendimento.", "pi-calendar-plus", "/consultas/nova", false),
         new("Cadastrar paciente", "Adicione uma pessoa ao consultorio.", "pi-user-plus", "/pacientes/novo", false),
         new("Novo documento", "Crie um documento psicologico.", "pi-file-plus", "/documentos/novo", false),
-        new("Conversas WhatsApp", "Acompanhe as conversas do consultorio.", "pi-whatsapp", "/integracoes/whatsapp/conversas", false)
+        new("Mensagens", "Revise contatos recebidos pelo WhatsApp.", "pi-whatsapp", "/integracoes/whatsapp/conversas", false)
     ];
+
+    private static string FormatarQuantidade(int quantidade, string singular, string plural) =>
+        $"{quantidade} {(quantidade == 1 ? singular : plural)}";
 
     private static string ObterPrimeiroNome(string nomeCompleto) =>
         nomeCompleto
