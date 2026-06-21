@@ -112,8 +112,10 @@
             type="text"
             inputmode="numeric"
             autocomplete="off"
+            maxlength="9"
             placeholder="00/000000"
             formControlName="crp"
+            (input)="formatarCrp($event)"
           />
         </div>
         <p class="text-[11px] leading-4 text-[#737780]">Formato: regiao/numero</p>

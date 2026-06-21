@@ -85,6 +85,16 @@ export class Cadastro {
     this.senhaVisivel.update((visivel) => !visivel);
   }
 
+  protected formatarCrp(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const digitos = input.value.replace(/\D/g, '').slice(0, 8);
+    const valorFormatado =
+      digitos.length > 2 ? `${digitos.slice(0, 2)}/${digitos.slice(2)}` : digitos;
+
+    input.value = valorFormatado;
+    this.formulario.controls.crp.setValue(valorFormatado, { emitEvent: false });
+  }
+
   protected campoInvalido(campo: CampoCadastro): boolean {
     const controle = this.formulario.controls[campo];
     return controle.invalid && (controle.touched || controle.dirty);

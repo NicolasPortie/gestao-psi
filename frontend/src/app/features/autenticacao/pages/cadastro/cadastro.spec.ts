@@ -27,6 +27,20 @@ describe('Cadastro', () => {
     expect(elemento.querySelector('input[formControlName="crp"]')).toBeTruthy();
   });
 
+  it('deve aplicar mascara no campo CRP ao digitar', async () => {
+    const fixture = TestBed.createComponent(Cadastro);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const input = fixture.nativeElement.querySelector('#crp') as HTMLInputElement;
+
+    input.value = '06123456';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(input.value).toBe('06/123456');
+  });
+
   it('deve exibir validacoes ao tentar criar conta incompleta', async () => {
     const fixture = TestBed.createComponent(Cadastro);
     fixture.detectChanges();
