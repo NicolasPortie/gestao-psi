@@ -62,6 +62,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/agenda/configuracoes-agenda').then((componente) => componente.ConfiguracoesAgenda),
   },
   {
+    path: 'lista-espera',
+    title: 'Lista de espera | GestaoPsi',
+    canActivate: [autenticadoGuard],
+    loadComponent: () => import('./features/lista-espera/lista-espera').then((componente) => componente.ListaEspera),
+  },
+  {
     path: 'consultas/nova',
     title: 'Nova consulta | GestaoPsi',
     canActivate: [autenticadoGuard],

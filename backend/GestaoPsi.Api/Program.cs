@@ -8,6 +8,7 @@ using GestaoPsi.Api.Services.Autenticacao;
 using GestaoPsi.Api.Services.Agenda;
 using GestaoPsi.Api.Services.Comunicacao;
 using GestaoPsi.Api.Services.Consultas;
+using GestaoPsi.Api.Services.ListaEspera;
 using GestaoPsi.Api.Services.Painel;
 using GestaoPsi.Api.Services.Pagamentos;
 using GestaoPsi.Api.Services.Pacientes;
@@ -193,6 +194,7 @@ builder.Services.AddScoped<IAgendaService, AgendaService>();
 builder.Services.AddScoped<IConsultasService, ConsultasService>();
 builder.Services.AddScoped<ISessoesService, SessoesService>();
 builder.Services.AddScoped<IPagamentosService, PagamentosService>();
+builder.Services.AddScoped<IListaEsperaService, ListaEsperaService>();
 
 var app = builder.Build();
 

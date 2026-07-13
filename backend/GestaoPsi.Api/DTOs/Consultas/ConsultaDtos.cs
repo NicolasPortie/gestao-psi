@@ -9,6 +9,7 @@ public sealed class CriarConsultaRequest
 {
     public Guid PacienteId { get; init; }
     public Guid TipoAtendimentoId { get; init; }
+    public Guid? ListaEsperaId { get; init; }
     public DateTimeOffset InicioEm { get; init; }
     public DateTimeOffset FimEm { get; init; }
     public ModalidadeAtendimento Modalidade { get; init; }

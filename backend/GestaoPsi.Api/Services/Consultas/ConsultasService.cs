@@ -36,13 +36,31 @@ public sealed class ConsultasService(AppDbContext dbContext, IAutorizacaoContaSe
         if (request.InicioEm < DateTimeOffset.UtcNow.AddHours(await ObterAntecedenciaAsync(contaId, ct))) throw new RegraNegocioException("A consulta nao respeita a antecedencia minima configurada.");
         var paciente = await dbContext.Pacientes.SingleOrDefaultAsync(x => x.Id == request.PacienteId && x.ContaPsicologoId == contaId && x.Status == StatusPaciente.Ativo, ct) ?? throw new RegraNegocioException("Paciente ativo nao encontrado.", StatusCodes.Status404NotFound);
         var tipo = await dbContext.TiposAtendimento.SingleOrDefaultAsync(x => x.Id == request.TipoAtendimentoId && x.ContaPsicologoId == contaId && x.Ativo, ct) ?? throw new RegraNegocioException("Tipo de atendimento ativo nao encontrado.", StatusCodes.Status404NotFound);
+        Models.ListaEspera? listaEspera = null;
+        if (request.ListaEsperaId is not null)
+        {
+            listaEspera = await dbContext.ListaEspera.SingleOrDefaultAsync(x =>
+                x.Id == request.ListaEsperaId &&
+                x.ContaPsicologoId == contaId &&
+                x.PacienteId == paciente.Id &&
+                (x.TipoAtendimentoId == null || x.TipoAtendimentoId == tipo.Id) &&
+                (x.Status == StatusListaEspera.Aguardando || x.Status == StatusListaEspera.Contatado), ct)
+                ?? throw new RegraNegocioException("Registro ativo da lista de espera nao encontrado.", StatusCodes.Status404NotFound);
+        }
         var bloqueado = await dbContext.BloqueiosAgenda.AnyAsync(x => x.ContaPsicologoId == contaId && x.InicioEm < request.FimEm && x.FimEm > request.InicioEm, ct);
         if (bloqueado) throw new RegraNegocioException("O horario escolhido esta bloqueado na agenda.");
         var conflitante = await dbContext.Consultas.AnyAsync(x => x.ContaPsicologoId == contaId && x.Status != StatusConsulta.Cancelada && x.Status != StatusConsulta.Remarcada && x.InicioEm < request.FimEm && x.FimEm > request.InicioEm, ct);
         if (conflitante) throw new RegraNegocioException("Ja existe uma consulta neste intervalo.");
         var configuracao = await dbContext.ConfiguracoesAtendimento.AsNoTracking().SingleAsync(x => x.ContaPsicologoId == contaId && x.Ativo, ct);
-        var consulta = new Consulta { Id = Guid.NewGuid(), ContaPsicologoId = contaId, PacienteId = paciente.Id, TipoAtendimentoId = tipo.Id, InicioEm = request.InicioEm, FimEm = request.FimEm, Modalidade = request.Modalidade, LinkOnline = Limpar(request.LinkOnline), EnderecoAtendimento = Limpar(request.EnderecoAtendimento), ObservacaoAdministrativa = Limpar(request.ObservacaoAdministrativa), Status = configuracao.ConfirmacaoAutomaticaConsulta ? StatusConsulta.Confirmada : StatusConsulta.AguardandoConfirmacao, Origem = OrigemConsulta.Painel };
+        var consulta = new Consulta { Id = Guid.NewGuid(), ContaPsicologoId = contaId, PacienteId = paciente.Id, TipoAtendimentoId = tipo.Id, InicioEm = request.InicioEm, FimEm = request.FimEm, Modalidade = request.Modalidade, LinkOnline = Limpar(request.LinkOnline), EnderecoAtendimento = Limpar(request.EnderecoAtendimento), ObservacaoAdministrativa = Limpar(request.ObservacaoAdministrativa), Status = configuracao.ConfirmacaoAutomaticaConsulta ? StatusConsulta.Confirmada : StatusConsulta.AguardandoConfirmacao, Origem = listaEspera?.Origem ?? OrigemConsulta.Painel };
         dbContext.Consultas.Add(consulta);
+        if (listaEspera is not null)
+        {
+            var statusListaEsperaAnterior = listaEspera.Status;
+            listaEspera.Status = StatusListaEspera.Agendado;
+            listaEspera.AtualizadoEm = DateTimeOffset.UtcNow;
+            auditoria.Registrar(contaId, usuarioId, "ListaEsperaAgendada", nameof(Models.ListaEspera), listaEspera.Id, "Lista de espera convertida em consulta.", new { Status = statusListaEsperaAnterior }, new { listaEspera.Status, ConsultaId = consulta.Id }, ip, userAgent);
+        }
         dbContext.HistoricosConsulta.Add(new() { Id = Guid.NewGuid(), ContaPsicologoId = contaId, ConsultaId = consulta.Id, UsuarioId = usuarioId, StatusNovo = consulta.Status, Descricao = "Consulta criada." });
         auditoria.Registrar(contaId, usuarioId, "ConsultaCriada", nameof(Consulta), consulta.Id, "Consulta criada.", null, new { consulta.PacienteId, consulta.InicioEm, consulta.FimEm, consulta.Status }, ip, userAgent);
         await dbContext.SaveChangesAsync(ct);

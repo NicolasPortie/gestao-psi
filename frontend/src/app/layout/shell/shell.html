@@ -16,7 +16,7 @@
           <span class="text-lg font-semibold tracking-[-0.03em] text-[#36563f]">GestaoPsi</span>
         </a>
 
-        <nav class="hidden items-center gap-1 md:flex" aria-label="Menu principal">
+        <nav class="hidden items-center gap-1 lg:flex" aria-label="Menu principal">
           <a
             class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[#5a554f] transition-colors hover:bg-[#eef4ef] hover:text-[#36563f]"
             routerLink="/painel"
@@ -52,6 +52,15 @@
           >
             <i class="pi pi-wallet text-sm" aria-hidden="true"></i>
             Financeiro
+          </a>
+          <a
+            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[#5a554f] transition-colors hover:bg-[#eef4ef] hover:text-[#36563f]"
+            routerLink="/lista-espera"
+            routerLinkActive="!bg-[#eef4ef] !text-[#44664e]"
+            ariaCurrentWhenActive="page"
+          >
+            <i class="pi pi-clock text-sm" aria-hidden="true"></i>
+            Lista de espera
           </a>
           <a
             class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[#5a554f] transition-colors hover:bg-[#eef4ef] hover:text-[#36563f]"
@@ -99,7 +108,7 @@
     </div>
 
     <nav
-      class="mx-auto grid h-12 w-full max-w-[1800px] grid-cols-5 items-center gap-1 px-2 md:hidden"
+      class="mx-auto grid h-12 w-full max-w-[1800px] grid-cols-5 items-center gap-1 px-2 lg:hidden"
       aria-label="Menu principal mobile"
     >
       <a
@@ -151,7 +160,11 @@
     </nav>
   </header>
 
-  <main id="conteudo-principal" tabindex="-1" class="conteudo-pagina mx-auto flex w-full max-w-[1800px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
+  <main
+    id="conteudo-principal"
+    tabindex="-1"
+    class="conteudo-pagina mx-auto flex w-full max-w-[1800px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
+  >
     <ng-content />
   </main>
 </div>

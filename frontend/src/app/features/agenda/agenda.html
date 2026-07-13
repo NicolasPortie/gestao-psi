@@ -10,11 +10,18 @@
         Organize a rotina e acompanhe os próximos atendimentos.
       </p>
     </div>
-    <a
-      class="inline-flex h-11 items-center gap-2 rounded-lg bg-[#36563f] px-4 text-sm font-semibold text-white hover:bg-[#284a32]"
-      routerLink="/consultas/nova"
-      ><i class="pi pi-plus text-sm"></i>Nova consulta</a
-    >
+    <div class="flex flex-wrap gap-2">
+      <a
+        class="inline-flex h-11 items-center gap-2 rounded-lg border border-[#cfd7ce] bg-white px-4 text-sm font-semibold text-[#36563f] hover:border-[#36563f] hover:bg-[#eef4ef]"
+        routerLink="/lista-espera"
+        ><i class="pi pi-clock text-sm" aria-hidden="true"></i>Lista de espera</a
+      >
+      <a
+        class="inline-flex h-11 items-center gap-2 rounded-lg bg-[#36563f] px-4 text-sm font-semibold text-white hover:bg-[#284a32]"
+        routerLink="/consultas/nova"
+        ><i class="pi pi-plus text-sm" aria-hidden="true"></i>Nova consulta</a
+      >
+    </div>
   </section>
   <section
     class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#dfe5dd] bg-white p-4"
