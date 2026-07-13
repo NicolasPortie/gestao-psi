@@ -4,8 +4,8 @@ import { map, Observable } from 'rxjs';
 import { API_URL_BASE } from '../../core/api/api.config';
 import { RespostaApi } from '../../core/api/resposta-api.model';
 
-export interface Pagamento { id: string; pacienteId: string; paciente: string; valor: number; status: 'Pendente' | 'Pago' | 'Cancelado' | 'Reembolsado'; formaPagamento: string; vencimentoEm?: string; pagoEm?: string; observacao?: string; }
-export interface CriarPagamento { pacienteId: string; valor: number; formaPagamento: string; vencimentoEm?: string; observacao?: string; }
+export interface Pagamento { id: string; pacienteId: string; consultaId?: string; paciente: string; valor: number; status: 'Pendente' | 'Pago' | 'Cancelado' | 'Reembolsado'; formaPagamento: string; vencimentoEm?: string; pagoEm?: string; observacao?: string; }
+export interface CriarPagamento { pacienteId: string; consultaId?: string; valor: number; formaPagamento: string; vencimentoEm?: string; observacao?: string; }
 
 @Injectable({ providedIn: 'root' })
 export class PagamentosService {
