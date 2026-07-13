@@ -226,9 +226,9 @@ export class FormularioPacienteComponent implements OnInit {
     this.formulario.patchValue({
       nomeCompleto: paciente.nomeCompleto,
       dataNascimento: paciente.dataNascimento ?? '',
-      cpf: paciente.cpfMascarado ?? '',
-      telefone: paciente.telefone ?? '',
-      whatsApp: paciente.whatsApp ?? '',
+      cpf: this.aplicarMascaraCpf(paciente.cpf ?? paciente.cpfMascarado),
+      telefone: this.aplicarMascaraTelefone(paciente.telefone),
+      whatsApp: this.aplicarMascaraTelefone(paciente.whatsApp),
       email: paciente.email ?? '',
       status: paciente.status,
       observacaoAdministrativa: paciente.observacaoAdministrativa ?? '',
@@ -239,7 +239,9 @@ export class FormularioPacienteComponent implements OnInit {
       this.contatosAdicionais.push(
         this.criarContatoAdicional(
           contato.tipoContato,
-          contato.valor,
+          contato.tipoContato === 'Telefone' || contato.tipoContato === 'WhatsApp'
+            ? this.aplicarMascaraTelefone(contato.valor)
+            : contato.valor,
           contato.principal,
         ),
       );
@@ -256,5 +258,27 @@ export class FormularioPacienteComponent implements OnInit {
       valor: new FormControl(valor, { nonNullable: true }),
       principal: new FormControl(principal, { nonNullable: true }),
     });
+  }
+
+  private aplicarMascaraTelefone(valor: string | null | undefined): string {
+    const digitos = valor?.replace(/\D/g, '').slice(0, 11) ?? '';
+
+    if (!digitos) {
+      return '';
+    }
+
+    return digitos.length > 10
+      ? digitos.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, '($1) $2-$3')
+      : digitos.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+  }
+
+  private aplicarMascaraCpf(valor: string | null | undefined): string {
+    const digitos = valor?.replace(/\D/g, '').slice(0, 11) ?? '';
+
+    if (!digitos) {
+      return '';
+    }
+
+    return digitos.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2}).*/, '$1.$2.$3-$4');
   }
 }

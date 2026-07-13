@@ -5,10 +5,15 @@ using GestaoPsi.Api.Data;
 using GestaoPsi.Api.Middlewares;
 using GestaoPsi.Api.Models;
 using GestaoPsi.Api.Services.Autenticacao;
+using GestaoPsi.Api.Services.Agenda;
 using GestaoPsi.Api.Services.Comunicacao;
+using GestaoPsi.Api.Services.Consultas;
 using GestaoPsi.Api.Services.Painel;
+using GestaoPsi.Api.Services.Pagamentos;
 using GestaoPsi.Api.Services.Pacientes;
 using GestaoPsi.Api.Services.Seguranca;
+using GestaoPsi.Api.Services.Sessoes;
+using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Shared.Respostas;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
@@ -147,7 +152,18 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(opcoes =>
+{
+    opcoes.AddPolicy("GestaoAdministrativa", politica => politica.RequireRole(
+        PerfilUsuario.Psicologo.ToString(),
+        PerfilUsuario.Recepcionista.ToString(),
+        PerfilUsuario.Administrador.ToString()));
+    opcoes.AddPolicy("AcessoClinico", politica => politica.RequireRole(
+        PerfilUsuario.Psicologo.ToString()));
+    opcoes.AddPolicy("Auditoria", politica => politica.RequireRole(
+        PerfilUsuario.Psicologo.ToString(),
+        PerfilUsuario.Administrador.ToString()));
+});
 
 builder.Services.AddCors(opcoes =>
 {
@@ -169,8 +185,14 @@ builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
 builder.Services.AddScoped<IPainelService, PainelService>();
 builder.Services.AddScoped<IPacientesService, PacientesService>();
 builder.Services.AddScoped<IProtecaoDadosService, ProtecaoDadosService>();
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
+builder.Services.AddScoped<IAutorizacaoContaService, AutorizacaoContaService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailTransacionalService, EmailTransacionalService>();
+builder.Services.AddScoped<IAgendaService, AgendaService>();
+builder.Services.AddScoped<IConsultasService, ConsultasService>();
+builder.Services.AddScoped<ISessoesService, SessoesService>();
+builder.Services.AddScoped<IPagamentosService, PagamentosService>();
 
 var app = builder.Build();
 

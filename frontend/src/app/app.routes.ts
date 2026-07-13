@@ -29,6 +29,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'redefinir-senha',
+    canActivate: [naoAutenticadoGuard],
+    title: 'Redefinir senha | GestaoPsi',
+    loadComponent: () =>
+      import('./features/autenticacao/pages/redefinir-senha/redefinir-senha').then(
+        (componente) => componente.RedefinirSenha,
+      ),
+  },
+  {
     path: 'painel',
     title: 'Painel | GestaoPsi',
     canActivate: [autenticadoGuard],
@@ -44,10 +53,7 @@ export const routes: Routes = [
       icone: 'pi-calendar',
       etiqueta: 'Agenda',
     },
-    loadComponent: () =>
-      import('./features/modulos/pages/modulo-operacional/modulo-operacional').then(
-        (componente) => componente.ModuloOperacional,
-      ),
+    loadComponent: () => import('./features/agenda/agenda').then((componente) => componente.Agenda),
   },
   {
     path: 'consultas/nova',
@@ -58,10 +64,7 @@ export const routes: Routes = [
       icone: 'pi-calendar-plus',
       etiqueta: 'Agenda',
     },
-    loadComponent: () =>
-      import('./features/modulos/pages/modulo-operacional/modulo-operacional').then(
-        (componente) => componente.ModuloOperacional,
-      ),
+    loadComponent: () => import('./features/agenda/nova-consulta').then((componente) => componente.NovaConsulta),
   },
   {
     path: 'consultas/:id',

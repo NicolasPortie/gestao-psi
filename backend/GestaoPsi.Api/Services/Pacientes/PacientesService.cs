@@ -1,4 +1,3 @@
-using System.Text.Json;
 using GestaoPsi.Api.Data;
 using GestaoPsi.Api.DTOs.Pacientes;
 using GestaoPsi.Api.Models;
@@ -11,7 +10,8 @@ namespace GestaoPsi.Api.Services.Pacientes;
 
 public sealed class PacientesService(
     AppDbContext dbContext,
-    IProtecaoDadosService protecaoDados)
+    IProtecaoDadosService protecaoDados,
+    IAuditoriaService auditoria)
     : IPacientesService
 {
     public async Task<PacientesListagemResponse> ListarAsync(
@@ -86,6 +86,7 @@ public sealed class PacientesService(
             contaPsicologoId,
             pacienteId,
             rastrear: false,
+            incluirContatos: true,
             cancellationToken);
         var consultas = await ObterConsultasResumoAsync(
             contaPsicologoId,
@@ -173,6 +174,7 @@ public sealed class PacientesService(
             contaPsicologoId,
             pacienteId,
             rastrear: true,
+            incluirContatos: false,
             cancellationToken);
         var dados = NormalizarRequest(request, paciente);
         await ValidarDadosPacienteAsync(contaPsicologoId, paciente.Id, dados, cancellationToken);
@@ -189,9 +191,15 @@ public sealed class PacientesService(
         paciente.Status = request.Status;
         paciente.AtualizadoEm = DateTimeOffset.UtcNow;
 
-        dbContext.ContatosPaciente.RemoveRange(paciente.Contatos);
-        paciente.Contatos.Clear();
-        DefinirContatos(paciente, dados);
+        await using var transacao = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        await dbContext.ContatosPaciente
+            .Where(contato =>
+                contato.ContaPsicologoId == contaPsicologoId &&
+                contato.PacienteId == paciente.Id)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        dbContext.ContatosPaciente.AddRange(CriarContatos(paciente, dados));
 
         RegistrarAuditoria(
             contaPsicologoId,
@@ -205,6 +213,7 @@ public sealed class PacientesService(
             userAgent);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transacao.CommitAsync(cancellationToken);
 
         return await ObterPorIdAsync(contaPsicologoId, paciente.Id, cancellationToken);
     }
@@ -224,6 +233,7 @@ public sealed class PacientesService(
             contaPsicologoId,
             pacienteId,
             rastrear: true,
+            incluirContatos: true,
             cancellationToken);
         var statusAnterior = paciente.Status;
         paciente.Status = ativar ? StatusPaciente.Ativo : StatusPaciente.Inativo;
@@ -249,13 +259,18 @@ public sealed class PacientesService(
         Guid contaPsicologoId,
         Guid pacienteId,
         bool rastrear,
+        bool incluirContatos,
         CancellationToken cancellationToken)
     {
         var consulta = dbContext.Pacientes
-            .Include(paciente => paciente.Contatos)
             .Where(paciente =>
                 paciente.ContaPsicologoId == contaPsicologoId &&
                 paciente.Id == pacienteId);
+
+        if (incluirContatos)
+        {
+            consulta = consulta.Include(paciente => paciente.Contatos);
+        }
 
         if (!rastrear)
         {
@@ -390,21 +405,37 @@ public sealed class PacientesService(
 
     private void DefinirContatos(Paciente paciente, DadosPacienteNormalizados dados)
     {
-        AdicionarContato(paciente, TipoContato.Telefone, dados.Telefone);
-        AdicionarContato(paciente, TipoContato.WhatsApp, dados.WhatsApp);
-        AdicionarContato(paciente, TipoContato.Email, dados.Email);
+        foreach (var contato in CriarContatos(paciente, dados))
+        {
+            paciente.Contatos.Add(contato);
+        }
+    }
+
+    private IReadOnlyCollection<ContatoPaciente> CriarContatos(
+        Paciente paciente,
+        DadosPacienteNormalizados dados)
+    {
+        var contatos = new List<ContatoPaciente>();
+
+        AdicionarContato(contatos, paciente, TipoContato.Telefone, dados.Telefone);
+        AdicionarContato(contatos, paciente, TipoContato.WhatsApp, dados.WhatsApp);
+        AdicionarContato(contatos, paciente, TipoContato.Email, dados.Email);
 
         foreach (var contato in dados.ContatosAdicionais)
         {
             AdicionarContato(
+                contatos,
                 paciente,
                 contato.TipoContato,
                 contato.Valor,
                 contato.Principal);
         }
+
+        return contatos;
     }
 
     private void AdicionarContato(
+        ICollection<ContatoPaciente> contatos,
         Paciente paciente,
         TipoContato tipoContato,
         string? valor,
@@ -415,7 +446,7 @@ public sealed class PacientesService(
             return;
         }
 
-        paciente.Contatos.Add(new ContatoPaciente
+        contatos.Add(new ContatoPaciente
         {
             Id = Guid.NewGuid(),
             ContaPsicologoId = paciente.ContaPsicologoId,
@@ -453,6 +484,7 @@ public sealed class PacientesService(
             paciente.NomeCompleto,
             paciente.DataNascimento?.ToString("yyyy-MM-dd"),
             MascararCpf(DesprotegerOpcional(paciente.Cpf)),
+            DesprotegerOpcional(paciente.Cpf),
             DesprotegerOpcional(paciente.Telefone),
             ObterContato(paciente, TipoContato.WhatsApp),
             DesprotegerOpcional(paciente.Email),
@@ -531,23 +563,17 @@ public sealed class PacientesService(
         object? dadosDepois,
         string? ip,
         string? userAgent)
-    {
-        dbContext.LogsAuditoria.Add(new LogAuditoria
-        {
-            Id = Guid.NewGuid(),
-            ContaPsicologoId = contaPsicologoId,
-            UsuarioId = usuarioId,
-            TipoAcao = tipoAcao,
-            Entidade = "Paciente",
-            EntidadeId = entidadeId,
-            Descricao = descricao,
-            Ip = ip,
-            UserAgent = userAgent,
-            DadosAntesJson = dadosAntes is null ? null : JsonSerializer.Serialize(dadosAntes),
-            DadosDepoisJson = dadosDepois is null ? null : JsonSerializer.Serialize(dadosDepois),
-            CriadoEm = DateTimeOffset.UtcNow
-        });
-    }
+        => auditoria.Registrar(
+            contaPsicologoId,
+            usuarioId,
+            tipoAcao,
+            "Paciente",
+            entidadeId,
+            descricao,
+            dadosAntes,
+            dadosDepois,
+            ip,
+            userAgent);
 
     private object CriarSnapshotAuditoria(Paciente paciente) => new
     {
@@ -642,9 +668,12 @@ public sealed class PacientesService(
         return contatos
             .Select(contato => new ContatoPacienteNormalizado(
                 contato.TipoContato,
-                contato.TipoContato == TipoContato.Email
-                    ? NormalizarEmail(contato.Valor)
-                    : NormalizarTextoOpcional(contato.Valor),
+                contato.TipoContato switch
+                {
+                    TipoContato.Email => NormalizarEmail(contato.Valor),
+                    TipoContato.Telefone or TipoContato.WhatsApp => NormalizarDigitos(contato.Valor),
+                    _ => NormalizarTextoOpcional(contato.Valor)
+                },
                 contato.Principal))
             .Where(contato => !string.IsNullOrWhiteSpace(contato.Valor))
             .Take(10)

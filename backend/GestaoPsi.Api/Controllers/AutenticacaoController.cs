@@ -109,7 +109,7 @@ public sealed class AutenticacaoController(
 
         Response.Cookies.Delete(
             CookieRefreshToken,
-            new CookieOptions { Path = "/api/v1/autenticacao" });
+            new CookieOptions { Path = "/" });
         return NoContent();
     }
 
@@ -139,9 +139,9 @@ public sealed class AutenticacaoController(
             {
                 HttpOnly = true,
                 Secure = !ambiente.IsDevelopment() || Request.IsHttps,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.Lax,
                 Expires = resultado.RefreshTokenExpiraEm,
-                Path = "/api/v1/autenticacao",
+                Path = "/",
                 IsEssential = true
             });
     }

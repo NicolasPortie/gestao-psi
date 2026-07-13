@@ -104,6 +104,18 @@ export class AutenticacaoService {
       );
   }
 
+  redefinirSenha(token: string, novaSenha: string): Observable<void> {
+    return this.http
+      .post<RespostaApi<object>>(`${this.apiUrlBase}/autenticacao/recuperacao-senha/redefinir`, {
+        token,
+        novaSenha,
+      })
+      .pipe(
+        map(() => undefined),
+        catchError((erro) => this.tratarErro(erro)),
+      );
+  }
+
   private extrairDados<T>(resposta: RespostaApi<T>): T {
     if (!resposta.sucesso || !resposta.dados) {
       throw new Error(resposta.mensagem ?? 'Nao foi possivel concluir a operacao.');

@@ -24,6 +24,7 @@ export interface PacienteLista {
 }
 
 export interface PacienteDetalhe extends PacienteLista {
+  cpf: string | null;
   observacaoAdministrativa: string | null;
   contatosAdicionais: ContatoPaciente[];
 }

@@ -53,6 +53,7 @@ public sealed record PacienteDetalheResponse(
     string NomeCompleto,
     string? DataNascimento,
     string? CpfMascarado,
+    string? Cpf,
     string? Telefone,
     string? WhatsApp,
     string? Email,

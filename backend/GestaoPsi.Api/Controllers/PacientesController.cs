@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using GestaoPsi.Api.DTOs.Pacientes;
 using GestaoPsi.Api.Services.Pacientes;
 using GestaoPsi.Api.Shared.Enums;
@@ -11,9 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "GestaoAdministrativa")]
 [Route("api/v1/pacientes")]
-public sealed class PacientesController(IPacientesService pacientesService) : ControllerBase
+public sealed class PacientesController(IPacientesService pacientesService) : ControllerAutenticadoBase
 {
     [HttpGet]
     [ProducesResponseType<RespostaApi<PacientesListagemResponse>>(StatusCodes.Status200OK)]
@@ -128,26 +126,5 @@ public sealed class PacientesController(IPacientesService pacientesService) : Co
         return Ok(RespostaApi<PacienteDetalheResponse>.ComSucesso(
             resposta,
             "Paciente inativado com sucesso."));
-    }
-
-    private Guid ObterUsuarioId() =>
-        ObterGuidClaim(JwtRegisteredClaimNames.Sub, ClaimTypes.NameIdentifier);
-
-    private Guid ObterContaPsicologoId() =>
-        ObterGuidClaim("conta_psicologo_id");
-
-    private Guid ObterGuidClaim(params string[] tipos)
-    {
-        var valor = tipos
-            .Select(tipo => User.FindFirstValue(tipo))
-            .FirstOrDefault(item => !string.IsNullOrWhiteSpace(item));
-        if (!Guid.TryParse(valor, out var id))
-        {
-            throw new RegraNegocioException(
-                "Sessao invalida ou expirada.",
-                StatusCodes.Status401Unauthorized);
-        }
-
-        return id;
     }
 }
