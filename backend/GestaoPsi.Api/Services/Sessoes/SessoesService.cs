@@ -17,9 +17,10 @@ public sealed class SessoesService(AppDbContext db, IAutorizacaoContaService aut
         if (consulta.Status is StatusConsulta.Cancelada or StatusConsulta.Remarcada) throw new RegraNegocioException("Nao e possivel registrar sessao para uma consulta cancelada ou remarcada.");
         if (await db.RegistrosSessao.AnyAsync(x => x.ContaPsicologoId == contaId && x.ConsultaId == request.ConsultaId, ct)) throw new RegraNegocioException("Esta consulta ja possui registro de sessao.");
         var prontuario = await db.Prontuarios.SingleOrDefaultAsync(x => x.ContaPsicologoId == contaId && x.PacienteId == consulta.PacienteId && x.Status == StatusProntuario.Ativo, ct) ?? throw new RegraNegocioException("Prontuario ativo nao encontrado.", StatusCodes.Status404NotFound);
+        var statusAnterior = consulta.Status;
         var registro = new RegistroSessao { Id = Guid.NewGuid(), ContaPsicologoId = contaId, ConsultaId = consulta.Id, PacienteId = consulta.PacienteId, ProntuarioId = prontuario.Id, TipoAtendimentoId = consulta.TipoAtendimentoId, CriadoPorUsuarioId = usuarioId, DataSessao = consulta.InicioEm, ObservacoesClinicas = Proteger(request.ObservacoesClinicas), Evolucao = Proteger(request.Evolucao), Encaminhamentos = Proteger(request.Encaminhamentos), ProximaSessaoSugeridaEm = request.ProximaSessaoSugeridaEm, Status = StatusRegistroSessao.Finalizado };
         consulta.Status = StatusConsulta.Realizada; consulta.AtualizadoEm = DateTimeOffset.UtcNow; db.RegistrosSessao.Add(registro);
-        db.HistoricosConsulta.Add(new() { Id = Guid.NewGuid(), ContaPsicologoId = contaId, ConsultaId = consulta.Id, UsuarioId = usuarioId, StatusAnterior = StatusConsulta.Confirmada, StatusNovo = StatusConsulta.Realizada, Descricao = "Sessao registrada." });
+        db.HistoricosConsulta.Add(new() { Id = Guid.NewGuid(), ContaPsicologoId = contaId, ConsultaId = consulta.Id, UsuarioId = usuarioId, StatusAnterior = statusAnterior, StatusNovo = StatusConsulta.Realizada, Descricao = "Sessao registrada." });
         auditoria.Registrar(contaId, usuarioId, "RegistroSessaoCriado", nameof(RegistroSessao), registro.Id, "Registro de sessao criado.", null, new { registro.ConsultaId, registro.PacienteId, registro.Status }, ip, userAgent);
         await db.SaveChangesAsync(ct); return Mapear(registro);
     }
