@@ -8,7 +8,7 @@ public sealed class CriarPagamentoRequest
 {
     public Guid PacienteId { get; init; }
     public Guid? ConsultaId { get; init; }
-    [Range(typeof(decimal), "0.01", "999999.99")] public decimal Valor { get; init; }
+    [Range(typeof(decimal), "0.01", "999999.99", ParseLimitsInInvariantCulture = true)] public decimal Valor { get; init; }
     public FormaPagamento FormaPagamento { get; init; }
     public DateTimeOffset? VencimentoEm { get; init; }
     [StringLength(1000)] public string? Observacao { get; init; }

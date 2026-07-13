@@ -30,7 +30,7 @@ public sealed class SalvarTipoAtendimentoRequest
     [Required, StringLength(120, MinimumLength = 2)] public string Nome { get; init; } = string.Empty;
     [StringLength(1000)] public string? Descricao { get; init; }
     [Range(10, 240)] public int DuracaoMinutos { get; init; }
-    [Range(typeof(decimal), "0", "999999.99")] public decimal? ValorPadrao { get; init; }
+    [Range(typeof(decimal), "0", "999999.99", ParseLimitsInInvariantCulture = true)] public decimal? ValorPadrao { get; init; }
     public ModalidadeAtendimento ModalidadePadrao { get; init; }
     public bool Ativo { get; init; } = true;
 }

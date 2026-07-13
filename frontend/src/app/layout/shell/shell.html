@@ -19,14 +19,14 @@
             <i class="pi pi-home text-sm" aria-hidden="true"></i>
             Painel
           </a>
-          <span
-            class="inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-lg px-3 text-sm font-medium text-[#5a554f]/40"
-            aria-disabled="true"
-            title="Disponivel em breve"
+          <a
+            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-[#5a554f] transition-colors hover:bg-[#eef4ef] hover:text-[#44664e]"
+            routerLink="/agenda"
+            routerLinkActive="!bg-[#eef4ef] !text-[#44664e]"
           >
             <i class="pi pi-calendar text-sm" aria-hidden="true"></i>
             Agenda
-          </span>
+          </a>
           <a
             class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-[#5a554f] transition-colors hover:bg-[#eef4ef] hover:text-[#44664e]"
             routerLink="/pacientes"
@@ -35,14 +35,14 @@
             <i class="pi pi-users text-sm" aria-hidden="true"></i>
             Pacientes
           </a>
-          <span
-            class="inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-lg px-3 text-sm font-medium text-[#5a554f]/40"
-            aria-disabled="true"
-            title="Disponivel em breve"
+          <a
+            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-[#5a554f] transition-colors hover:bg-[#eef4ef] hover:text-[#44664e]"
+            routerLink="/pagamentos"
+            routerLinkActive="!bg-[#eef4ef] !text-[#44664e]"
           >
             <i class="pi pi-wallet text-sm" aria-hidden="true"></i>
             Financeiro
-          </span>
+          </a>
         </nav>
       </div>
 
@@ -101,20 +101,22 @@
         <i class="pi pi-users text-sm" aria-hidden="true"></i>
         <span class="truncate">Pacientes</span>
       </a>
-      <span
-        class="inline-flex h-9 min-w-0 cursor-not-allowed items-center justify-center gap-1 rounded-lg px-1 text-xs font-medium text-[#5a554f]/40"
-        aria-disabled="true"
+      <a
+        class="inline-flex h-9 min-w-0 items-center justify-center gap-1 rounded-lg px-1 text-xs font-semibold text-[#5a554f]"
+        routerLink="/agenda"
+        routerLinkActive="!bg-[#eef4ef] !text-[#44664e]"
       >
         <i class="pi pi-calendar text-sm" aria-hidden="true"></i>
         <span class="truncate">Agenda</span>
-      </span>
-      <span
-        class="inline-flex h-9 min-w-0 cursor-not-allowed items-center justify-center gap-1 rounded-lg px-1 text-xs font-medium text-[#5a554f]/40"
-        aria-disabled="true"
+      </a>
+      <a
+        class="inline-flex h-9 min-w-0 items-center justify-center gap-1 rounded-lg px-1 text-xs font-semibold text-[#5a554f]"
+        routerLink="/pagamentos"
+        routerLinkActive="!bg-[#eef4ef] !text-[#44664e]"
       >
         <i class="pi pi-wallet text-sm" aria-hidden="true"></i>
         <span class="truncate">Financeiro</span>
-      </span>
+      </a>
     </nav>
   </header>
 
