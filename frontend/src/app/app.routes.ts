@@ -111,15 +111,7 @@ export const routes: Routes = [
     path: 'pagamentos',
     title: 'Financeiro | GestaoPsi',
     canActivate: [autenticadoGuard],
-    data: {
-      titulo: 'Financeiro administrativo',
-      icone: 'pi-wallet',
-      etiqueta: 'Financeiro',
-    },
-    loadComponent: () =>
-      import('./features/modulos/pages/modulo-operacional/modulo-operacional').then(
-        (componente) => componente.ModuloOperacional,
-      ),
+    loadComponent: () => import('./features/pagamentos/pagamentos').then((componente) => componente.Pagamentos),
   },
   {
     path: 'documentos/novo',
