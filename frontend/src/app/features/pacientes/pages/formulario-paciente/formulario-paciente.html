@@ -3,7 +3,7 @@
   [perfil]="usuario()?.perfil ?? 'Conta autenticada'"
   [notificacoesNaoLidas]="0"
 >
-  <section class="mx-auto flex w-full max-w-7xl flex-col gap-5">
+  <section class="flex w-full flex-col gap-5">
     <header class="flex flex-col gap-4 rounded-lg border border-white/70 bg-white/70 p-5 shadow-[0_18px_50px_-36px_rgba(68,102,78,0.45)] backdrop-blur md:flex-row md:items-center md:justify-between">
       <div class="flex items-start gap-3">
         <a
@@ -56,7 +56,7 @@
 
     <form
       id="formulario-paciente"
-      class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_420px]"
+      class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.34fr)] 2xl:gap-7"
       [formGroup]="formulario"
       (ngSubmit)="salvar()"
       novalidate

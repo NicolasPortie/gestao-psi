@@ -4,7 +4,7 @@
     [perfil]="dados.usuario.perfil"
     [notificacoesNaoLidas]="dados.indicadores.notificacoesNaoLidas"
   >
-    <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.32fr)] 2xl:gap-7">
       <div
         class="overflow-hidden rounded-2xl border border-[#eae1d9]/80 bg-[#fdfbf7] shadow-[0_18px_55px_-34px_rgba(68,102,78,0.55)]"
       >
@@ -86,18 +86,23 @@
 
         <div class="mt-4 space-y-3">
           @for (prioridade of dados.prioridades; track prioridade.titulo) {
-            <article
-              class="block rounded-xl border p-3"
+            <a
+              class="group block rounded-xl border p-3 transition-transform hover:-translate-y-0.5"
               [ngClass]="classePrioridade(prioridade.tom)"
+              [routerLink]="prioridade.rota"
             >
               <div class="flex items-start gap-3">
                 <i class="pi mt-0.5 text-base" [ngClass]="prioridade.icone" aria-hidden="true"></i>
                 <div class="min-w-0 flex-1">
                   <h3 class="text-sm font-bold text-[#1f1b16]">{{ prioridade.titulo }}</h3>
                   <p class="mt-1 text-xs leading-5 text-[#5a554f]">{{ prioridade.mensagem }}</p>
+                  <span class="mt-2 inline-flex items-center gap-1 text-xs font-bold">
+                    {{ prioridade.acao }}
+                    <i class="pi pi-arrow-right text-[0.65rem] transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+                  </span>
                 </div>
               </div>
-            </article>
+            </a>
           }
         </div>
       </section>
@@ -227,6 +232,13 @@
               Pagamentos pendentes
             </p>
           </div>
+          <a
+            class="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#d8cdc3] bg-white px-4 text-sm font-bold text-[#44664e] hover:border-[#44664e] hover:bg-[#eef4ef]"
+            routerLink="/pagamentos"
+          >
+            Acompanhar cobranças
+            <i class="pi pi-arrow-right text-xs" aria-hidden="true"></i>
+          </a>
         </section>
       </aside>
     </section>

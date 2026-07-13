@@ -3,7 +3,7 @@
   [perfil]="usuario()?.perfil ?? 'Conta autenticada'"
   [notificacoesNaoLidas]="0"
 >
-  <section class="mx-auto flex w-full max-w-7xl flex-col gap-4 lg:h-[calc(100vh-7rem)] lg:min-h-[640px]">
+  <section class="flex w-full flex-col gap-4 lg:h-[calc(100vh-7rem)] lg:min-h-[640px]">
     @if (erro()) {
       <p class="rounded-lg border border-[#ffdad6] bg-[#fff4f2] p-3 text-sm text-[#ba1a1a]" role="alert">
         {{ erro() }}
@@ -16,7 +16,7 @@
       </p>
     }
 
-    <div class="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
+    <div class="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(20rem,0.3fr)_minmax(0,1fr)] 2xl:gap-7">
       <aside class="flex min-h-0 flex-col rounded-lg border border-white/70 bg-white/70 p-4 shadow-[0_18px_50px_-36px_rgba(68,102,78,0.45)] backdrop-blur">
         <div class="flex items-center justify-between gap-3">
           <div>

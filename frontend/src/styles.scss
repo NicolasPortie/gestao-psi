@@ -2,22 +2,23 @@
 
 @plugin "tailwindcss-primeui";
 
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
 @import 'primeicons/primeicons.css';
 
 @theme {
-  --font-sans: 'Quicksand', sans-serif;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 html {
-  background: #f8f9ff;
-  color: #181c21;
-  font-family: 'Quicksand', sans-serif;
+  background: #f6f7f4;
+  color: #20241f;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  scrollbar-gutter: stable;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  overflow-y: scroll;
 }
 
 button,
@@ -25,6 +26,34 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+a,
+button:not(:disabled) {
+  transition:
+    background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.conteudo-pagina {
+  animation: revelar-conteudo 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+[role='status'],
+[role='alert'] {
+  animation: revelar-feedback 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.item-atualizado {
+  animation: destacar-item 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .campo-autenticacao {
@@ -142,11 +171,42 @@ textarea:focus-visible {
   }
 }
 
+@keyframes revelar-conteudo {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes revelar-feedback {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes destacar-item {
+  0%, 100% { background-color: transparent; }
+  25% { background-color: rgb(234 245 235 / 85%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
