@@ -1,4 +1,130 @@
-<app-shell [nomeUsuario]="usuario()?.usuario?.nomeCompleto ?? 'GestaoPsi'" [perfil]="usuario()?.usuario?.perfil ?? ''">
-  <section class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-[#44664e]">Agenda</p><h1 class="mt-1 text-2xl font-bold text-[#1f1b16]">Proximos atendimentos</h1><p class="mt-2 text-sm text-[#5a554f]">Acompanhe a semana e organize novos horarios.</p></div><a class="inline-flex h-11 items-center gap-2 rounded-lg bg-[#44664e] px-4 text-sm font-bold text-white" routerLink="/consultas/nova"><i class="pi pi-plus"></i> Nova consulta</a></section>
-  @if (carregando()) { <p class="rounded-xl border border-[#eae1d9] bg-white p-6 text-sm text-[#5a554f]">Carregando agenda...</p> } @else if (erro()) { <p class="rounded-xl border border-[#ffdad6] bg-[#fff4f2] p-6 text-sm text-[#ba1a1a]">{{ erro() }}</p> } @else if (consultas().length === 0) { <section class="rounded-2xl border border-dashed border-[#d8cdc3] bg-white p-10 text-center"><i class="pi pi-calendar-times text-3xl text-[#44664e]"></i><h2 class="mt-4 text-lg font-bold">Nenhuma consulta nesta semana</h2><p class="mt-2 text-sm text-[#5a554f]">Crie a primeira consulta para ocupar um horario disponivel.</p></section> } @else { <section class="overflow-hidden rounded-2xl border border-[#eae1d9] bg-white">@for (consulta of consultas(); track consulta.id) { <article class="flex flex-wrap items-center justify-between gap-4 border-b border-[#eae1d9] p-5 last:border-0"><div><p class="text-sm font-bold text-[#1f1b16]">{{ consulta.paciente }}</p><p class="mt-1 text-xs text-[#5a554f]">{{ consulta.tipoAtendimento }} · {{ consulta.inicioEm | date:'EEE, dd/MM HH:mm' }}</p></div><span class="rounded-full bg-[#eef4ef] px-3 py-1 text-xs font-bold text-[#44664e]">{{ consulta.status }}</span></article> }</section> }
+<app-shell
+  [nomeUsuario]="usuario()?.usuario?.nomeCompleto ?? 'GestãoPsi'"
+  [perfil]="usuario()?.usuario?.perfil ?? ''"
+>
+  <section class="flex flex-wrap items-end justify-between gap-5">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[.16em] text-[#52725a]">Agenda</p>
+      <h1 class="mt-2 text-3xl font-semibold tracking-tight">Atendimentos da semana</h1>
+      <p class="mt-2 text-sm text-[#625f58]">
+        Organize a rotina e acompanhe os próximos atendimentos.
+      </p>
+    </div>
+    <a
+      class="inline-flex h-11 items-center gap-2 rounded-lg bg-[#36563f] px-4 text-sm font-semibold text-white hover:bg-[#284a32]"
+      routerLink="/consultas/nova"
+      ><i class="pi pi-plus text-sm"></i>Nova consulta</a
+    >
+  </section>
+  <section
+    class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#dfe5dd] bg-white p-4"
+  >
+    <div class="flex items-center gap-2">
+      <button
+        class="inline-flex size-10 items-center justify-center rounded-lg border border-[#cfd7ce]"
+        type="button"
+        (click)="periodoAnterior()"
+        aria-label="Semana anterior"
+      >
+        <i class="pi pi-chevron-left text-xs"></i></button
+      ><button
+        class="h-10 rounded-lg border border-[#cfd7ce] px-3 text-sm font-semibold"
+        type="button"
+        (click)="irParaHoje()"
+      >
+        Hoje</button
+      ><button
+        class="inline-flex size-10 items-center justify-center rounded-lg border border-[#cfd7ce]"
+        type="button"
+        (click)="proximoPeriodo()"
+        aria-label="Próxima semana"
+      >
+        <i class="pi pi-chevron-right text-xs"></i>
+      </button>
+      <p class="ml-2 text-sm font-semibold text-[#454840]">{{ faixaPeriodo() }}</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="hidden text-sm text-[#625f58] sm:inline">{{ totalPeriodo() }} {{ totalPeriodo() === 1 ? 'atendimento' : 'atendimentos' }}</span
+      ><label class="sr-only" for="filtro-status">Filtrar por status</label
+      ><select
+        id="filtro-status"
+        class="h-10 rounded-lg border border-[#cfd7ce] bg-white px-3 text-sm outline-none focus:border-[#36563f]"
+        [formControl]="filtroStatus"
+      >
+        <option value="">Todos os status</option>
+        <option value="AguardandoConfirmacao">Aguardando confirmação</option>
+        <option value="Agendada">Agendada</option>
+        <option value="Confirmada">Confirmada</option>
+        <option value="Realizada">Realizada</option>
+        <option value="Cancelada">Cancelada</option>
+        <option value="NaoCompareceu">Falta</option>
+      </select>
+    </div>
+  </section>
+  @if (erro()) {
+    <section class="rounded-2xl border border-[#f3cac5] bg-[#fff8f6] p-6" role="alert">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <p class="text-sm text-[#a12d24]">{{ erro() }}</p>
+        <button
+          class="h-10 rounded-lg bg-[#a12d24] px-4 text-sm font-semibold text-white"
+          type="button"
+          (click)="carregar()"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </section>
+  } @else if (carregando()) {
+    <section class="space-y-4" aria-label="Carregando agenda">
+      @for (item of [1, 2, 3]; track item) {
+        <div class="h-24 animate-pulse rounded-2xl bg-[#e8ece7]"></div>
+      }
+    </section>
+  } @else {
+    <section class="overflow-hidden rounded-2xl border border-[#dfe5dd] bg-white">
+      @for (dia of dias(); track dia.data) {
+        <div class="border-b border-[#e7ebe5] last:border-0">
+          <header class="flex items-center justify-between bg-[#fbfcf9] px-5 py-3">
+            <h2
+              class="text-sm font-semibold capitalize"
+              [ngClass]="ehHoje(dia.data) ? 'text-[#28563b]' : 'text-[#454840]'"
+            >
+              {{ dia.data | date: 'EEEE, dd MMMM' }}
+            </h2>
+            @if (ehHoje(dia.data)) {
+              <span class="rounded-full bg-[#eaf5eb] px-2.5 py-1 text-xs font-bold text-[#28563b]"
+                >Hoje</span
+              >
+            }
+          </header>
+          @if (dia.consultas.length > 0) {
+            <div class="divide-y divide-[#eef0ed]">
+              @for (consulta of dia.consultas; track consulta.id) {
+                <a
+                  class="grid gap-3 px-5 py-4 hover:bg-[#f5f8f4] sm:grid-cols-[6rem_minmax(0,1fr)_auto] sm:items-center"
+                  [routerLink]="['/consultas', consulta.id]"
+                  ><p class="text-sm font-semibold text-[#36563f]">
+                    {{ consulta.inicioEm | date: 'HH:mm' }} · {{ consulta.fimEm | date: 'HH:mm' }}
+                  </p>
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold">{{ consulta.paciente }}</p>
+                    <p class="mt-1 text-xs text-[#625f58]">
+                      {{ consulta.tipoAtendimento }} · {{ consulta.modalidade }}
+                    </p>
+                  </div>
+                  <span
+                    class="justify-self-start rounded-full px-3 py-1 text-xs font-bold sm:justify-self-end"
+                    [ngClass]="classeStatus(consulta.status)"
+                    >{{ rotuloStatus(consulta.status) }}</span
+                  ></a
+                >
+              }
+            </div>
+          } @else {
+            <p class="px-5 py-5 text-sm text-[#75726b]">Nenhum atendimento neste dia.</p>
+          }
+        </div>
+      }
+    </section>
+  }
 </app-shell>

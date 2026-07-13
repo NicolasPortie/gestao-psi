@@ -85,4 +85,10 @@ export class DetalheConsulta {
     if (status === 'Cancelada' || status === 'NaoCompareceu') return 'bg-[#fff0ed] text-[#a12d24]';
     return 'bg-[#fff8df] text-[#725519]';
   }
+
+  protected rotuloStatus(status: string): string {
+    if (status === 'AguardandoConfirmacao') return 'Aguardando confirmação';
+    if (status === 'NaoCompareceu') return 'Não compareceu';
+    return status;
+  }
 }
