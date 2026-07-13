@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe, NgClass } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
+import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { Shell } from '../../../../layout/shell/shell';
@@ -17,6 +18,7 @@ import { PainelService } from '../../services/painel.service';
     DatePipe,
     NgClass,
     ButtonModule,
+    RouterLink,
     Shell,
     AcaoRapidaCard,
     AlertaPainelItem,
