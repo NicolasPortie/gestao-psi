@@ -18,6 +18,17 @@ public sealed class ConsultasService(AppDbContext dbContext, IAutorizacaoContaSe
         return consultas.Select(Mapear).ToArray();
     }
 
+    public async Task<ConsultaResponse> ObterPorIdAsync(Guid usuarioId, Guid contaId, Guid id, CancellationToken ct)
+    {
+        await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
+        var consulta = await dbContext.Consultas.AsNoTracking()
+            .Include(x => x.Paciente)
+            .Include(x => x.TipoAtendimento)
+            .SingleOrDefaultAsync(x => x.Id == id && x.ContaPsicologoId == contaId, ct)
+            ?? throw new RegraNegocioException("Consulta nao encontrada.", StatusCodes.Status404NotFound);
+        return Mapear(consulta);
+    }
+
     public async Task<ConsultaResponse> CriarAsync(Guid usuarioId, Guid contaId, CriarConsultaRequest request, string? ip, string? userAgent, CancellationToken ct)
     {
         await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);

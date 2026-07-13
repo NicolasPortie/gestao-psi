@@ -172,6 +172,15 @@
                   </div>
 
                   <div class="flex gap-2">
+                    @if (usuario()?.perfil === 'Psicologo') {
+                      <a
+                        class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#c6dfcb] bg-[#f2f8f3] px-3 text-xs font-bold text-[#2d4e37] transition-colors hover:bg-[#e4f1e6]"
+                        [routerLink]="['/pacientes', paciente.id, 'prontuario']"
+                      >
+                        <i class="pi pi-file-edit text-xs" aria-hidden="true"></i>
+                        Prontuário
+                      </a>
+                    }
                     <a
                       class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#eae1d9] bg-white px-3 text-xs font-bold text-[#43474f] transition-colors hover:bg-[#f4f0ea]"
                       [routerLink]="['/pacientes', paciente.id]"

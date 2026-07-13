@@ -75,10 +75,7 @@ export const routes: Routes = [
       icone: 'pi-calendar-clock',
       etiqueta: 'Consulta',
     },
-    loadComponent: () =>
-      import('./features/modulos/pages/modulo-operacional/modulo-operacional').then(
-        (componente) => componente.ModuloOperacional,
-      ),
+    loadComponent: () => import('./features/consultas/pages/detalhe-consulta/detalhe-consulta').then((componente) => componente.DetalheConsulta),
   },
   {
     path: 'pacientes',
@@ -97,6 +94,12 @@ export const routes: Routes = [
       import('./features/pacientes/pages/formulario-paciente/formulario-paciente').then(
         (componente) => componente.FormularioPacienteComponent,
       ),
+  },
+  {
+    path: 'pacientes/:id/prontuario',
+    title: 'Prontuário | GestaoPsi',
+    canActivate: [autenticadoGuard],
+    loadComponent: () => import('./features/sessoes/pages/prontuario/prontuario').then((componente) => componente.Prontuario),
   },
   {
     path: 'pacientes/:id',

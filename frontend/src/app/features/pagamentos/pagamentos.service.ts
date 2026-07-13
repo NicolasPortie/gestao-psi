@@ -13,5 +13,6 @@ export class PagamentosService {
   listar(): Observable<Pagamento[]> { return this.http.get<RespostaApi<Pagamento[]>>(`${this.base}/pagamentos`, { withCredentials: true }).pipe(map((r) => this.dados(r, 'Não foi possível carregar os pagamentos.'))); }
   criar(request: CriarPagamento): Observable<Pagamento> { return this.http.post<RespostaApi<Pagamento>>(`${this.base}/pagamentos`, request, { withCredentials: true }).pipe(map((r) => this.dados(r, 'Não foi possível registrar o pagamento.'))); }
   marcarComoPago(id: string): Observable<Pagamento> { return this.http.patch<RespostaApi<Pagamento>>(`${this.base}/pagamentos/${id}/status`, { status: 'Pago' }, { withCredentials: true }).pipe(map((r) => this.dados(r, 'Não foi possível atualizar o pagamento.'))); }
+  alterarStatus(id: string, status: 'Pago' | 'Cancelado' | 'Reembolsado'): Observable<Pagamento> { return this.http.patch<RespostaApi<Pagamento>>(`${this.base}/pagamentos/${id}/status`, { status }, { withCredentials: true }).pipe(map((r) => this.dados(r, 'Não foi possível atualizar o pagamento.'))); }
   private dados<T>(resposta: RespostaApi<T>, padrao: string): T { if (!resposta.sucesso || !resposta.dados) throw new Error(resposta.mensagem ?? padrao); return resposta.dados; }
 }
