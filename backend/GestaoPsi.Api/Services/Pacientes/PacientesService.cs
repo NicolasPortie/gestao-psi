@@ -279,7 +279,7 @@ public sealed class PacientesService(
 
         return await consulta.SingleOrDefaultAsync(cancellationToken)
             ?? throw new RegraNegocioException(
-                "Paciente nao encontrado.",
+                "Paciente não encontrado.",
                 StatusCodes.Status404NotFound);
     }
 
@@ -300,7 +300,7 @@ public sealed class PacientesService(
         if (!usuarioExiste)
         {
             throw new RegraNegocioException(
-                "Sessao invalida ou expirada.",
+                "Sessão inválida ou expirada.",
                 StatusCodes.Status401Unauthorized);
         }
     }
@@ -335,7 +335,7 @@ public sealed class PacientesService(
 
             if (cpfEmUso)
             {
-                throw new RegraNegocioException("Ja existe um paciente com este CPF.");
+                throw new RegraNegocioException("Já existe um paciente com este CPF.");
             }
         }
     }

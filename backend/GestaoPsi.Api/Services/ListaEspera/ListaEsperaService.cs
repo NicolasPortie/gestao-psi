@@ -1,9 +1,10 @@
-using GestaoPsi.Api.Data;
+﻿using GestaoPsi.Api.Data;
 using GestaoPsi.Api.DTOs.ListaEspera;
 using GestaoPsi.Api.Models;
 using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Shared.Excecoes;
+using GestaoPsi.Api.Shared.Paginacao;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestaoPsi.Api.Services.ListaEspera;
@@ -13,13 +14,14 @@ public sealed class ListaEsperaService(
     IAutorizacaoContaService autorizacao,
     IAuditoriaService auditoria) : IListaEsperaService
 {
-    public async Task<IReadOnlyCollection<ListaEsperaResponse>> ListarAsync(
+    public async Task<ResultadoPaginado<ListaEsperaResponse>> ListarAsync(
         Guid usuarioId,
         Guid contaId,
         FiltroListaEsperaRequest filtro,
         CancellationToken cancellationToken)
     {
         await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, cancellationToken);
+        var (pagina, tamanhoPagina) = ParametrosPaginacao.Normalizar(filtro.Pagina, filtro.TamanhoPagina);
 
         var consulta = dbContext.ListaEspera
             .AsNoTracking()
@@ -32,13 +34,17 @@ public sealed class ListaEsperaService(
         if (filtro.Prioridade is not null) consulta = consulta.Where(item => item.Prioridade == filtro.Prioridade);
         if (filtro.Origem is not null) consulta = consulta.Where(item => item.Origem == filtro.Origem);
 
+        var total = await consulta.CountAsync(cancellationToken);
+
         var itens = await consulta
             .OrderBy(item => item.Status == StatusListaEspera.Aguardando ? 0 : item.Status == StatusListaEspera.Contatado ? 1 : 2)
             .ThenBy(item => item.Prioridade ?? 2)
             .ThenBy(item => item.CriadoEm)
+            .Skip((pagina - 1) * tamanhoPagina)
+            .Take(tamanhoPagina)
             .ToArrayAsync(cancellationToken);
 
-        return itens.Select(Mapear).ToArray();
+        return new ResultadoPaginado<ListaEsperaResponse>(itens.Select(Mapear).ToArray(), total, pagina, tamanhoPagina);
     }
 
     public async Task<ListaEsperaResponse> CriarAsync(
@@ -57,14 +63,14 @@ public sealed class ListaEsperaService(
             item => item.Id == request.PacienteId &&
                     item.ContaPsicologoId == contaId &&
                     item.Status == StatusPaciente.Ativo,
-            cancellationToken) ?? throw new RegraNegocioException("Paciente ativo nao encontrado.", StatusCodes.Status404NotFound);
+            cancellationToken) ?? throw new RegraNegocioException("Paciente ativo não encontrado.", StatusCodes.Status404NotFound);
 
         TipoAtendimento? tipo = null;
         if (request.TipoAtendimentoId is not null)
         {
             tipo = await dbContext.TiposAtendimento.SingleOrDefaultAsync(
                 item => item.Id == request.TipoAtendimentoId && item.ContaPsicologoId == contaId && item.Ativo,
-                cancellationToken) ?? throw new RegraNegocioException("Tipo de atendimento ativo nao encontrado.", StatusCodes.Status404NotFound);
+                cancellationToken) ?? throw new RegraNegocioException("Tipo de atendimento ativo não encontrado.", StatusCodes.Status404NotFound);
         }
 
         var jaExiste = await dbContext.ListaEspera.AnyAsync(
@@ -73,7 +79,7 @@ public sealed class ListaEsperaService(
                     item.TipoAtendimentoId == request.TipoAtendimentoId &&
                     (item.Status == StatusListaEspera.Aguardando || item.Status == StatusListaEspera.Contatado),
             cancellationToken);
-        if (jaExiste) throw new RegraNegocioException("O paciente ja esta aguardando este tipo de atendimento.");
+        if (jaExiste) throw new RegraNegocioException("O paciente já está aguardando este tipo de atendimento.");
 
         var item = new Models.ListaEspera
         {
@@ -113,12 +119,12 @@ public sealed class ListaEsperaService(
             .Include(registro => registro.Paciente)
             .Include(registro => registro.TipoAtendimento)
             .SingleOrDefaultAsync(registro => registro.Id == id && registro.ContaPsicologoId == contaId, cancellationToken)
-            ?? throw new RegraNegocioException("Registro da lista de espera nao encontrado.", StatusCodes.Status404NotFound);
+            ?? throw new RegraNegocioException("Registro da lista de espera não encontrado.", StatusCodes.Status404NotFound);
 
         if (item.Status is StatusListaEspera.Agendado or StatusListaEspera.Cancelado or StatusListaEspera.Expirado)
-            throw new RegraNegocioException("Este registro da lista de espera ja foi encerrado.");
+            throw new RegraNegocioException("Este registro da lista de espera já foi encerrado.");
         if (request.Status is not (StatusListaEspera.Contatado or StatusListaEspera.Cancelado or StatusListaEspera.Expirado))
-            throw new RegraNegocioException("Transicao de status da lista de espera invalida.");
+            throw new RegraNegocioException("Transição de status da lista de espera inválida.");
 
         var statusAnterior = item.Status;
         item.Status = request.Status;
@@ -134,13 +140,13 @@ public sealed class ListaEsperaService(
             item => item.ContaPsicologoId == contaId && item.Ativo,
             cancellationToken);
         if (configuracao is null || !configuracao.PermiteListaEspera)
-            throw new RegraNegocioException("A lista de espera esta desativada nas configuracoes da agenda.");
+            throw new RegraNegocioException("A lista de espera está desativada nas configurações da agenda.");
     }
 
     private static void ValidarHorario(TimeOnly? inicio, TimeOnly? fim)
     {
-        if (inicio.HasValue != fim.HasValue) throw new RegraNegocioException("Informe o inicio e o fim da preferencia de horario.");
-        if (inicio is not null && fim <= inicio) throw new RegraNegocioException("O fim da preferencia deve ser posterior ao inicio.");
+        if (inicio.HasValue != fim.HasValue) throw new RegraNegocioException("Informe o início e o fim da preferência de horário.");
+        if (inicio is not null && fim <= inicio) throw new RegraNegocioException("O fim da preferência deve ser posterior ao início.");
     }
 
     private static string? Limpar(string? valor) => string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();

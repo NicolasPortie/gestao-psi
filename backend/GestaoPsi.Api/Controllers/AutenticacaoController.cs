@@ -2,7 +2,9 @@ using GestaoPsi.Api.DTOs.Autenticacao;
 using GestaoPsi.Api.Services.Autenticacao;
 using GestaoPsi.Api.Shared.Excecoes;
 using GestaoPsi.Api.Shared.Respostas;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GestaoPsi.Api.Controllers;
 
@@ -11,8 +13,12 @@ namespace GestaoPsi.Api.Controllers;
 public sealed class AutenticacaoController(
     IAutenticacaoService autenticacaoService,
     IWebHostEnvironment ambiente)
-    : ControllerBase
+    : ControllerAutenticadoBase
 {
+    // O limite por IP vale só onde há tentativa de adivinhar ou inundar: cadastro, login e recuperação.
+    // Renovar e encerrar sessão dependem de um cookie válido e rodam a cada carregamento de página; limitá-los
+    // por IP puniria vários usuários atrás do mesmo endereço (um consultório, por exemplo).
+    [EnableRateLimiting("sem-sessao")]
     [HttpPost("cadastro")]
     [ProducesResponseType<RespostaApi<AutenticacaoResponse>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CriarConta(
@@ -33,6 +39,7 @@ public sealed class AutenticacaoController(
                 "Conta criada com sucesso."));
     }
 
+    [EnableRateLimiting("sem-sessao")]
     [HttpPost("login")]
     [ProducesResponseType<RespostaApi<AutenticacaoResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Login(
@@ -49,6 +56,7 @@ public sealed class AutenticacaoController(
         return Ok(RespostaApi<AutenticacaoResponse>.ComSucesso(resposta.Resposta));
     }
 
+    [EnableRateLimiting("sem-sessao")]
     [HttpPost("recuperacao-senha/solicitar")]
     [ProducesResponseType<RespostaApi<object>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> SolicitarRecuperacaoSenha(
@@ -66,6 +74,7 @@ public sealed class AutenticacaoController(
             "Se o e-mail estiver cadastrado, as instruções serão enviadas."));
     }
 
+    [EnableRateLimiting("sem-sessao")]
     [HttpPost("recuperacao-senha/redefinir")]
     [ProducesResponseType<RespostaApi<object>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> RedefinirSenha(
@@ -76,6 +85,25 @@ public sealed class AutenticacaoController(
         return Ok(RespostaApi<object>.ComSucesso(
             new { },
             "Senha redefinida com sucesso."));
+    }
+
+    [Authorize]
+    [HttpPost("senha/alterar")]
+    [ProducesResponseType<RespostaApi<AutenticacaoResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> AlterarSenha(
+        [FromBody] AlterarSenhaRequest request,
+        CancellationToken cancellationToken)
+    {
+        var resposta = await autenticacaoService.AlterarSenhaAsync(
+            ObterUsuarioId(),
+            ObterContaPsicologoId(),
+            request,
+            cancellationToken);
+        DefinirCookieRefreshToken(resposta);
+
+        return Ok(RespostaApi<AutenticacaoResponse>.ComSucesso(
+            resposta.Resposta,
+            "Senha alterada. As outras sessões foram encerradas."));
     }
 
     [HttpPost("token/renovar")]

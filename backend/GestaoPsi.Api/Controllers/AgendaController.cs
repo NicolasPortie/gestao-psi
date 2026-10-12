@@ -46,7 +46,4 @@ public sealed class AgendaController(IAgendaService agendaService) : ControllerA
 
     [HttpDelete("bloqueios/{id:guid}")]
     public async Task<IActionResult> RemoverBloqueio(Guid id, CancellationToken ct) { await agendaService.RemoverBloqueioAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, ObterIp(), ObterUserAgent(), ct); return NoContent(); }
-
-    private string? ObterIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
-    private string? ObterUserAgent() => Request.Headers.UserAgent.ToString();
 }

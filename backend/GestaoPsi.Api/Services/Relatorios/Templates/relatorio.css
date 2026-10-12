@@ -1,0 +1,273 @@
+:root {
+  --verde: #36563f;
+  --verde-suave: #eef4ef;
+  --texto: #20241f;
+  --muted: #625f58;
+  --borda: #dfe5dd;
+  --fundo: #f6f7f4;
+  --branco: #ffffff;
+  --alerta: #895537;
+  --erro: #a12d24;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  color: var(--texto);
+  background: var(--fundo);
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.relatorio {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 40px;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+}
+
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--verde);
+  margin-bottom: 20px;
+}
+
+.marca {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--verde);
+}
+
+.titulo {
+  margin: 6px 0 0;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.subtitulo {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.meta {
+  text-align: right;
+  min-width: 220px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.meta strong {
+  display: block;
+  color: var(--texto);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.filtros {
+  background: var(--verde-suave);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.filtros h2,
+.indicadores h2,
+.secao h2 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--verde);
+}
+
+.filtros ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.filtros li {
+  color: var(--muted);
+}
+
+.filtros li strong {
+  color: var(--texto);
+}
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.indicador {
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--branco);
+}
+
+.indicador .rotulo {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.indicador .valor {
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--verde);
+}
+
+.secao {
+  margin-top: 8px;
+}
+
+.tabela-wrap {
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #fbfcf9;
+}
+
+th,
+td {
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--borda);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.vazio {
+  padding: 28px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.rodape {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid var(--borda);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--verde-suave);
+  color: var(--verde);
+}
+
+.badge-alerta {
+  background: #fff8df;
+  color: var(--alerta);
+}
+
+.badge-erro {
+  background: #fff0ed;
+  color: var(--erro);
+}
+
+@media print {
+  @page {
+    margin: 14mm 12mm;
+  }
+
+  html,
+  body {
+    background: white;
+  }
+
+  .relatorio {
+    max-width: none;
+    border: none;
+    padding: 0;
+  }
+
+  .indicadores {
+    grid-template-columns: repeat(4, 1fr);
+    break-inside: avoid;
+  }
+
+  .cabecalho,
+  .filtros,
+  .indicadores {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  .rodape {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (max-width: 800px) {
+  .cabecalho {
+    flex-direction: column;
+  }
+
+  .meta {
+    text-align: left;
+  }
+
+  .indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -315,6 +315,7 @@ public sealed class AutenticacaoService(
         }
 
         usuario.SenhaHash = passwordHasher.HashPassword(usuario, request.NovaSenha);
+        usuario.VersaoAutenticacao++;
         usuario.AtualizadoEm = DateTimeOffset.UtcNow;
         await estadoAutenticacao.RevogarRefreshTokensUsuarioAsync(
             usuario.Id,
@@ -325,6 +326,76 @@ public sealed class AutenticacaoService(
             "RedefinicaoSenha",
             "Senha redefinida e sessões anteriores revogadas."));
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<ResultadoAutenticacao> AlterarSenhaAsync(
+        Guid usuarioId,
+        Guid contaId,
+        AlterarSenhaRequest request,
+        CancellationToken cancellationToken)
+    {
+        var identificador = CriarIdentificador("alterar-senha", usuarioId.ToString());
+        var tentativas = await estadoAutenticacao.ObterTentativasLoginAsync(
+            identificador,
+            cancellationToken);
+
+        if (tentativas >= _seguranca.MaximoTentativasLogin)
+        {
+            throw new RegraNegocioException(
+                "Muitas tentativas. Aguarde alguns minutos.",
+                StatusCodes.Status429TooManyRequests);
+        }
+
+        var usuario = await dbContext.Usuarios
+            .Include(item => item.ContaPsicologo)
+            .SingleOrDefaultAsync(
+                item => item.Id == usuarioId && item.ContaPsicologoId == contaId,
+                cancellationToken);
+
+        if (usuario is null ||
+            usuario.Status != StatusUsuario.Ativo ||
+            usuario.ContaPsicologo.Status != StatusContaPsicologo.Ativa)
+        {
+            throw SessaoInvalida();
+        }
+
+        var resultadoSenha = passwordHasher.VerifyHashedPassword(
+            usuario,
+            usuario.SenhaHash,
+            request.SenhaAtual);
+
+        if (resultadoSenha == PasswordVerificationResult.Failed)
+        {
+            await estadoAutenticacao.RegistrarTentativaLoginAsync(
+                identificador,
+                TimeSpan.FromMinutes(_seguranca.DuracaoBloqueioLoginMinutos),
+                cancellationToken);
+            // 400 e não 401: a sessão continua válida, só o dado informado está errado.
+            throw new RegraNegocioException("A senha atual está incorreta.");
+        }
+
+        if (string.Equals(request.NovaSenha, request.SenhaAtual, StringComparison.Ordinal))
+        {
+            throw new RegraNegocioException("A nova senha deve ser diferente da senha atual.");
+        }
+
+        await estadoAutenticacao.LimparTentativasLoginAsync(identificador, cancellationToken);
+
+        usuario.SenhaHash = passwordHasher.HashPassword(usuario, request.NovaSenha);
+        usuario.VersaoAutenticacao++;
+        usuario.AtualizadoEm = DateTimeOffset.UtcNow;
+        await estadoAutenticacao.RevogarRefreshTokensUsuarioAsync(
+            usuario.Id,
+            cancellationToken);
+
+        dbContext.LogsAuditoria.Add(CriarLog(
+            usuario,
+            "AlteracaoSenha",
+            "Senha alterada pelo próprio usuário; as demais sessões foram revogadas."));
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Quem trocou a senha continua conectado: recebe uma sessão nova na versão atual.
+        return await GerarAutenticacaoAsync(usuario, cancellationToken);
     }
 
     public async Task<ResultadoAutenticacao> RenovarTokenAsync(
@@ -350,7 +421,8 @@ public sealed class AutenticacaoService(
 
         if (usuario is null ||
             usuario.Status != StatusUsuario.Ativo ||
-            usuario.ContaPsicologo.Status != StatusContaPsicologo.Ativa)
+            usuario.ContaPsicologo.Status != StatusContaPsicologo.Ativa ||
+            usuario.VersaoAutenticacao != estado.VersaoAutenticacao)
         {
             throw SessaoInvalida();
         }
@@ -380,7 +452,7 @@ public sealed class AutenticacaoService(
 
         await estadoAutenticacao.ArmazenarRefreshTokenAsync(
             refreshTokenHash,
-            new EstadoRefreshToken(usuario.Id, usuario.ContaPsicologoId),
+            new EstadoRefreshToken(usuario.Id, usuario.ContaPsicologoId, usuario.VersaoAutenticacao),
             expiracaoRefresh,
             cancellationToken);
 

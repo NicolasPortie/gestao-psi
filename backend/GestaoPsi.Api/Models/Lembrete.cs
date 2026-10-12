@@ -8,11 +8,12 @@ public class Lembrete : EntidadeDaConta
     public Guid ConsultaId { get; set; }
     public Guid PacienteId { get; set; }
     public Guid? ModeloMensagemId { get; set; }
-    public CanalComunicacao Canal { get; set; } = CanalComunicacao.WhatsApp;
+    public CanalComunicacao Canal { get; set; } = CanalComunicacao.Email;
     public TipoLembrete Tipo { get; set; }
     public StatusLembrete Status { get; set; } = StatusLembrete.Agendado;
     public DateTimeOffset AgendadoPara { get; set; }
     public DateTimeOffset? EnviadoEm { get; set; }
+    public string? Assunto { get; set; }
     public string? Mensagem { get; set; }
     public string? ErroEnvio { get; set; }
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;

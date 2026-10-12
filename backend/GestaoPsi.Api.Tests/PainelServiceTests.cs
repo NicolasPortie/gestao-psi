@@ -20,7 +20,7 @@ public sealed class PainelServiceTests
         var conta = new ContaPsicologo
         {
             Id = contaId,
-            NomeConta = "Consultorio Principal",
+            NomeConta = "Consultório Principal",
             Status = StatusContaPsicologo.Ativa
         };
         var outraConta = new ContaPsicologo

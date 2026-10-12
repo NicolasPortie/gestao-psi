@@ -26,25 +26,64 @@ public sealed class EmailTransacionalService(
         }
 
         var link = $"{_configuracao.UrlFrontend.TrimEnd('/')}/redefinir-senha?token={Uri.EscapeDataString(token)}";
+        var corpo = $"""
+            Olá, {nome}.
+
+            Recebemos uma solicitação para redefinir sua senha no GestãoPsi.
+            Use o link abaixo. Ele expira em poucos minutos e pode ser utilizado uma única vez.
+
+            {link}
+
+            Se você não solicitou esta alteração, ignore esta mensagem.
+            """;
+
+        return await EnviarAsync(
+            destinatario,
+            "Recuperação de acesso ao GestãoPsi",
+            corpo,
+            cancellationToken);
+    }
+
+    public async Task<bool> EnviarMensagemAdministrativaAsync(
+        string destinatario,
+        string nomeDestinatario,
+        string assunto,
+        string corpo,
+        CancellationToken cancellationToken)
+    {
+        if (!_configuracao.Ativo)
+        {
+            logger.LogWarning("Envio de e-mail administrativo está desabilitado.");
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(destinatario) ||
+            string.IsNullOrWhiteSpace(assunto) ||
+            string.IsNullOrWhiteSpace(corpo))
+        {
+            return false;
+        }
+
+        var corpoFormatado = string.IsNullOrWhiteSpace(nomeDestinatario)
+            ? corpo
+            : $"Olá, {nomeDestinatario}.\n\n{corpo}";
+
+        return await EnviarAsync(destinatario, assunto.Trim(), corpoFormatado, cancellationToken);
+    }
+
+    private async Task<bool> EnviarAsync(
+        string destinatario,
+        string assunto,
+        string corpo,
+        CancellationToken cancellationToken)
+    {
         var mensagem = new MimeMessage();
         mensagem.From.Add(new MailboxAddress(
             _configuracao.NomeRemetente,
             _configuracao.EmailRemetente));
         mensagem.To.Add(MailboxAddress.Parse(destinatario));
-        mensagem.Subject = "Recuperação de acesso ao GestãoPsi";
-        mensagem.Body = new TextPart("plain")
-        {
-            Text = $"""
-                Olá, {nome}.
-
-                Recebemos uma solicitação para redefinir sua senha no GestãoPsi.
-                Use o link abaixo. Ele expira em poucos minutos e pode ser utilizado uma única vez.
-
-                {link}
-
-                Se você não solicitou esta alteração, ignore esta mensagem.
-                """
-        };
+        mensagem.Subject = assunto;
+        mensagem.Body = new TextPart("plain") { Text = corpo };
 
         try
         {

@@ -23,7 +23,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         if (usuario is null)
         {
             throw new RegraNegocioException(
-                "Sessao invalida ou expirada.",
+                "Sessão inválida ou expirada.",
                 StatusCodes.Status401Unauthorized);
         }
 
@@ -242,7 +242,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .Select(lembrete => new PainelAlertaResponse(
                 "erro",
                 "Falha de lembrete",
-                lembrete.ErroEnvio ?? "Um lembrete nao foi enviado corretamente.",
+                lembrete.ErroEnvio ?? "Um lembrete não foi enviado corretamente.",
                 lembrete.AtualizadoEm ?? lembrete.CriadoEm,
                 null))
             .ToListAsync(cancellationToken);
@@ -318,8 +318,8 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
                 "Lembretes com falha",
                 FormatarQuantidade(
                     lembretesFalhosHoje,
-                    "lembrete nao foi enviado hoje.",
-                    "lembretes nao foram enviados hoje."),
+                    "lembrete não foi enviado hoje.",
+                    "lembretes não foram enviados hoje."),
                 "pi-send",
                 "erro",
                 "/lembretes",
@@ -329,11 +329,11 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         if (consultasAguardando > 0)
         {
             prioridades.Add(new PainelPrioridadeResponse(
-                "Confirmacoes pendentes",
+                "Confirmações pendentes",
                 FormatarQuantidade(
                     consultasAguardando,
-                    "consulta ainda aguarda confirmacao.",
-                    "consultas ainda aguardam confirmacao."),
+                    "consulta ainda aguarda confirmação.",
+                    "consultas ainda aguardam confirmação."),
                 "pi-calendar-clock",
                 "atencao",
                 "/agenda",
@@ -344,7 +344,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         {
             prioridades.Add(new PainelPrioridadeResponse(
                 "Financeiro a acompanhar",
-                "Ha pagamentos pendentes vinculados ao consultorio.",
+                "Há pagamentos pendentes vinculados ao consultório.",
                 "pi-wallet",
                 "neutro",
                 "/pagamentos",
@@ -354,15 +354,15 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         if (notificacoesNaoLidas > 0)
         {
             prioridades.Add(new PainelPrioridadeResponse(
-                "Notificacoes nao lidas",
+                "Notificações não lidas",
                 FormatarQuantidade(
                     notificacoesNaoLidas,
-                    "notificacao precisa de leitura.",
-                    "notificacoes precisam de leitura."),
+                    "notificação precisa de leitura.",
+                    "notificações precisam de leitura."),
                 "pi-bell",
                 "neutro",
                 "/notificacoes",
-                "Ler notificacoes"));
+                "Ler notificações"));
         }
 
         if (prioridades.Count == 0)
@@ -370,8 +370,8 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             prioridades.Add(new PainelPrioridadeResponse(
                 "Rotina administrativa em dia",
                 consultasHoje == 0
-                    ? "Sem pendencias e sem consultas registradas para hoje."
-                    : "Sem pendencias criticas antes dos atendimentos de hoje.",
+                    ? "Sem pendências e sem consultas registradas para hoje."
+                    : "Sem pendências críticas antes dos atendimentos de hoje.",
                 "pi-check-circle",
                 "ok",
                 "/agenda",
@@ -384,8 +384,8 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
     private static IReadOnlyCollection<PainelAcaoRapidaResponse> CriarAcoesRapidas() =>
     [
         new("Nova consulta", "Agende um novo atendimento.", "pi-calendar-plus", "/consultas/nova", false),
-        new("Cadastrar paciente", "Adicione uma pessoa ao consultorio.", "pi-user-plus", "/pacientes/novo", false),
-        new("Novo documento", "Crie um documento psicologico.", "pi-file-plus", "/documentos/novo", false),
+        new("Cadastrar paciente", "Adicione uma pessoa ao consultório.", "pi-user-plus", "/pacientes/novo", false),
+        new("Novo documento", "Crie um documento psicológico.", "pi-file-plus", "/documentos/novo", false),
         new("Mensagens", "Revise contatos recebidos pelo WhatsApp.", "pi-whatsapp", "/integracoes/whatsapp/conversas", false)
     ];
 

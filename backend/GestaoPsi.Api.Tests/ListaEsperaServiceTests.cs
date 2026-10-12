@@ -3,8 +3,13 @@ using GestaoPsi.Api.DTOs.Consultas;
 using GestaoPsi.Api.DTOs.ListaEspera;
 using GestaoPsi.Api.Models;
 using GestaoPsi.Api.Services.Consultas;
+using GestaoPsi.Api.Services.Lembretes;
 using GestaoPsi.Api.Services.ListaEspera;
+using GestaoPsi.Api.Services.Notificacoes;
 using GestaoPsi.Api.Services.Seguranca;
+using GestaoPsi.Api.Configuracoes;
+using GestaoPsi.Api.Services.Comunicacao;
+using Microsoft.Extensions.Options;
 using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Shared.Excecoes;
 using Microsoft.AspNetCore.Http;
@@ -49,8 +54,50 @@ public sealed class ListaEsperaServiceTests
         var service = CriarService(contexto);
         var resultado = await service.ListarAsync(cenario.UsuarioId, cenario.ContaId, new(), CancellationToken.None);
 
-        Assert.Single(resultado);
-        Assert.Equal(cenario.Paciente.NomeCompleto, resultado.Single().Paciente);
+        Assert.Single(resultado.Itens);
+        Assert.Equal(cenario.Paciente.NomeCompleto, resultado.Itens.Single().Paciente);
+    }
+
+    [Fact]
+    public async Task Listar_DevePaginarComTotalCorreto()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        for (var i = 0; i < 7; i++)
+        {
+            contexto.ListaEspera.Add(new ListaEspera
+            {
+                Id = Guid.NewGuid(),
+                ContaPsicologoId = cenario.ContaId,
+                PacienteId = cenario.Paciente.Id,
+                Prioridade = 2
+            });
+        }
+        await contexto.SaveChangesAsync();
+
+        var service = CriarService(contexto);
+        var primeira = await service.ListarAsync(cenario.UsuarioId, cenario.ContaId, new FiltroListaEsperaRequest { Pagina = 1, TamanhoPagina = 5 }, CancellationToken.None);
+        var segunda = await service.ListarAsync(cenario.UsuarioId, cenario.ContaId, new FiltroListaEsperaRequest { Pagina = 2, TamanhoPagina = 5 }, CancellationToken.None);
+
+        Assert.Equal(7, primeira.Total);
+        Assert.Equal(5, primeira.Itens.Count);
+        Assert.Equal(1, primeira.Pagina);
+        Assert.Equal(2, segunda.Itens.Count);
+        Assert.Equal(2, segunda.Pagina);
+        Assert.Empty(primeira.Itens.Select(item => item.Id).Intersect(segunda.Itens.Select(item => item.Id)));
+    }
+
+    [Fact]
+    public async Task Listar_DeveNormalizarPaginaETamanhoPagina()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+
+        var service = CriarService(contexto);
+        var resultado = await service.ListarAsync(cenario.UsuarioId, cenario.ContaId, new FiltroListaEsperaRequest { Pagina = 0, TamanhoPagina = 500 }, CancellationToken.None);
+
+        Assert.Equal(1, resultado.Pagina);
+        Assert.Equal(100, resultado.TamanhoPagina);
     }
 
     [Fact]
@@ -110,7 +157,17 @@ public sealed class ListaEsperaServiceTests
         contexto.AddRange(tipo, espera);
         await contexto.SaveChangesAsync();
 
-        var service = new ConsultasService(contexto, new AutorizacaoContaService(contexto), new AuditoriaCaptura());
+        var autorizacao = new AutorizacaoContaService(contexto);
+        var lembretes = new LembretesService(
+            contexto,
+            autorizacao,
+            new AuditoriaCaptura(),
+            new ModeloMensagemTemplateService(),
+            new EmailFakeListaEspera(),
+            Options.Create(new EmailConfiguracao { Ativo = false }),
+            new NotificacoesService(contexto, autorizacao),
+            new ProtecaoFakeListaEspera());
+        var service = new ConsultasService(contexto, autorizacao, new AuditoriaCaptura(), lembretes);
         var inicio = DateTimeOffset.UtcNow.AddDays(2);
         var consulta = await service.CriarAsync(
             cenario.UsuarioId,
@@ -183,4 +240,31 @@ public sealed class ListaEsperaServiceTests
         {
         }
     }
+
+    private sealed class EmailFakeListaEspera : IEmailTransacionalService
+    {
+        public Task<bool> EnviarRecuperacaoSenhaAsync(string destinatario, string nome, string token, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
+        public Task<bool> EnviarMensagemAdministrativaAsync(
+            string destinatario,
+            string nomeDestinatario,
+            string assunto,
+            string corpo,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+    }
+
+    private sealed class ProtecaoFakeListaEspera : IProtecaoDadosService
+    {
+        public string Proteger(string valor) => $"protegido:{valor}";
+        public string Desproteger(string valorProtegido) =>
+            valorProtegido.StartsWith("protegido:", StringComparison.Ordinal)
+                ? valorProtegido["protegido:".Length..]
+                : valorProtegido;
+        public string HashDeterministico(string valor) => $"hash:{valor}";
+        public string HashToken(string token) => $"tokenhash:{token}";
+        public string GerarTokenSeguro() => "token";
+    }
 }
+

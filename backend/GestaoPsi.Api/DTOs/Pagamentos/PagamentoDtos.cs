@@ -4,6 +4,8 @@ using GestaoPsi.Api.Shared.Enums;
 namespace GestaoPsi.Api.DTOs.Pagamentos;
 
 public sealed record PagamentoResponse(Guid Id, Guid PacienteId, string Paciente, Guid? ConsultaId, decimal Valor, StatusPagamento Status, FormaPagamento FormaPagamento, DateTimeOffset? VencimentoEm, DateTimeOffset? PagoEm, string? Observacao);
+public sealed record PagamentosResumoResponse(decimal Recebido, decimal Pendente, decimal Reembolsado, int Quantidade);
+public sealed record PagamentosListagemResponse(IReadOnlyCollection<PagamentoResponse> Itens, PagamentosResumoResponse Resumo, int Total, int Pagina, int TamanhoPagina);
 public sealed class CriarPagamentoRequest
 {
     public Guid PacienteId { get; init; }

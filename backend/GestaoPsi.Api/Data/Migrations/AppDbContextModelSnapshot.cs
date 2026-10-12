@@ -76,7 +76,9 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ContaPsicologoId");
+                    b.HasIndex("ContaPsicologoId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Ativa'");
 
                     b.HasIndex("PlanoSaasId");
 
@@ -147,6 +149,9 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.Property<int?>("AntecedenciaCancelamentoHoras")
                         .HasColumnType("int");
 
+                    b.Property<int>("AntecedenciaLembreteHoras")
+                        .HasColumnType("int");
+
                     b.Property<int?>("AntecedenciaMinimaAgendamentoHoras")
                         .HasColumnType("int");
 
@@ -158,6 +163,11 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<DateTimeOffset?>("AtualizadoEm")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CanalLembretePadrao")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
 
                     b.Property<bool>("ConfirmacaoAutomaticaConsulta")
                         .HasColumnType("bit");
@@ -174,10 +184,24 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.Property<bool>("ExigeJustificativaCancelamento")
                         .HasColumnType("bit");
 
+                    b.Property<string>("FusoHorario")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<bool>("LembretesAutomaticosAtivos")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("PermiteAgendamentoWhatsApp")
                         .HasColumnType("bit");
 
                     b.Property<bool>("PermiteListaEspera")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ProgramarLembreteAoConfirmar")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ProgramarLembreteAoCriarConsulta")
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
@@ -321,6 +345,8 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasIndex("ContaPsicologoId", "PacienteId", "InicioEm");
 
+                    b.HasIndex("ContaPsicologoId", "Status", "InicioEm", "FimEm");
+
                     b.ToTable("Consultas", null, t =>
                         {
                             t.HasCheckConstraint("CK_Consultas_Periodo", "[FimEm] > [InicioEm]");
@@ -384,8 +410,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Valor")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ValorHash")
                         .IsRequired()
@@ -515,7 +540,9 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasAlternateKey("ContaPsicologoId", "Id");
 
-                    b.HasIndex("ContaPsicologoId");
+                    b.HasIndex("ContaPsicologoId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Ativo'");
 
                     b.HasIndex("ContaPsicologoId", "CrpHash")
                         .IsUnique();
@@ -544,7 +571,6 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConteudoAtualJson")
-                        .HasMaxLength(12000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("CriadoEm")
@@ -601,6 +627,8 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.HasIndex("ContaPsicologoId", "FinalizadoPorUsuarioId");
 
                     b.HasIndex("ContaPsicologoId", "PacienteId", "CriadoEm");
+
+                    b.HasIndex("ContaPsicologoId", "PacienteId", "ProntuarioId");
 
                     b.HasIndex("ContaPsicologoId", "Status", "FinalizadoEm");
 
@@ -679,7 +707,6 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Conteudo")
                         .IsRequired()
-                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("CriadoEm")
@@ -713,11 +740,11 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasIndex("ContaPsicologoId", "CriadoPorUsuarioId");
 
-                    b.HasIndex("ContaPsicologoId", "RegistroSessaoId");
-
                     b.HasIndex("ContaPsicologoId", "PacienteId", "DataEvolucao");
 
                     b.HasIndex("ContaPsicologoId", "ProntuarioId", "DataEvolucao");
+
+                    b.HasIndex("ContaPsicologoId", "PacienteId", "ProntuarioId", "RegistroSessaoId");
 
                     b.ToTable("EvolucoesProntuario", (string)null);
                 });
@@ -914,8 +941,19 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("TokenCriptografado")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset?>("UltimaConexaoTestadaEm")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UltimoErro")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("UrlBaseBridge")
                         .IsRequired()
@@ -925,6 +963,9 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ContaPsicologoId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
 
                     b.HasIndex("ContaPsicologoId", "Ativo");
 
@@ -971,6 +1012,10 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<DateTimeOffset>("AgendadoPara")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Assunto")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTimeOffset?>("AtualizadoEm")
                         .HasColumnType("datetimeoffset");
@@ -1022,13 +1067,11 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasIndex("ContaPsicologoId");
 
-                    b.HasIndex("ContaPsicologoId", "ConsultaId");
-
                     b.HasIndex("ContaPsicologoId", "ModeloMensagemId");
 
-                    b.HasIndex("ContaPsicologoId", "PacienteId");
-
                     b.HasIndex("ContaPsicologoId", "AgendadoPara", "Status");
+
+                    b.HasIndex("ContaPsicologoId", "PacienteId", "ConsultaId");
 
                     b.ToTable("Lembretes", (string)null);
                 });
@@ -1112,11 +1155,9 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("DadosAntesJson")
-                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DadosDepoisJson")
-                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Descricao")
@@ -1172,7 +1213,6 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Conteudo")
-                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("ConversaWhatsAppId")
@@ -1281,6 +1321,10 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Assunto")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
@@ -1397,8 +1441,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("date");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NomeCompleto")
                         .IsRequired()
@@ -1406,8 +1449,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(180)");
 
                     b.Property<string>("ObservacaoAdministrativa")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1490,6 +1532,8 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.HasIndex("ContaPsicologoId");
 
                     b.HasIndex("ContaPsicologoId", "ConsultaId");
+
+                    b.HasIndex("ContaPsicologoId", "PacienteId", "ConsultaId");
 
                     b.HasIndex("ContaPsicologoId", "PacienteId", "Status");
 
@@ -1605,10 +1649,13 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasAlternateKey("ContaPsicologoId", "Id");
+
                     b.HasIndex("ContaPsicologoId");
 
                     b.HasIndex("ContaPsicologoId", "PacienteId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Ativo'");
 
                     b.HasIndex("ContaPsicologoId", "Status");
 
@@ -1654,6 +1701,9 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("nvarchar(80)");
 
+                    b.Property<Guid>("VersaoDocumentoProntuarioId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasAlternateKey("ContaPsicologoId", "Id");
@@ -1663,6 +1713,8 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.HasIndex("ContaPsicologoId", "RegistradoPorUsuarioId");
 
                     b.HasIndex("ContaPsicologoId", "DocumentoProntuarioId", "EntregueEm");
+
+                    b.HasIndex("ContaPsicologoId", "DocumentoProntuarioId", "VersaoDocumentoProntuarioId");
 
                     b.HasIndex("ContaPsicologoId", "Status", "EntregueEm");
 
@@ -1694,15 +1746,12 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Encaminhamentos")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Evolucao")
-                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ObservacoesClinicas")
-                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PacienteId")
@@ -1736,6 +1785,9 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.HasIndex("ContaPsicologoId", "PacienteId", "DataSessao");
 
                     b.HasIndex("ContaPsicologoId", "ProntuarioId", "DataSessao");
+
+                    b.HasIndex("ContaPsicologoId", "PacienteId", "TipoAtendimentoId", "ConsultaId")
+                        .IsUnique();
 
                     b.ToTable("RegistrosSessao", (string)null);
                 });
@@ -1816,11 +1868,9 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ValorAnterior")
-                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ValorNovo")
-                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -1855,8 +1905,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("DadosTemporariosJson")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EtapaAtual")
                         .HasMaxLength(120)
@@ -1999,6 +2048,9 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.Property<DateTimeOffset?>("UltimoAcessoEm")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int>("VersaoAutenticacao")
+                        .HasColumnType("int");
+
                     b.Property<string>("VersaoTermosAceitos")
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
@@ -2026,7 +2078,6 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("ConteudoJson")
                         .IsRequired()
-                        .HasMaxLength(12000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("CriadoEm")
@@ -2248,8 +2299,8 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasOne("GestaoPsi.Api.Models.Prontuario", "Prontuario")
                         .WithMany("Documentos")
-                        .HasForeignKey("ContaPsicologoId", "ProntuarioId")
-                        .HasPrincipalKey("ContaPsicologoId", "Id")
+                        .HasForeignKey("ContaPsicologoId", "PacienteId", "ProntuarioId")
+                        .HasPrincipalKey("ContaPsicologoId", "PacienteId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2308,15 +2359,15 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasOne("GestaoPsi.Api.Models.Prontuario", "Prontuario")
                         .WithMany("Evolucoes")
-                        .HasForeignKey("ContaPsicologoId", "ProntuarioId")
-                        .HasPrincipalKey("ContaPsicologoId", "Id")
+                        .HasForeignKey("ContaPsicologoId", "PacienteId", "ProntuarioId")
+                        .HasPrincipalKey("ContaPsicologoId", "PacienteId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("GestaoPsi.Api.Models.RegistroSessao", "RegistroSessao")
                         .WithMany("Evolucoes")
-                        .HasForeignKey("ContaPsicologoId", "RegistroSessaoId")
-                        .HasPrincipalKey("ContaPsicologoId", "Id")
+                        .HasForeignKey("ContaPsicologoId", "PacienteId", "ProntuarioId", "RegistroSessaoId")
+                        .HasPrincipalKey("ContaPsicologoId", "PacienteId", "ProntuarioId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ContaPsicologo");
@@ -2408,13 +2459,6 @@ namespace GestaoPsi.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("GestaoPsi.Api.Models.Consulta", "Consulta")
-                        .WithMany("Lembretes")
-                        .HasForeignKey("ContaPsicologoId", "ConsultaId")
-                        .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("GestaoPsi.Api.Models.ModeloMensagem", "ModeloMensagem")
                         .WithMany("Lembretes")
                         .HasForeignKey("ContaPsicologoId", "ModeloMensagemId")
@@ -2425,6 +2469,13 @@ namespace GestaoPsi.Api.Data.Migrations
                         .WithMany()
                         .HasForeignKey("ContaPsicologoId", "PacienteId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GestaoPsi.Api.Models.Consulta", "Consulta")
+                        .WithMany("Lembretes")
+                        .HasForeignKey("ContaPsicologoId", "PacienteId", "ConsultaId")
+                        .HasPrincipalKey("ContaPsicologoId", "PacienteId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2573,18 +2624,18 @@ namespace GestaoPsi.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("GestaoPsi.Api.Models.Consulta", "Consulta")
-                        .WithMany("Pagamentos")
-                        .HasForeignKey("ContaPsicologoId", "ConsultaId")
-                        .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("GestaoPsi.Api.Models.Paciente", "Paciente")
                         .WithMany("Pagamentos")
                         .HasForeignKey("ContaPsicologoId", "PacienteId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("GestaoPsi.Api.Models.Consulta", "Consulta")
+                        .WithMany("Pagamentos")
+                        .HasForeignKey("ContaPsicologoId", "PacienteId", "ConsultaId")
+                        .HasPrincipalKey("ContaPsicologoId", "PacienteId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Consulta");
 
@@ -2602,9 +2653,9 @@ namespace GestaoPsi.Api.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("GestaoPsi.Api.Models.Paciente", "Paciente")
-                        .WithOne("Prontuario")
-                        .HasForeignKey("GestaoPsi.Api.Models.Prontuario", "ContaPsicologoId", "PacienteId")
-                        .HasPrincipalKey("GestaoPsi.Api.Models.Paciente", "ContaPsicologoId", "Id")
+                        .WithMany("Prontuarios")
+                        .HasForeignKey("ContaPsicologoId", "PacienteId")
+                        .HasPrincipalKey("ContaPsicologoId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2635,11 +2686,20 @@ namespace GestaoPsi.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("GestaoPsi.Api.Models.VersaoDocumentoProntuario", "VersaoDocumentoProntuario")
+                        .WithMany()
+                        .HasForeignKey("ContaPsicologoId", "DocumentoProntuarioId", "VersaoDocumentoProntuarioId")
+                        .HasPrincipalKey("ContaPsicologoId", "DocumentoProntuarioId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("ContaPsicologo");
 
                     b.Navigation("DocumentoProntuario");
 
                     b.Navigation("RegistradoPorUsuario");
+
+                    b.Navigation("VersaoDocumentoProntuario");
                 });
 
             modelBuilder.Entity("GestaoPsi.Api.Models.RegistroSessao", b =>
@@ -2647,13 +2707,6 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.HasOne("GestaoPsi.Api.Models.ContaPsicologo", "ContaPsicologo")
                         .WithMany()
                         .HasForeignKey("ContaPsicologoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GestaoPsi.Api.Models.Consulta", "Consulta")
-                        .WithOne("RegistroSessao")
-                        .HasForeignKey("GestaoPsi.Api.Models.RegistroSessao", "ContaPsicologoId", "ConsultaId")
-                        .HasPrincipalKey("GestaoPsi.Api.Models.Consulta", "ContaPsicologoId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2671,17 +2724,24 @@ namespace GestaoPsi.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("GestaoPsi.Api.Models.Prontuario", "Prontuario")
-                        .WithMany("RegistrosSessao")
-                        .HasForeignKey("ContaPsicologoId", "ProntuarioId")
-                        .HasPrincipalKey("ContaPsicologoId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("GestaoPsi.Api.Models.TipoAtendimento", "TipoAtendimento")
                         .WithMany("RegistrosSessao")
                         .HasForeignKey("ContaPsicologoId", "TipoAtendimentoId")
                         .HasPrincipalKey("ContaPsicologoId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GestaoPsi.Api.Models.Prontuario", "Prontuario")
+                        .WithMany("RegistrosSessao")
+                        .HasForeignKey("ContaPsicologoId", "PacienteId", "ProntuarioId")
+                        .HasPrincipalKey("ContaPsicologoId", "PacienteId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GestaoPsi.Api.Models.Consulta", "Consulta")
+                        .WithOne("RegistroSessao")
+                        .HasForeignKey("GestaoPsi.Api.Models.RegistroSessao", "ContaPsicologoId", "PacienteId", "TipoAtendimentoId", "ConsultaId")
+                        .HasPrincipalKey("GestaoPsi.Api.Models.Consulta", "ContaPsicologoId", "PacienteId", "TipoAtendimentoId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2860,7 +2920,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Navigation("Pagamentos");
 
-                    b.Navigation("Prontuario");
+                    b.Navigation("Prontuarios");
 
                     b.Navigation("RegistrosSessao");
 

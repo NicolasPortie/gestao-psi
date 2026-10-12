@@ -18,7 +18,7 @@ public class Paciente : EntidadeDaConta
     public DateTimeOffset? AtualizadoEm { get; set; }
 
     public Usuario? Usuario { get; set; }
-    public Prontuario? Prontuario { get; set; }
+    public ICollection<Prontuario> Prontuarios { get; set; } = [];
     public ICollection<ContatoPaciente> Contatos { get; set; } = [];
     public ICollection<Consulta> Consultas { get; set; } = [];
     public ICollection<RegistroSessao> RegistrosSessao { get; set; } = [];

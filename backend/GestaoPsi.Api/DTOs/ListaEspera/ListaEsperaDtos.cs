@@ -25,6 +25,8 @@ public sealed class FiltroListaEsperaRequest
     public Guid? TipoAtendimentoId { get; init; }
     [Range(1, 3)] public int? Prioridade { get; init; }
     public OrigemConsulta? Origem { get; init; }
+    public int Pagina { get; init; } = 1;
+    public int TamanhoPagina { get; init; } = 20;
 }
 
 public sealed class CriarListaEsperaRequest

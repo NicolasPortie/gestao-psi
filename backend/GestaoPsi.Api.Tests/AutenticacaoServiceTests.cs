@@ -7,6 +7,7 @@ using GestaoPsi.Api.Services.Comunicacao;
 using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Shared.Excecoes;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -190,6 +191,140 @@ public sealed class AutenticacaoServiceTests
         return new AppDbContext(options);
     }
 
+    [Fact]
+    public async Task RenovarToken_ComSessaoAnteriorAAlteracaoDeSenha_DeveNegar()
+    {
+        await using var contexto = CriarContexto();
+        var estado = new EstadoAutenticacaoFake();
+        var hasher = new PasswordHasher<Usuario>();
+        var usuario = await AdicionarUsuarioAsync(contexto, hasher, "senha-antiga");
+        estado.RefreshTokens["hash:token-antigo"] = new EstadoRefreshToken(usuario.Id, usuario.ContaPsicologoId);
+        // Simula token que escapou da limpeza do Redis durante uma renovacao concorrente.
+        usuario.VersaoAutenticacao = 1;
+        await contexto.SaveChangesAsync();
+        var service = CriarService(contexto, estado, new ProtecaoDadosFake(), hasher);
+
+        var erro = await Assert.ThrowsAsync<RegraNegocioException>(() =>
+            service.RenovarTokenAsync("token-antigo", CancellationToken.None));
+        Assert.Equal(401, erro.StatusCode);
+    }
+
+    [Fact]
+    public async Task AlterarSenha_DeveTrocarSenhaRevogarOutrasSessoesEManterAtualConectado()
+    {
+        await using var contexto = CriarContexto();
+        var estado = new EstadoAutenticacaoFake();
+        var hasher = new PasswordHasher<Usuario>();
+        var usuario = await AdicionarUsuarioAsync(contexto, hasher, "senha-antiga");
+        var service = CriarService(contexto, estado, new ProtecaoDadosFake(), hasher);
+
+        var resultado = await service.AlterarSenhaAsync(
+            usuario.Id,
+            usuario.ContaPsicologoId,
+            new AlterarSenhaRequest { SenhaAtual = "senha-antiga", NovaSenha = "senha-nova-segura" },
+            CancellationToken.None);
+
+        Assert.Equal(
+            PasswordVerificationResult.Success,
+            hasher.VerifyHashedPassword(usuario, usuario.SenhaHash, "senha-nova-segura"));
+        Assert.Equal(1, usuario.VersaoAutenticacao);
+        Assert.True(estado.RefreshTokensForamRevogados);
+        Assert.NotEmpty(resultado.RefreshToken);
+        Assert.Contains(estado.RefreshTokens.Values, token => token.UsuarioId == usuario.Id && token.VersaoAutenticacao == 1);
+        Assert.Contains(contexto.LogsAuditoria, log => log.TipoAcao == "AlteracaoSenha" && log.UsuarioId == usuario.Id);
+    }
+
+    [Fact]
+    public async Task AlterarSenha_ComSenhaAtualIncorreta_DeveRecusarSemEncerrarSessao()
+    {
+        await using var contexto = CriarContexto();
+        var estado = new EstadoAutenticacaoFake();
+        var hasher = new PasswordHasher<Usuario>();
+        var usuario = await AdicionarUsuarioAsync(contexto, hasher, "senha-antiga");
+        var service = CriarService(contexto, estado, new ProtecaoDadosFake(), hasher);
+
+        var erro = await Assert.ThrowsAsync<RegraNegocioException>(() => service.AlterarSenhaAsync(
+            usuario.Id,
+            usuario.ContaPsicologoId,
+            new AlterarSenhaRequest { SenhaAtual = "errada", NovaSenha = "senha-nova-segura" },
+            CancellationToken.None));
+
+        // 400 e não 401: o front-end trata 401 como sessão expirada.
+        Assert.Equal(StatusCodes.Status400BadRequest, erro.StatusCode);
+        Assert.Equal(1, estado.TotalTentativasRegistradas);
+        Assert.Equal(0, usuario.VersaoAutenticacao);
+        Assert.False(estado.RefreshTokensForamRevogados);
+        Assert.Equal(
+            PasswordVerificationResult.Success,
+            hasher.VerifyHashedPassword(usuario, usuario.SenhaHash, "senha-antiga"));
+    }
+
+    [Fact]
+    public async Task AlterarSenha_ComNovaSenhaIgualAAtual_DeveRecusar()
+    {
+        await using var contexto = CriarContexto();
+        var hasher = new PasswordHasher<Usuario>();
+        var usuario = await AdicionarUsuarioAsync(contexto, hasher, "senha-antiga");
+        var service = CriarService(contexto, new EstadoAutenticacaoFake(), new ProtecaoDadosFake(), hasher);
+
+        var erro = await Assert.ThrowsAsync<RegraNegocioException>(() => service.AlterarSenhaAsync(
+            usuario.Id,
+            usuario.ContaPsicologoId,
+            new AlterarSenhaRequest { SenhaAtual = "senha-antiga", NovaSenha = "senha-antiga" },
+            CancellationToken.None));
+
+        Assert.Contains("diferente", erro.Message);
+        Assert.Equal(0, usuario.VersaoAutenticacao);
+    }
+
+    [Fact]
+    public async Task AlterarSenha_AposLimiteDeTentativas_DeveBloquearMesmoComSenhaCorreta()
+    {
+        await using var contexto = CriarContexto();
+        var estado = new EstadoAutenticacaoFake();
+        var hasher = new PasswordHasher<Usuario>();
+        var usuario = await AdicionarUsuarioAsync(contexto, hasher, "senha-antiga");
+        var service = CriarService(contexto, estado, new ProtecaoDadosFake(), hasher);
+
+        for (var tentativa = 0; tentativa < 5; tentativa++)
+        {
+            await Assert.ThrowsAsync<RegraNegocioException>(() => service.AlterarSenhaAsync(
+                usuario.Id,
+                usuario.ContaPsicologoId,
+                new AlterarSenhaRequest { SenhaAtual = "errada", NovaSenha = "senha-nova-segura" },
+                CancellationToken.None));
+        }
+
+        var erro = await Assert.ThrowsAsync<RegraNegocioException>(() => service.AlterarSenhaAsync(
+            usuario.Id,
+            usuario.ContaPsicologoId,
+            new AlterarSenhaRequest { SenhaAtual = "senha-antiga", NovaSenha = "senha-nova-segura" },
+            CancellationToken.None));
+
+        Assert.Equal(StatusCodes.Status429TooManyRequests, erro.StatusCode);
+        Assert.Equal(0, usuario.VersaoAutenticacao);
+    }
+
+    [Fact]
+    public async Task AlterarSenha_ComUsuarioDeOutraConta_DeveNegarComoSessaoInvalida()
+    {
+        await using var contexto = CriarContexto();
+        var hasher = new PasswordHasher<Usuario>();
+        var usuario = await AdicionarUsuarioAsync(contexto, hasher, "senha-antiga");
+        var service = CriarService(contexto, new EstadoAutenticacaoFake(), new ProtecaoDadosFake(), hasher);
+
+        var erro = await Assert.ThrowsAsync<RegraNegocioException>(() => service.AlterarSenhaAsync(
+            usuario.Id,
+            Guid.NewGuid(),
+            new AlterarSenhaRequest { SenhaAtual = "senha-antiga", NovaSenha = "senha-nova-segura" },
+            CancellationToken.None));
+
+        Assert.Equal(StatusCodes.Status401Unauthorized, erro.StatusCode);
+        Assert.Equal(
+            PasswordVerificationResult.Success,
+            hasher.VerifyHashedPassword(usuario, usuario.SenhaHash, "senha-antiga"));
+    }
+
     private static AutenticacaoService CriarService(
         AppDbContext contexto,
         EstadoAutenticacaoFake estado,
@@ -275,6 +410,14 @@ public sealed class AutenticacaoServiceTests
             TokenRecebido = token;
             return Task.FromResult(true);
         }
+
+        public Task<bool> EnviarMensagemAdministrativaAsync(
+            string destinatario,
+            string nomeDestinatario,
+            string assunto,
+            string corpo,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(true);
     }
 
     private sealed class EstadoAutenticacaoFake : IEstadoAutenticacao

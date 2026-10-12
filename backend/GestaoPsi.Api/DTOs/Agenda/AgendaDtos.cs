@@ -4,21 +4,33 @@ using GestaoPsi.Api.Shared.Enums;
 namespace GestaoPsi.Api.DTOs.Agenda;
 
 public sealed record ConfiguracaoAtendimentoResponse(
+    string FusoHorario,
     int DuracaoPadraoMinutos,
     bool ConfirmacaoAutomaticaConsulta,
     int? AntecedenciaMinimaAgendamentoHoras,
     int? AntecedenciaCancelamentoHoras,
     int? AntecedenciaRemarcacaoHoras,
-    bool ExigeJustificativaCancelamento);
+    bool ExigeJustificativaCancelamento,
+    bool LembretesAutomaticosAtivos,
+    bool ProgramarLembreteAoCriarConsulta,
+    bool ProgramarLembreteAoConfirmar,
+    int AntecedenciaLembreteHoras,
+    CanalComunicacao CanalLembretePadrao);
 
 public sealed class AtualizarConfiguracaoAtendimentoRequest
 {
+    [Required, StringLength(80, MinimumLength = 3)] public string FusoHorario { get; init; } = "America/Sao_Paulo";
     [Range(10, 240)] public int DuracaoPadraoMinutos { get; init; }
     public bool ConfirmacaoAutomaticaConsulta { get; init; }
     [Range(0, 720)] public int? AntecedenciaMinimaAgendamentoHoras { get; init; }
     [Range(0, 720)] public int? AntecedenciaCancelamentoHoras { get; init; }
     [Range(0, 720)] public int? AntecedenciaRemarcacaoHoras { get; init; }
     public bool ExigeJustificativaCancelamento { get; init; }
+    public bool LembretesAutomaticosAtivos { get; init; } = true;
+    public bool ProgramarLembreteAoCriarConsulta { get; init; } = true;
+    public bool ProgramarLembreteAoConfirmar { get; init; } = true;
+    [Range(0, 720)] public int AntecedenciaLembreteHoras { get; init; } = 24;
+    public CanalComunicacao CanalLembretePadrao { get; init; } = CanalComunicacao.Email;
 }
 
 public sealed record TipoAtendimentoResponse(

@@ -6,6 +6,7 @@ public class ProtocoloEntregaDocumento : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid DocumentoProntuarioId { get; set; }
+    public Guid VersaoDocumentoProntuarioId { get; set; }
     public Guid RegistradoPorUsuarioId { get; set; }
     public TipoEntregaDocumento TipoEntrega { get; set; }
     public StatusEntregaDocumento Status { get; set; } = StatusEntregaDocumento.Registrada;
@@ -15,5 +16,6 @@ public class ProtocoloEntregaDocumento : EntidadeDaConta
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
 
     public DocumentoProntuario DocumentoProntuario { get; set; } = null!;
+    public VersaoDocumentoProntuario VersaoDocumentoProntuario { get; set; } = null!;
     public Usuario RegistradoPorUsuario { get; set; } = null!;
 }

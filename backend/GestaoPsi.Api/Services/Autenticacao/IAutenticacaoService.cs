@@ -19,6 +19,11 @@ public interface IAutenticacaoService
     Task RedefinirSenhaAsync(
         RedefinirSenhaRequest request,
         CancellationToken cancellationToken);
+    Task<ResultadoAutenticacao> AlterarSenhaAsync(
+        Guid usuarioId,
+        Guid contaId,
+        AlterarSenhaRequest request,
+        CancellationToken cancellationToken);
     Task<ResultadoAutenticacao> RenovarTokenAsync(
         string refreshToken,
         CancellationToken cancellationToken);

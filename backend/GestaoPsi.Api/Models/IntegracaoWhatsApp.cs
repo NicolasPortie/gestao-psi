@@ -9,7 +9,10 @@ public class IntegracaoWhatsApp : EntidadeDaConta
     public string Provedor { get; set; } = string.Empty;
     public string UrlBaseBridge { get; set; } = string.Empty;
     public string TokenCriptografado { get; set; } = string.Empty;
+    public string TokenHash { get; set; } = string.Empty;
     public string NumeroWhatsApp { get; set; } = string.Empty;
+    public string? UltimoErro { get; set; }
+    public DateTimeOffset? UltimaConexaoTestadaEm { get; set; }
     public StatusIntegracao Status { get; set; } = StatusIntegracao.Pendente;
     public bool Ativo { get; set; } = true;
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;

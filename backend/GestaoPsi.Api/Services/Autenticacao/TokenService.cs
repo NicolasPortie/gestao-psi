@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Globalization;
 using GestaoPsi.Api.Configuracoes;
 using GestaoPsi.Api.Models;
 using Microsoft.Extensions.Options;
@@ -23,6 +24,7 @@ public sealed class TokenService(IOptions<JwtConfiguracao> configuracao) : IToke
             new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim("conta_psicologo_id", usuario.ContaPsicologoId.ToString()),
+            new Claim("versao_autenticacao", usuario.VersaoAutenticacao.ToString(CultureInfo.InvariantCulture)),
             new Claim(ClaimTypes.Role, usuario.Perfil.ToString())
         };
 

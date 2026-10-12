@@ -7,7 +7,8 @@ public class ModeloMensagem : EntidadeDaConta
     public Guid Id { get; set; }
     public string Nome { get; set; } = string.Empty;
     public TipoLembrete Tipo { get; set; }
-    public CanalComunicacao Canal { get; set; } = CanalComunicacao.WhatsApp;
+    public CanalComunicacao Canal { get; set; } = CanalComunicacao.Email;
+    public string? Assunto { get; set; }
     public string Conteudo { get; set; } = string.Empty;
     public bool Ativo { get; set; } = true;
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;

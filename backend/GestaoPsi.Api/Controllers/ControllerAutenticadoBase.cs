@@ -12,6 +12,10 @@ public abstract class ControllerAutenticadoBase : ControllerBase
 
     protected Guid ObterContaPsicologoId() => ObterGuidClaim("conta_psicologo_id");
 
+    protected string? ObterIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
+
+    protected string? ObterUserAgent() => Request.Headers.UserAgent.ToString();
+
     private Guid ObterGuidClaim(params string[] tipos)
     {
         var valor = tipos
@@ -21,7 +25,7 @@ public abstract class ControllerAutenticadoBase : ControllerBase
         if (!Guid.TryParse(valor, out var id))
         {
             throw new RegraNegocioException(
-                "Sessao invalida ou expirada.",
+                "Sessão inválida ou expirada.",
                 StatusCodes.Status401Unauthorized);
         }
 

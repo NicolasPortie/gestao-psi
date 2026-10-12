@@ -1,0 +1,673 @@
+using GestaoPsi.Api.Configuracoes;
+using GestaoPsi.Api.Data;
+using GestaoPsi.Api.DTOs.Lembretes;
+using GestaoPsi.Api.DTOs.ModelosMensagem;
+using GestaoPsi.Api.Models;
+using GestaoPsi.Api.Services.Comunicacao;
+using GestaoPsi.Api.Services.Lembretes;
+using GestaoPsi.Api.Services.ModelosMensagem;
+using GestaoPsi.Api.Services.Notificacoes;
+using GestaoPsi.Api.Services.Seguranca;
+using GestaoPsi.Api.Shared.Enums;
+using GestaoPsi.Api.Shared.Excecoes;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+
+namespace GestaoPsi.Api.Tests;
+
+public sealed class LembretesServiceTests
+{
+    [Fact]
+    public async Task Listar_DeveIsolarLembretesPorConta()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var outraContaId = Guid.NewGuid();
+        var outroPaciente = new Paciente
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = outraContaId,
+            NomeCompleto = "Externo",
+            Status = StatusPaciente.Ativo
+        };
+        var outroTipo = new TipoAtendimento
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = outraContaId,
+            Nome = "Externo",
+            DuracaoMinutos = 50,
+            ModalidadePadrao = ModalidadeAtendimento.Online,
+            Ativo = true
+        };
+        var outraConsulta = new Consulta
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = outraContaId,
+            PacienteId = outroPaciente.Id,
+            TipoAtendimentoId = outroTipo.Id,
+            InicioEm = DateTimeOffset.UtcNow.AddDays(1),
+            FimEm = DateTimeOffset.UtcNow.AddDays(1).AddMinutes(50),
+            Status = StatusConsulta.Agendada,
+            Modalidade = ModalidadeAtendimento.Online
+        };
+
+        contexto.AddRange(
+            new ContaPsicologo { Id = outraContaId, NomeConta = "Outra", Status = StatusContaPsicologo.Ativa },
+            outroPaciente,
+            outroTipo,
+            outraConsulta,
+            new Lembrete
+            {
+                Id = Guid.NewGuid(),
+                ContaPsicologoId = cenario.ContaId,
+                ConsultaId = cenario.Consulta.Id,
+                PacienteId = cenario.Paciente.Id,
+                Canal = CanalComunicacao.Email,
+                Tipo = TipoLembrete.LembreteConsulta,
+                Status = StatusLembrete.Agendado,
+                AgendadoPara = DateTimeOffset.UtcNow.AddHours(2),
+                Mensagem = "Da conta"
+            },
+            new Lembrete
+            {
+                Id = Guid.NewGuid(),
+                ContaPsicologoId = outraContaId,
+                ConsultaId = outraConsulta.Id,
+                PacienteId = outroPaciente.Id,
+                Canal = CanalComunicacao.Email,
+                Tipo = TipoLembrete.LembreteConsulta,
+                Status = StatusLembrete.Agendado,
+                AgendadoPara = DateTimeOffset.UtcNow.AddHours(2),
+                Mensagem = "Outra conta"
+            });
+        await contexto.SaveChangesAsync();
+
+        var service = CriarLembretesService(contexto);
+        var resultado = await service.ListarAsync(cenario.UsuarioId, cenario.ContaId, new(), CancellationToken.None);
+
+        Assert.Single(resultado.Itens);
+        Assert.Equal("Da conta", resultado.Itens.Single().Mensagem);
+    }
+
+    [Fact]
+    public async Task Criar_NaoDeveAceitarConsultaDeOutraConta()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var outraContaId = Guid.NewGuid();
+        var outroPaciente = new Paciente
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = outraContaId,
+            NomeCompleto = "Externo",
+            Status = StatusPaciente.Ativo
+        };
+        var outroTipo = new TipoAtendimento
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = outraContaId,
+            Nome = "Externo",
+            DuracaoMinutos = 50,
+            ModalidadePadrao = ModalidadeAtendimento.Online,
+            Ativo = true
+        };
+        var outraConsulta = new Consulta
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = outraContaId,
+            PacienteId = outroPaciente.Id,
+            TipoAtendimentoId = outroTipo.Id,
+            InicioEm = DateTimeOffset.UtcNow.AddDays(1),
+            FimEm = DateTimeOffset.UtcNow.AddDays(1).AddMinutes(50),
+            Status = StatusConsulta.Agendada,
+            Modalidade = ModalidadeAtendimento.Online
+        };
+        contexto.AddRange(
+            new ContaPsicologo { Id = outraContaId, NomeConta = "Outra", Status = StatusContaPsicologo.Ativa },
+            outroPaciente,
+            outroTipo,
+            outraConsulta);
+        await contexto.SaveChangesAsync();
+
+        var service = CriarLembretesService(contexto);
+        var excecao = await Assert.ThrowsAsync<RegraNegocioException>(() => service.CriarAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            new CriarLembreteRequest
+            {
+                ConsultaId = outraConsulta.Id,
+                Canal = CanalComunicacao.Email,
+                Tipo = TipoLembrete.LembreteConsulta,
+                AgendadoPara = DateTimeOffset.UtcNow.AddHours(6),
+                Assunto = "Lembrete",
+                Mensagem = "Olá, {{nome_paciente}}"
+            },
+            null,
+            null,
+            CancellationToken.None));
+
+        Assert.Equal(StatusCodes.Status404NotFound, excecao.StatusCode);
+        Assert.Empty(contexto.Lembretes);
+    }
+
+    [Fact]
+    public async Task Criar_NaoDeveAceitarModeloDeOutraConta()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var outraContaId = Guid.NewGuid();
+        var modeloExterno = new ModeloMensagem
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = outraContaId,
+            Nome = "Externo",
+            Tipo = TipoLembrete.LembreteConsulta,
+            Canal = CanalComunicacao.Email,
+            Assunto = "Assunto",
+            Conteudo = "Olá, {{nome_paciente}}",
+            Ativo = true
+        };
+        contexto.AddRange(
+            new ContaPsicologo { Id = outraContaId, NomeConta = "Outra", Status = StatusContaPsicologo.Ativa },
+            modeloExterno);
+        await contexto.SaveChangesAsync();
+
+        var service = CriarLembretesService(contexto);
+        var excecao = await Assert.ThrowsAsync<RegraNegocioException>(() => service.CriarAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            new CriarLembreteRequest
+            {
+                ConsultaId = cenario.Consulta.Id,
+                ModeloMensagemId = modeloExterno.Id,
+                Canal = CanalComunicacao.Email,
+                Tipo = TipoLembrete.LembreteConsulta,
+                AgendadoPara = DateTimeOffset.UtcNow.AddHours(6)
+            },
+            null,
+            null,
+            CancellationToken.None));
+
+        Assert.Equal(StatusCodes.Status404NotFound, excecao.StatusCode);
+    }
+
+    [Fact]
+    public async Task Criar_DeveImpedirDuplicidadeDeLembreteProgramado()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var service = CriarLembretesService(contexto);
+        var request = new CriarLembreteRequest
+        {
+            ConsultaId = cenario.Consulta.Id,
+            Canal = CanalComunicacao.Email,
+            Tipo = TipoLembrete.LembreteConsulta,
+            AgendadoPara = DateTimeOffset.UtcNow.AddHours(12),
+            Assunto = "Lembrete",
+            Mensagem = "Olá, {{nome_paciente}}"
+        };
+
+        await service.CriarAsync(cenario.UsuarioId, cenario.ContaId, request, null, null, CancellationToken.None);
+        var excecao = await Assert.ThrowsAsync<RegraNegocioException>(() =>
+            service.CriarAsync(cenario.UsuarioId, cenario.ContaId, request, null, null, CancellationToken.None));
+
+        Assert.Contains("Já existe um lembrete programado", excecao.Message);
+        Assert.Single(contexto.Lembretes);
+    }
+
+    [Fact]
+    public async Task Cancelar_DeveRejeitarTransicaoInvalidaDeEnviado()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var lembrete = new Lembrete
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = cenario.ContaId,
+            ConsultaId = cenario.Consulta.Id,
+            PacienteId = cenario.Paciente.Id,
+            Canal = CanalComunicacao.Email,
+            Tipo = TipoLembrete.LembreteConsulta,
+            Status = StatusLembrete.Enviado,
+            AgendadoPara = DateTimeOffset.UtcNow.AddHours(-1),
+            EnviadoEm = DateTimeOffset.UtcNow,
+            Mensagem = "Enviado"
+        };
+        contexto.Lembretes.Add(lembrete);
+        await contexto.SaveChangesAsync();
+
+        var service = CriarLembretesService(contexto);
+        var excecao = await Assert.ThrowsAsync<RegraNegocioException>(() =>
+            service.CancelarAsync(cenario.UsuarioId, cenario.ContaId, lembrete.Id, null, null, CancellationToken.None));
+
+        Assert.Contains("programados ou com falha", excecao.Message);
+        Assert.Equal(StatusLembrete.Enviado, lembrete.Status);
+    }
+
+    [Fact]
+    public async Task Criar_ComEmailDesabilitado_DeveManterProgramadoSemFingirEnvio()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var service = CriarLembretesService(contexto, emailAtivo: false);
+
+        var resultado = await service.CriarAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            new CriarLembreteRequest
+            {
+                ConsultaId = cenario.Consulta.Id,
+                Canal = CanalComunicacao.Email,
+                Tipo = TipoLembrete.LembreteConsulta,
+                AgendadoPara = DateTimeOffset.UtcNow,
+                Assunto = "Lembrete",
+                Mensagem = "Olá, {{nome_paciente}}"
+            },
+            null,
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(StatusLembrete.Agendado, resultado.Status);
+        Assert.Null(resultado.EnviadoEm);
+        Assert.Contains("desabilitado", resultado.ErroEnvio ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Modelo_NaoDeveAceitarPacienteDeOutraContaNaPrevia()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var outraContaId = Guid.NewGuid();
+        var outroPaciente = new Paciente
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = outraContaId,
+            NomeCompleto = "Externo",
+            Status = StatusPaciente.Ativo
+        };
+        contexto.AddRange(
+            new ContaPsicologo { Id = outraContaId, NomeConta = "Outra", Status = StatusContaPsicologo.Ativa },
+            outroPaciente);
+        await contexto.SaveChangesAsync();
+
+        var service = CriarModelosService(contexto);
+        var excecao = await Assert.ThrowsAsync<RegraNegocioException>(() => service.PreviaAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            new PreviaModeloMensagemRequest
+            {
+                Conteudo = "Olá, {{nome_paciente}}",
+                PacienteId = outroPaciente.Id
+            },
+            CancellationToken.None));
+
+        Assert.Equal(StatusCodes.Status404NotFound, excecao.StatusCode);
+    }
+
+    [Fact]
+    public async Task CriarModelo_DeveRegistrarAuditoria()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var auditoria = new AuditoriaCaptura();
+        var service = new ModelosMensagemService(
+            contexto,
+            new AutorizacaoContaService(contexto),
+            auditoria,
+            new ModeloMensagemTemplateService());
+
+        await service.CriarAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            new CriarModeloMensagemRequest
+            {
+                Nome = "Confirmação",
+                Tipo = TipoLembrete.ConfirmacaoConsulta,
+                Canal = CanalComunicacao.Email,
+                Assunto = "Confirmação",
+                Conteudo = "Olá, {{nome_paciente}}",
+                Ativo = true
+            },
+            "127.0.0.1",
+            "teste",
+            CancellationToken.None);
+
+        Assert.Contains(auditoria.Registros, item => item.TipoAcao == "ModeloMensagemCriado");
+    }
+
+    [Fact]
+    public async Task Recepcionista_PodeGerenciarLembretesAdministrativos()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto, PerfilUsuario.Recepcionista);
+        var service = CriarLembretesService(contexto);
+
+        var resultado = await service.CriarAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            new CriarLembreteRequest
+            {
+                ConsultaId = cenario.Consulta.Id,
+                Canal = CanalComunicacao.Sistema,
+                Tipo = TipoLembrete.LembreteConsulta,
+                AgendadoPara = DateTimeOffset.UtcNow.AddHours(3),
+                Mensagem = "Olá, {{nome_paciente}}. Consulta em {{data_consulta}}."
+            },
+            null,
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(StatusLembrete.Agendado, resultado.Status);
+        Assert.Contains("Olá, Paciente da conta", resultado.Mensagem);
+    }
+
+    [Fact]
+    public async Task ProgramarAutomatico_DeveCriarLembreteComAntecedencia()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var service = CriarLembretesService(contexto);
+
+        var resultado = await service.ProgramarAutomaticoParaConsultaAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            cenario.Consulta.Id,
+            null,
+            null,
+            CancellationToken.None);
+
+        Assert.NotNull(resultado);
+        Assert.Equal(StatusLembrete.Agendado, resultado!.Status);
+        Assert.Equal(TipoLembrete.LembreteConsulta, resultado.Tipo);
+        Assert.True(resultado.AgendadoPara <= cenario.Consulta.InicioEm);
+        Assert.Contains("Paciente da conta", resultado.Mensagem);
+    }
+
+    [Fact]
+    public async Task EncerrarProgramados_DeveIgnorarLembretesDaConsulta()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var service = CriarLembretesService(contexto);
+        await service.ProgramarAutomaticoParaConsultaAsync(
+            cenario.UsuarioId, cenario.ContaId, cenario.Consulta.Id, null, null, CancellationToken.None);
+
+        var quantidade = await service.EncerrarProgramadosDaConsultaAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            cenario.Consulta.Id,
+            StatusLembrete.Ignorado,
+            "Consulta cancelada",
+            null,
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(1, quantidade);
+        Assert.All(contexto.Lembretes, item => Assert.Equal(StatusLembrete.Ignorado, item.Status));
+    }
+
+    [Fact]
+    public async Task ProcessarVencidos_ComConsultaCancelada_DeveIgnorar()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        cenario.Consulta.Status = StatusConsulta.Cancelada;
+        var lembrete = new Lembrete
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = cenario.ContaId,
+            ConsultaId = cenario.Consulta.Id,
+            PacienteId = cenario.Paciente.Id,
+            Canal = CanalComunicacao.Email,
+            Tipo = TipoLembrete.LembreteConsulta,
+            Status = StatusLembrete.Agendado,
+            AgendadoPara = DateTimeOffset.UtcNow.AddMinutes(-10),
+            Assunto = "Assunto",
+            Mensagem = "Mensagem"
+        };
+        contexto.Lembretes.Add(lembrete);
+        await contexto.SaveChangesAsync();
+
+        var service = CriarLembretesService(contexto);
+        var processados = await service.ProcessarVencidosAsync(CancellationToken.None);
+
+        Assert.Equal(1, processados);
+        Assert.Equal(StatusLembrete.Ignorado, lembrete.Status);
+    }
+
+    [Fact]
+    public async Task Criar_WhatsAppComConversa_DeveRegistrarMensagemDeSaida()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var integracaoId = Guid.NewGuid();
+        var conversaId = Guid.NewGuid();
+        contexto.AddRange(
+            new IntegracaoWhatsApp
+            {
+                Id = integracaoId,
+                ContaPsicologoId = cenario.ContaId,
+                Nome = "Bridge",
+                Provedor = "Bridge",
+                UrlBaseBridge = "https://bridge.local",
+                TokenCriptografado = "x",
+                TokenHash = "y",
+                NumeroWhatsApp = "5511888888888",
+                Status = StatusIntegracao.Ativa,
+                Ativo = true
+            },
+            new ConversaWhatsApp
+            {
+                Id = conversaId,
+                ContaPsicologoId = cenario.ContaId,
+                IntegracaoWhatsAppId = integracaoId,
+                PacienteId = cenario.Paciente.Id,
+                Telefone = "5511999999999",
+                Status = StatusConversaWhatsApp.Aberta
+            });
+        await contexto.SaveChangesAsync();
+
+        var service = CriarLembretesService(contexto);
+        var resposta = await service.CriarAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            new CriarLembreteRequest
+            {
+                ConsultaId = cenario.Consulta.Id,
+                Canal = CanalComunicacao.WhatsApp,
+                AgendadoPara = DateTimeOffset.UtcNow.AddMinutes(-1),
+                Mensagem = "Lembrete: consulta amanha as 10h."
+            },
+            null,
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(StatusLembrete.Enviado, resposta.Status);
+        var saida = Assert.Single(contexto.MensagensWhatsApp);
+        Assert.Equal(DirecaoMensagem.Saida, saida.Direcao);
+        Assert.Equal(conversaId, saida.ConversaWhatsAppId);
+    }
+
+    [Fact]
+    public async Task Criar_WhatsAppSemConversa_DeveManterProgramado()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        contexto.Add(
+            new IntegracaoWhatsApp
+            {
+                Id = Guid.NewGuid(),
+                ContaPsicologoId = cenario.ContaId,
+                Nome = "Bridge",
+                Provedor = "Bridge",
+                UrlBaseBridge = "https://bridge.local",
+                TokenCriptografado = "x",
+                TokenHash = "y",
+                NumeroWhatsApp = "5511888888888",
+                Status = StatusIntegracao.Ativa,
+                Ativo = true
+            });
+        await contexto.SaveChangesAsync();
+
+        var service = CriarLembretesService(contexto);
+        var resposta = await service.CriarAsync(
+            cenario.UsuarioId,
+            cenario.ContaId,
+            new CriarLembreteRequest
+            {
+                ConsultaId = cenario.Consulta.Id,
+                Canal = CanalComunicacao.WhatsApp,
+                AgendadoPara = DateTimeOffset.UtcNow.AddMinutes(-1),
+                Mensagem = "Lembrete: consulta amanha as 10h."
+            },
+            null,
+            null,
+            CancellationToken.None);
+
+        Assert.Equal(StatusLembrete.Agendado, resposta.Status);
+        Assert.Empty(contexto.MensagensWhatsApp);
+    }
+
+    private static LembretesService CriarLembretesService(AppDbContext contexto, bool emailAtivo = false) =>
+        new(
+            contexto,
+            new AutorizacaoContaService(contexto),
+            new AuditoriaCaptura(),
+            new ModeloMensagemTemplateService(),
+            new EmailFake(),
+            Options.Create(new EmailConfiguracao { Ativo = emailAtivo }),
+            new NotificacoesService(contexto, new AutorizacaoContaService(contexto)),
+            new ProtecaoFake());
+
+    private static ModelosMensagemService CriarModelosService(AppDbContext contexto) =>
+        new(contexto, new AutorizacaoContaService(contexto), new AuditoriaCaptura(), new ModeloMensagemTemplateService());
+
+    private static async Task<Cenario> CriarCenarioAsync(AppDbContext contexto, PerfilUsuario perfil = PerfilUsuario.Psicologo)
+    {
+        var contaId = Guid.NewGuid();
+        var usuarioId = Guid.NewGuid();
+        var paciente = new Paciente
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = contaId,
+            NomeCompleto = "Paciente da conta",
+            Email = "paciente@teste.local",
+            Status = StatusPaciente.Ativo
+        };
+        var tipo = new TipoAtendimento
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = contaId,
+            Nome = "Psicoterapia",
+            DuracaoMinutos = 50,
+            ModalidadePadrao = ModalidadeAtendimento.Presencial,
+            Ativo = true
+        };
+        var consulta = new Consulta
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = contaId,
+            PacienteId = paciente.Id,
+            TipoAtendimentoId = tipo.Id,
+            InicioEm = DateTimeOffset.UtcNow.AddDays(2),
+            FimEm = DateTimeOffset.UtcNow.AddDays(2).AddMinutes(50),
+            Status = StatusConsulta.Agendada,
+            Modalidade = ModalidadeAtendimento.Presencial,
+            EnderecoAtendimento = "Rua do Consultório, 10"
+        };
+
+        contexto.AddRange(
+            new ContaPsicologo { Id = contaId, NomeConta = "Consultorio", Status = StatusContaPsicologo.Ativa },
+            new Usuario
+            {
+                Id = usuarioId,
+                ContaPsicologoId = contaId,
+                NomeCompleto = "Profissional",
+                Email = $"{usuarioId:N}@teste.local",
+                SenhaHash = "hash",
+                Perfil = perfil,
+                Status = StatusUsuario.Ativo
+            },
+            new DadosProfissionaisPsicologo
+            {
+                Id = Guid.NewGuid(),
+                ContaPsicologoId = contaId,
+                UsuarioId = usuarioId,
+                Crp = "06/12345",
+                CrpHash = "hash",
+                NomeProfissional = "Dra. Teste",
+                Status = StatusUsuario.Ativo
+            },
+            new ConfiguracaoAtendimento
+            {
+                Id = Guid.NewGuid(),
+                ContaPsicologoId = contaId,
+                AntecedenciaCancelamentoHoras = 24,
+                AntecedenciaRemarcacaoHoras = 12,
+                ExigeJustificativaCancelamento = true,
+                LembretesAutomaticosAtivos = true,
+                ProgramarLembreteAoCriarConsulta = true,
+                ProgramarLembreteAoConfirmar = true,
+                AntecedenciaLembreteHoras = 24,
+                CanalLembretePadrao = CanalComunicacao.Email,
+                Ativo = true
+            },
+            paciente,
+            tipo,
+            consulta);
+        await contexto.SaveChangesAsync();
+        return new Cenario(contaId, usuarioId, paciente, consulta);
+    }
+
+    private static AppDbContext CriarContexto() => new(
+        new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private sealed record Cenario(Guid ContaId, Guid UsuarioId, Paciente Paciente, Consulta Consulta);
+
+    private sealed class AuditoriaCaptura : IAuditoriaService
+    {
+        public List<(string TipoAcao, string Entidade, Guid? EntidadeId)> Registros { get; } = [];
+
+        public void Registrar(
+            Guid contaPsicologoId,
+            Guid? usuarioId,
+            string tipoAcao,
+            string entidade,
+            Guid? entidadeId,
+            string descricao,
+            object? dadosAntes = null,
+            object? dadosDepois = null,
+            string? ip = null,
+            string? userAgent = null) =>
+            Registros.Add((tipoAcao, entidade, entidadeId));
+    }
+
+    private sealed class EmailFake : IEmailTransacionalService
+    {
+        public Task<bool> EnviarRecuperacaoSenhaAsync(string destinatario, string nome, string token, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
+        public Task<bool> EnviarMensagemAdministrativaAsync(
+            string destinatario,
+            string nomeDestinatario,
+            string assunto,
+            string corpo,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(true);
+    }
+
+    private sealed class ProtecaoFake : IProtecaoDadosService
+    {
+        public string Proteger(string valor) => $"protegido:{valor}";
+        public string Desproteger(string valorProtegido) =>
+            valorProtegido.StartsWith("protegido:", StringComparison.Ordinal)
+                ? valorProtegido["protegido:".Length..]
+                : valorProtegido;
+        public string HashDeterministico(string valor) => $"hash:{valor}";
+        public string HashToken(string token) => $"tokenhash:{token}";
+        public string GerarTokenSeguro() => "token";
+    }
+}

@@ -16,11 +16,12 @@ public sealed class AutorizacaoContaService(AppDbContext dbContext) : IAutorizac
         var usuario = await dbContext.Usuarios.SingleOrDefaultAsync(
             item => item.Id == usuarioId &&
                     item.ContaPsicologoId == contaPsicologoId &&
-                    item.Status == StatusUsuario.Ativo,
+                    item.Status == StatusUsuario.Ativo &&
+                    item.ContaPsicologo.Status == StatusContaPsicologo.Ativa,
             cancellationToken);
 
         return usuario ?? throw new RegraNegocioException(
-            "Sua sessao nao possui permissao para esta operacao.",
+            "Sua sessão não possui permissão para esta operação.",
             StatusCodes.Status403Forbidden);
     }
 }

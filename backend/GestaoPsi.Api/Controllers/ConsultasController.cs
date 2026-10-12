@@ -12,13 +12,13 @@ namespace GestaoPsi.Api.Controllers;
 public sealed class ConsultasController(IConsultasService consultasService) : ControllerAutenticadoBase
 {
     [HttpGet]
-    public async Task<IActionResult> Listar([FromQuery] DateTimeOffset inicio, [FromQuery] DateTimeOffset fim, CancellationToken ct) => Ok(RespostaApi<IReadOnlyCollection<ConsultaResponse>>.ComSucesso(await consultasService.ListarAsync(ObterUsuarioId(), ObterContaPsicologoId(), inicio, fim, ct)));
+    public async Task<IActionResult> Listar([FromQuery] DateTimeOffset inicio, [FromQuery] DateTimeOffset fim, [FromQuery] Guid? pacienteId, CancellationToken ct) => Ok(RespostaApi<IReadOnlyCollection<ConsultaResponse>>.ComSucesso(await consultasService.ListarAsync(ObterUsuarioId(), ObterContaPsicologoId(), inicio, fim, pacienteId, ct)));
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> ObterPorId(Guid id, CancellationToken ct) => Ok(RespostaApi<ConsultaResponse>.ComSucesso(await consultasService.ObterPorIdAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, ct)));
+    public async Task<IActionResult> ObterPorId(Guid id, CancellationToken ct) => Ok(RespostaApi<ConsultaDetalheResponse>.ComSucesso(await consultasService.ObterPorIdAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, ct)));
     [HttpPost]
     public async Task<IActionResult> Criar(CriarConsultaRequest request, CancellationToken ct) => Ok(RespostaApi<ConsultaResponse>.ComSucesso(await consultasService.CriarAsync(ObterUsuarioId(), ObterContaPsicologoId(), request, ObterIp(), ObterUserAgent(), ct)));
     [HttpPatch("{id:guid}/status")]
     public async Task<IActionResult> AlterarStatus(Guid id, AlterarStatusConsultaRequest request, CancellationToken ct) => Ok(RespostaApi<ConsultaResponse>.ComSucesso(await consultasService.AlterarStatusAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, request, ObterIp(), ObterUserAgent(), ct)));
-    private string? ObterIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
-    private string? ObterUserAgent() => Request.Headers.UserAgent.ToString();
+    [HttpPatch("{id:guid}/remarcar")]
+    public async Task<IActionResult> Remarcar(Guid id, RemarcarConsultaRequest request, CancellationToken ct) => Ok(RespostaApi<ConsultaResponse>.ComSucesso(await consultasService.RemarcarAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, request, ObterIp(), ObterUserAgent(), ct)));
 }
