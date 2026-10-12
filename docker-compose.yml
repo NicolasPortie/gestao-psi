@@ -1,0 +1,93 @@
+# Ambiente local completo do GestaoPsi (API + SQL Server + Redis + frontend).
+# Uso: copie .env.example para .env, preencha os valores e execute
+# docker compose up --build. O job migracoes prepara o banco antes da API.
+# Ambiente de demonstracao local via HTTP; producao exige TLS e configuracao propria.
+name: gestaopsi
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SQL_SENHA:?Defina SQL_SENHA no arquivo .env}"
+    ports:
+      - "127.0.0.1:14333:1433"
+    volumes:
+      - gestaopsi-sql:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_SENHA:?Defina REDIS_SENHA no arquivo .env}"]
+    environment:
+      REDISCLI_AUTH: "${REDIS_SENHA}"
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - gestaopsi-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  migracoes:
+    build:
+      context: ./backend/GestaoPsi.Api
+      target: migracoes
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=GestaoPsi;User Id=sa;Password=${SQL_SENHA};TrustServerCertificate=True"
+    restart: "no"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ./backend/GestaoPsi.Api
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      TZ: "America/Sao_Paulo"
+      # A API fica atrás do nginx do serviço frontend: confia no X-Forwarded-For vindo da rede privada do Compose.
+      Rede__ConfiarEmProxyReverso: "true"
+      # Limite de contas novas por hora e por IP. A suite E2E cria contas de teste e eleva este valor.
+      Seguranca__MaximoCadastrosPorHora: "${MAXIMO_CADASTROS_POR_HORA:-5}"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=GestaoPsi;User Id=sa;Password=${SQL_SENHA};TrustServerCertificate=True"
+      ConnectionStrings__Redis: "redis:6379,password=${REDIS_SENHA}"
+      Jwt__Chave: "${JWT_CHAVE:?Defina JWT_CHAVE com ao menos 32 caracteres}"
+      Jwt__Emissor: "GestaoPsi.Api"
+      Jwt__Audiencia: "GestaoPsi.Web"
+      Seguranca__ChaveHashDados: "${HASH_CHAVE:?Defina HASH_CHAVE em Base64 com ao menos 32 bytes}"
+      Email__Ativo: "${Email__Ativo:-false}"
+      Email__ServidorSmtp: "${Email__ServidorSmtp:-}"
+      Email__Usuario: "${Email__Usuario:-}"
+      Email__Senha: "${Email__Senha:-}"
+      Email__EmailRemetente: "${Email__EmailRemetente:-}"
+    ports:
+      - "127.0.0.1:5178:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migracoes:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:4200:80"
+    depends_on:
+      - api
+
+volumes:
+  gestaopsi-sql:
+  gestaopsi-redis:

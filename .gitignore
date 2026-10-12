@@ -3,6 +3,10 @@
 /*.MD
 
 # Documentacao oficial do projeto
+!/PRODUCT.md
+!/DESIGN.md
+!/README.md
+!/GLOSSARY.md
 !/docs/**/*.md
 !/frontend/README.md
 
@@ -21,10 +25,9 @@ appsettings.Development.local.json
 appsettings.Local.json
 backend/GestaoPsi.Api/.gestaopsi-dev/
 
-# Node / Angular
+# Node
 node_modules/
 dist/
-.angular/
 .cache/
 npm-debug.log*
 yarn-debug.log*
@@ -51,3 +54,9 @@ Desktop.ini
 *.ldf
 *.ndf
 *.bak
+
+# Artefatos locais de auditoria e navegacao
+output/
+test-results/
+playwright-report/
+.playwright-cli/
