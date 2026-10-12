@@ -207,7 +207,7 @@ appsettings.json
 launchSettings.json
 package.json
 tsconfig.json
-angular.json
+vite.config.ts
 Dockerfile
 README.md
 ```
@@ -222,7 +222,7 @@ Response
 Middleware
 Migration
 DbContext
-HttpClient
+fetch
 Interceptor
 Guard
 Component
@@ -321,7 +321,7 @@ Guid consultaId
 string nomeCompleto
 ```
 
-### TypeScript / Angular
+### TypeScript / React
 
 Usar PascalCase para:
 
@@ -354,7 +354,7 @@ pacienteSelecionado
 consultaAtual
 ```
 
-Nomes de arquivos no Angular devem usar kebab-case.
+Nomes de arquivos de dominio no React devem usar kebab-case. Pontos de entrada convencionais, como `App.tsx`, podem manter PascalCase.
 
 Exemplos:
 

@@ -171,6 +171,10 @@ Regras:
 - usar TTL em todas as chaves de autenticacao;
 - tokens de recuperacao e refresh tokens devem ser de uso unico ou rotacionados;
 - redefinir senha deve revogar sessoes anteriores;
+- access tokens incluem `VersaoAutenticacao` do usuario; redefinicao de senha
+  e mudanca de status incrementam essa versao e revogam refresh tokens;
+- a validacao de cada JWT confirma usuario e conta ativos, perfil atual e versao;
+- tokens anteriores a essa regra exigem renovacao de sessao;
 - Redis deve exigir autenticacao e conexao protegida em producao;
 - chaves Redis nao devem conter e-mail, CRP, CPF ou outro dado pessoal em texto aberto.
 
@@ -181,3 +185,16 @@ Para desenvolvimento local, o estado temporario de autenticacao pode rodar em me
 MFA/2FA e altamente recomendado para psicologos.
 
 Pode ser fase futura, mas deve ser previsto na arquitetura de autenticacao.
+
+## Camada HTTP
+
+Regras aplicadas na API e no servidor do front-end:
+
+- respostas da API com `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` e CSP `default-src 'none'`;
+- CSP do front sem scripts embutidos, com `connect-src 'self'` e `frame-ancestors 'none'`;
+- HSTS na API fora de Development e `Strict-Transport-Security` no terminador TLS em producao;
+- limite de 60 requisicoes por minuto por IP nos endpoints sem sessao (cadastro, login, recuperacao e webhook do Bridge), alem das travas por conta e por e-mail;
+- IP do cliente por `X-Forwarded-For` somente quando `Rede:ConfiarEmProxyReverso` esta ligado e a origem e uma rede privada;
+- endpoint de saude anonimo sem detalhes da infraestrutura fora de Development;
+- listagem de consultas com periodo maximo de 366 dias e filtro por paciente no servidor;
+- troca de senha com a senha atual, limite de tentativas, revogacao das demais sessoes e auditoria (`AlteracaoSenha`).

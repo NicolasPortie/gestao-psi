@@ -6,7 +6,7 @@ Este documento define a stack inicial e a arquitetura do back-end do projeto Ges
 
 O objetivo é criar uma API profissional, organizada e fácil de evoluir, sem usar Clean Architecture neste momento.
 
-A API deve ser pensada para atender não apenas o front-end Angular, mas também possíveis consumidores futuros, como chatbot, aplicativo mobile, integrações com WhatsApp, sistemas externos ou outros painéis.
+A API deve ser pensada para atender não apenas o front-end React, mas também possíveis consumidores futuros, como chatbot, aplicativo mobile, integrações com WhatsApp, sistemas externos ou outros painéis.
 
 As regras de nomenclatura do projeto estão definidas em `CONVENCOES_NOMENCLATURA.md`.
 
@@ -401,7 +401,7 @@ Evitar colocar regras de negócio importantes em `Shared`.
 
 A API deve ser criada para ser consumida por diferentes clientes:
 
-- front-end Angular;
+- front-end React;
 - chatbot administrativo;
 - aplicativo mobile futuro;
 - integrações com WhatsApp;
@@ -521,7 +521,7 @@ Exemplo de resposta de erro:
 }
 ```
 
-Essa padronização facilita o consumo pelo Angular, chatbot e futuras integrações.
+Essa padronização facilita o consumo pelo React, chatbot e futuras integrações.
 
 ## Autenticacao e Autorizacao
 

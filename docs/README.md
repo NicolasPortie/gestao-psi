@@ -25,8 +25,10 @@ docs/
     07-mvp-e-fases.md
 
   04-ux/
+    README.md
 
-  05-operacao/
+  adr/
+    0001-reestruturacao-do-frontend.md
 ```
 
 ## Fonte de Verdade
@@ -34,7 +36,8 @@ docs/
 - Produto e escopo: `01-produto/PLANEJAMENTO.md`
 - Arquitetura tecnica: `02-arquitetura/`
 - Modelagem e regras de dominio: `03-modelagem/`
-- Telas: `04-ux/`
+- Design e telas: `../DESIGN.md` e `04-ux/`
+- Decisoes arquiteturais: `adr/`
 
 ## Decisao Atual do Produto
 
