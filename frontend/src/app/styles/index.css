@@ -1,0 +1,387 @@
+@import 'tailwindcss';
+@import './tokens.css';
+@import './sobreposicoes.css';
+
+/*
+ * Base global. Tudo que o navegador desenha sem pedir (selecao de texto, cursor,
+ * barras de rolagem, foco, numerais) tambem pertence ao sistema visual.
+ */
+@layer base {
+  html {
+    min-width: 320px;
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+    background: var(--paper);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: var(--line);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  p {
+    text-wrap: pretty;
+    margin: 0;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  a {
+    color: var(--accent-ink);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--accent) 26%, transparent);
+    color: inherit;
+  }
+
+  input,
+  textarea {
+    caret-color: var(--accent);
+  }
+
+  ::placeholder {
+    color: var(--ink-faint);
+    opacity: 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Rolagem fina, tingida pela regua; nunca a barra padrao do sistema. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid transparent;
+    border-radius: 8px;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* iOS amplia a pagina quando o campo tem menos de 16px. */
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: max(16px, 1em);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility scroll-contido {
+  overscroll-behavior: contain;
+}
+
+@utility sem-barra {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Troca de tema sem "borrar" cada transicao de cor ao mesmo tempo. */
+.sem-transicao,
+.sem-transicao *,
+.sem-transicao *::before,
+.sem-transicao *::after {
+  transition: none !important;
+}
+
+/* ---- Movimento ------------------------------------------------------------ */
+
+@keyframes esqueleto-pulso {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes marca-entrar {
+  from {
+    opacity: 0.2;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes conteudo-entrar {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes revelar-subir {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.animar-esqueleto {
+  animation: esqueleto-pulso 1.6s var(--ease-in-out) infinite;
+}
+
+.animar-marca {
+  animation: marca-entrar 220ms var(--ease-out) both;
+}
+
+.animar-conteudo {
+  animation: conteudo-entrar 140ms var(--ease-out) both;
+}
+
+.animar-girar {
+  animation: girar 0.8s linear infinite;
+}
+
+.animar-revelar {
+  animation: revelar-subir 300ms var(--ease-out) both;
+  animation-delay: calc(var(--ordem, 0) * 100ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animar-esqueleto,
+  .animar-marca,
+  .animar-revelar {
+    animation: conteudo-entrar 120ms linear both;
+    animation-delay: 0ms;
+  }
+
+  .animar-girar {
+    animation-duration: 2.4s;
+  }
+}
+
+/* ---- Controles de formulario nativos, redesenhados ------------------------- */
+
+.caixa,
+.opcao,
+.interruptor {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  margin: 0;
+  cursor: pointer;
+  background: var(--field);
+  border: 1px solid var(--line-strong);
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 140ms;
+  transition-timing-function: var(--ease-out);
+}
+
+.caixa,
+.opcao {
+  display: inline-grid;
+  place-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.caixa {
+  border-radius: var(--radius-xs);
+}
+
+.opcao {
+  border-radius: 9999px;
+}
+
+.caixa::before {
+  content: '';
+  width: 0.625rem;
+  height: 0.625rem;
+  background: var(--on-accent);
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%);
+  transform: scale(0.6);
+  opacity: 0;
+  transition:
+    transform 140ms var(--ease-out),
+    opacity 140ms var(--ease-out);
+}
+
+.opcao::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--on-accent);
+  transform: scale(0.5);
+  opacity: 0;
+  transition:
+    transform 140ms var(--ease-out),
+    opacity 140ms var(--ease-out);
+}
+
+.caixa:checked,
+.opcao:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.caixa:checked::before,
+.opcao:checked::before {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.caixa:disabled,
+.opcao:disabled,
+.interruptor:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.caixa[aria-invalid='true'],
+.opcao[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.interruptor {
+  position: relative;
+  width: 2.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+}
+
+.interruptor::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0.1875rem;
+  width: 0.8125rem;
+  height: 0.8125rem;
+  border-radius: 9999px;
+  background: var(--ink-muted);
+  transform: translateY(-50%);
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms var(--ease-out);
+}
+
+.interruptor:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.interruptor:checked::before {
+  background: var(--on-accent);
+  transform: translate(1rem, -50%);
+}
+
+@media (pointer: coarse) {
+  .caixa,
+  .opcao {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+  .interruptor {
+    width: 2.75rem;
+    height: 1.5rem;
+  }
+  .interruptor::before {
+    width: 1.0625rem;
+    height: 1.0625rem;
+  }
+  .interruptor:checked::before {
+    transform: translate(1.25rem, -50%);
+  }
+}
+
+/* Area de toque ampliada sem alterar o layout visual. */
+.alvo-toque {
+  position: relative;
+}
+
+.alvo-toque::after {
+  content: '';
+  position: absolute;
+  inset: -0.5rem;
+}

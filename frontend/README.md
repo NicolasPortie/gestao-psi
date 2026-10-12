@@ -1,79 +1,45 @@
-# GestaoPsi Frontend
+# Frontend GestãoPsi
 
-Frontend Angular do GestaoPsi.
+SPA oficial em React, TypeScript e Vite. O front-end Angular anterior foi removido e não existe modo de compatibilidade.
 
-O GestaoPsi e um produto SaaS multi-conta para psicologos autonomos.
+## Requisitos
 
-Na experiencia do usuario, cada psicologo acessa uma conta propria, privada e altamente configuravel para o seu consultorio.
+- Node.js 22.12 ou superior;
+- npm 11;
+- API GestãoPsi disponível em `http://127.0.0.1:5178` durante o desenvolvimento.
 
-O produto deve manter foco em:
-
-- agenda;
-- pacientes;
-- consultas;
-- sessoes;
-- pagamentos;
-- registros clinicos protegidos;
-- configuracoes do consultorio;
-- chatbot administrativo;
-- integracao WhatsApp via Bridge.
-
-O front-end deve operar sempre no contexto da conta autenticada e nao deve assumir multi-clinica no MVP.
-
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.15.
-
-## Development server
-
-To start a local development server, run:
+## Comandos
 
 ```bash
-ng serve
+npm install
+npm run dev            # Vite em http://localhost:4200, com /api encaminhado para a API local
+npm run typecheck
+npm run lint
+npm test               # Vitest + Testing Library
+npm run build
+npm run contraste      # mede o contraste WCAG dos pares de cor de tokens.css (claro e escuro)
+npm run seed:demo      # conta fictícia com dados realistas (somente API local)
+npm run test:e2e       # Playwright, desktop e mobile; exige API e front rodando
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+O servidor Vite usa a porta `4200`. Para outro endereço de API, defina `VITE_API_URL` sem barra final.
 
-## Code scaffolding
+Os testes de ponta a ponta criam dados fictícios em contas de teste próprias (`qa.consultorio@…`, `e2e.rotas@…`). Não os execute contra um banco com dados reais de atendimento.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Arquitetura
 
-```bash
-ng generate component component-name
-```
+- `src/app`: providers e rotas;
+- `src/app/core`: API, autenticação, vocabulário de estados, formatação, hooks e tema;
+- `src/app/components/ui`: primitivos do sistema de design (botão, campo, tabela, diálogo, menu, abas…);
+- `src/app/components/feedback`: esqueleto, estados vazio e erro, avisos e toasts;
+- `src/app/components/layout`: shell, trilho lateral, navegação móvel e cabeçalho de página;
+- `src/app/features`: fatias de domínio, cada uma com páginas, `components/`, `*.api.ts`, `*.types.ts`, `*.schemas.ts` e `*.rotulos.ts`;
+- `src/app/styles`: `tokens.css` (papéis semânticos claro/escuro), `index.css` e `sobreposicoes.css`;
+- `e2e`: fluxos críticos em Playwright (`apoio.ts` reúne os auxiliares compartilhados).
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Antes de implementar novas telas, leia:
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [`docs/02-arquitetura/FRONTEND_STACK_E_ARQUITETURA.md`](../docs/02-arquitetura/FRONTEND_STACK_E_ARQUITETURA.md): stack, fronteiras e regras;
+- [`DESIGN.md`](../DESIGN.md): sistema de design e o que não fazer;
+- [`docs/04-ux/README.md`](../docs/04-ux/README.md): mapa de telas, padrões e verificação visual;
+- [`docs/adr/0001-reestruturacao-do-frontend.md`](../docs/adr/0001-reestruturacao-do-frontend.md): por que o front-end é assim.

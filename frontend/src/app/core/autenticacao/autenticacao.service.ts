@@ -1,144 +1,119 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable, signal } from '@angular/core';
-import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
+import { useSyncExternalStore } from 'react';
 
-import { API_URL_BASE } from '../api/api.config';
-import { RespostaApi } from '../api/resposta-api.model';
-import {
+import { configurarAutenticacaoApi, requisicaoApi, requisicaoPublica } from '../api/cliente-api';
+import { extrairDados, type RespostaApi } from '../api/resposta-api';
+import type {
   AutenticacaoResponse,
   CriarContaRequest,
+  EstadoSessao,
   LoginRequest,
-  SolicitarRecuperacaoSenhaRequest,
-} from './autenticacao.model';
+} from './autenticacao.types';
 
-@Injectable({ providedIn: 'root' })
-export class AutenticacaoService {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrlBase = inject(API_URL_BASE);
-  private renovacaoEmAndamento: Observable<AutenticacaoResponse> | null = null;
+let estado: EstadoSessao = { status: 'verificando', usuario: null, accessToken: null };
+const ouvintes = new Set<() => void>();
+let renovacaoEmAndamento: Promise<boolean> | null = null;
 
-  readonly usuarioAtual = signal<AutenticacaoResponse | null>(null);
+function publicar(novoEstado: EstadoSessao) {
+  estado = novoEstado;
+  ouvintes.forEach((ouvinte) => ouvinte());
+}
 
-  obterAccessToken(): string | null {
-    return this.usuarioAtual()?.accessToken ?? null;
-  }
+function aplicarAutenticacao(resposta: AutenticacaoResponse) {
+  publicar({ status: 'autenticado', usuario: resposta.usuario, accessToken: resposta.accessToken });
+}
 
-  login(request: LoginRequest): Observable<AutenticacaoResponse> {
-    return this.http
-      .post<
-        RespostaApi<AutenticacaoResponse>
-      >(`${this.apiUrlBase}/autenticacao/login`, request, { withCredentials: true })
-      .pipe(
-        map((resposta) => this.extrairDados(resposta)),
-        tap((autenticacao) => this.usuarioAtual.set(autenticacao)),
-        catchError((erro) => this.tratarErro(erro)),
-      );
-  }
+export function obterEstadoSessao() {
+  return estado;
+}
 
-  criarConta(request: CriarContaRequest): Observable<AutenticacaoResponse> {
-    return this.http
-      .post<
-        RespostaApi<AutenticacaoResponse>
-      >(`${this.apiUrlBase}/autenticacao/cadastro`, request, { withCredentials: true })
-      .pipe(
-        map((resposta) => this.extrairDados(resposta)),
-        tap((autenticacao) => this.usuarioAtual.set(autenticacao)),
-        catchError((erro) => this.tratarErro(erro)),
-      );
-  }
+export function observarSessao(ouvinte: () => void) {
+  ouvintes.add(ouvinte);
+  return () => ouvintes.delete(ouvinte);
+}
 
-  renovarToken(): Observable<AutenticacaoResponse> {
-    if (this.renovacaoEmAndamento) {
-      return this.renovacaoEmAndamento;
+export function useSessao() {
+  return useSyncExternalStore(observarSessao, obterEstadoSessao, obterEstadoSessao);
+}
+
+export async function entrar(request: LoginRequest) {
+  const envelope = await requisicaoPublica<RespostaApi<AutenticacaoResponse>>('/autenticacao/login', {
+    method: 'POST',
+    body: request,
+  });
+  const autenticacao = extrairDados(envelope, 'Não foi possível entrar.');
+  aplicarAutenticacao(autenticacao);
+  return autenticacao;
+}
+
+export async function criarConta(request: CriarContaRequest) {
+  const envelope = await requisicaoPublica<RespostaApi<AutenticacaoResponse>>('/autenticacao/cadastro', {
+    method: 'POST',
+    body: request,
+  });
+  const autenticacao = extrairDados(envelope, 'Não foi possível criar a conta.');
+  aplicarAutenticacao(autenticacao);
+  return autenticacao;
+}
+
+/** Troca a senha da sessão ativa. O servidor encerra as outras sessões e devolve uma nova para esta. */
+export async function alterarSenha(senhaAtual: string, novaSenha: string) {
+  const envelope = await requisicaoApi<RespostaApi<AutenticacaoResponse>>('/autenticacao/senha/alterar', {
+    method: 'POST',
+    body: { senhaAtual, novaSenha },
+  });
+  aplicarAutenticacao(extrairDados(envelope, 'Não foi possível alterar a senha.'));
+}
+
+export async function renovarSessao(): Promise<boolean> {
+  if (renovacaoEmAndamento) return renovacaoEmAndamento;
+
+  renovacaoEmAndamento = (async () => {
+    try {
+      const envelope = await requisicaoPublica<RespostaApi<AutenticacaoResponse>>('/autenticacao/token/renovar', {
+        method: 'POST',
+        body: {},
+      });
+      aplicarAutenticacao(extrairDados(envelope, 'Sessão expirada.'));
+      return true;
+    } catch {
+      publicar({ status: 'anonimo', usuario: null, accessToken: null });
+      return false;
+    } finally {
+      renovacaoEmAndamento = null;
     }
+  })();
 
-    this.renovacaoEmAndamento = this.http
-      .post<
-        RespostaApi<AutenticacaoResponse>
-      >(`${this.apiUrlBase}/autenticacao/token/renovar`, {}, { withCredentials: true })
-      .pipe(
-        map((resposta) => this.extrairDados(resposta)),
-        tap((autenticacao) => this.usuarioAtual.set(autenticacao)),
-        catchError((erro) => {
-          this.usuarioAtual.set(null);
-          return this.tratarErro(erro);
-        }),
-        finalize(() => (this.renovacaoEmAndamento = null)),
-        shareReplay({ bufferSize: 1, refCount: false }),
-      );
+  return renovacaoEmAndamento;
+}
 
-    return this.renovacaoEmAndamento;
-  }
+export async function restaurarSessao() {
+  if (estado.status === 'autenticado') return true;
+  return renovarSessao();
+}
 
-  restaurarSessao(): Observable<boolean> {
-    if (this.obterAccessToken()) {
-      return of(true);
-    }
-
-    return this.renovarToken().pipe(
-      map(() => true),
-      catchError(() => of(false)),
-    );
-  }
-
-  sair(): Observable<void> {
-    return this.http
-      .post<void>(`${this.apiUrlBase}/autenticacao/sair`, {}, { withCredentials: true })
-      .pipe(
-        tap(() => this.usuarioAtual.set(null)),
-        catchError((erro) => {
-          this.usuarioAtual.set(null);
-          return this.tratarErro(erro);
-        }),
-      );
-  }
-
-  solicitarRecuperacaoSenha(request: SolicitarRecuperacaoSenhaRequest): Observable<void> {
-    return this.http
-      .post<
-        RespostaApi<object>
-      >(`${this.apiUrlBase}/autenticacao/recuperacao-senha/solicitar`, request)
-      .pipe(
-        map(() => undefined),
-        catchError((erro) => this.tratarErro(erro)),
-      );
-  }
-
-  redefinirSenha(token: string, novaSenha: string): Observable<void> {
-    return this.http
-      .post<RespostaApi<object>>(`${this.apiUrlBase}/autenticacao/recuperacao-senha/redefinir`, {
-        token,
-        novaSenha,
-      })
-      .pipe(
-        map(() => undefined),
-        catchError((erro) => this.tratarErro(erro)),
-      );
-  }
-
-  private extrairDados<T>(resposta: RespostaApi<T>): T {
-    if (!resposta.sucesso || !resposta.dados) {
-      throw new Error(resposta.mensagem ?? 'Nao foi possivel concluir a operacao.');
-    }
-
-    return resposta.dados;
-  }
-
-  private tratarErro(erro: unknown): Observable<never> {
-    if (erro instanceof HttpErrorResponse) {
-      const resposta = erro.error as Partial<RespostaApi<unknown>> | null;
-      const mensagem =
-        resposta?.erros?.[0] ??
-        resposta?.mensagem ??
-        'Nao foi possivel concluir a operacao. Tente novamente.';
-
-      return throwError(() => new Error(mensagem));
-    }
-
-    if (erro instanceof Error) {
-      return throwError(() => erro);
-    }
-
-    return throwError(() => new Error('Nao foi possivel concluir a operacao. Tente novamente.'));
+export async function sair() {
+  try {
+    await requisicaoApi<void>('/autenticacao/sair', { method: 'POST', body: {} });
+  } finally {
+    publicar({ status: 'anonimo', usuario: null, accessToken: null });
   }
 }
+
+export async function solicitarRecuperacaoSenha(email: string) {
+  await requisicaoPublica('/autenticacao/recuperacao-senha/solicitar', {
+    method: 'POST',
+    body: { email },
+  });
+}
+
+export async function redefinirSenha(token: string, novaSenha: string) {
+  await requisicaoPublica('/autenticacao/recuperacao-senha/redefinir', {
+    method: 'POST',
+    body: { token, novaSenha },
+  });
+}
+
+configurarAutenticacaoApi({
+  obterToken: () => (estado.status === 'autenticado' ? estado.accessToken : null),
+  renovar: renovarSessao,
+});

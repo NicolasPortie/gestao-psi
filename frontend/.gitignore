@@ -3,8 +3,6 @@
 # Compiled output
 /dist
 /tmp
-/out-tsc
-/bazel-out
 
 # Node
 /node_modules
@@ -30,14 +28,15 @@ yarn-error.log
 .history/*
 
 # Miscellaneous
-/.angular/cache
-.sass-cache/
 /connect.lock
 /coverage
 /libpeerconnection.log
-testem.log
-/typings
 __screenshots__/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 
 # System files
 .DS_Store

@@ -1,0 +1,250 @@
+/*
+ * Superfícies que flutuam sobre a tela: diálogo, gaveta, menu e dica.
+ * Entram com ease-out forte, saem mais rápido que entram. Popovers nascem do
+ * gatilho (--transform-origin); diálogos permanecem centrados.
+ * Elevação declarada uma vez: anel + sombra em --shadow-float.
+ */
+
+.fundo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--scrim);
+  transition: opacity 180ms var(--ease-out);
+}
+
+.fundo-overlay[data-starting-style],
+.fundo-overlay[data-ending-style] {
+  opacity: 0;
+}
+
+.fundo-overlay[data-ending-style] {
+  transition-duration: 120ms;
+}
+
+/* ---- Diálogo ---------------------------------------------------------------- */
+
+.dialogo {
+  position: fixed;
+  z-index: 61;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  width: min(var(--largura-dialogo, 32rem), calc(100vw - 2rem));
+  max-height: min(46rem, calc(100dvh - 2rem));
+  border-radius: var(--radius-xl);
+  background: var(--overlay);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+  outline: none;
+  transition:
+    scale 200ms var(--ease-out),
+    opacity 200ms var(--ease-out);
+}
+
+.dialogo[data-starting-style],
+.dialogo[data-ending-style] {
+  opacity: 0;
+  scale: 0.96;
+}
+
+.dialogo[data-ending-style] {
+  transition-duration: 130ms;
+}
+
+@media (max-width: 40rem) {
+  .dialogo {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    translate: none;
+    width: 100%;
+    max-height: min(90dvh, 46rem);
+    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    transition:
+      translate 300ms var(--ease-drawer),
+      opacity 200ms var(--ease-out);
+  }
+
+  .dialogo[data-starting-style],
+  .dialogo[data-ending-style] {
+    translate: 0 100%;
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+/* ---- Gaveta lateral ---------------------------------------------------------- */
+
+.gaveta {
+  position: fixed;
+  z-index: 61;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(var(--largura-gaveta, 28rem), 100vw);
+  background: var(--overlay);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+  outline: none;
+  transition: translate 300ms var(--ease-drawer);
+}
+
+.gaveta[data-starting-style],
+.gaveta[data-ending-style] {
+  translate: 100% 0;
+}
+
+.gaveta[data-ending-style] {
+  transition-duration: 200ms;
+}
+
+.gaveta[data-lado='esquerda'] {
+  right: auto;
+  left: 0;
+}
+
+.gaveta[data-lado='esquerda'][data-starting-style],
+.gaveta[data-lado='esquerda'][data-ending-style] {
+  translate: -100% 0;
+}
+
+@media (max-width: 40rem) {
+  .gaveta:not([data-lado='esquerda']) {
+    top: auto;
+    left: 0;
+    width: 100%;
+    max-height: 92dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+
+  .gaveta:not([data-lado='esquerda'])[data-starting-style],
+  .gaveta:not([data-lado='esquerda'])[data-ending-style] {
+    translate: 0 100%;
+  }
+}
+
+/* ---- Menu, popover e dica ---------------------------------------------------- */
+
+.menu-popup {
+  min-width: 11rem;
+  max-width: min(22rem, calc(100vw - 1rem));
+  padding: 0.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--overlay);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+  outline: none;
+  transform-origin: var(--transform-origin);
+  transition:
+    scale 150ms var(--ease-out),
+    opacity 150ms var(--ease-out);
+}
+
+.menu-popup[data-starting-style],
+.menu-popup[data-ending-style] {
+  opacity: 0;
+  scale: 0.96;
+}
+
+.menu-popup[data-ending-style] {
+  transition-duration: 100ms;
+}
+
+.item-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: 1.125rem;
+  color: var(--ink);
+  cursor: default;
+  outline: none;
+  user-select: none;
+  text-align: left;
+  text-decoration: none;
+}
+
+@media (pointer: coarse) {
+  .item-menu {
+    min-height: 2.75rem;
+    font-size: var(--text-base);
+  }
+}
+
+.item-menu[data-highlighted] {
+  background: var(--hover);
+}
+
+.item-menu[data-disabled] {
+  color: var(--ink-faint);
+}
+
+.item-menu[data-perigo] {
+  color: var(--danger-ink);
+}
+
+.item-menu[data-perigo][data-highlighted] {
+  background: var(--danger-wash);
+}
+
+.item-menu[data-selecionado] {
+  font-weight: 500;
+}
+
+.dica-popup {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--text-xs);
+  line-height: 1rem;
+  font-weight: 500;
+  transform-origin: var(--transform-origin);
+  transition:
+    scale 125ms var(--ease-out),
+    opacity 125ms var(--ease-out);
+}
+
+.dica-popup[data-starting-style],
+.dica-popup[data-ending-style] {
+  opacity: 0;
+  scale: 0.97;
+}
+
+.dica-popup[data-instant] {
+  transition-duration: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogo,
+  .gaveta,
+  .menu-popup,
+  .dica-popup {
+    transition-property: opacity;
+    transition-duration: 120ms;
+  }
+
+  .dialogo[data-starting-style],
+  .dialogo[data-ending-style],
+  .gaveta[data-starting-style],
+  .gaveta[data-ending-style],
+  .menu-popup[data-starting-style],
+  .menu-popup[data-ending-style],
+  .dica-popup[data-starting-style],
+  .dica-popup[data-ending-style] {
+    translate: none;
+    scale: 1;
+    opacity: 0;
+  }
+}

@@ -1,0 +1,213 @@
+/*
+ * Tokens de design do GestaoPsi.
+ *
+ * Camada 1 (abaixo): papeis semanticos, um conjunto por tema. Componentes so
+ * leem estes papeis, nunca valores literais.
+ * Camada 2 (@theme inline): expoe os papeis como utilitarios Tailwind
+ * (bg-paper, text-ink, border-line...) sem duplicar valores.
+ *
+ * Mundo visual: papel de leitura optica. Neutros frios quase sem croma, tinta
+ * azul-grafite, regua "drop-out" em petroleo claro, um unico acento petroleo e
+ * uma tinta de correcao vermelha reservada a atencao e erro.
+ * Todos os pares de texto sao medidos por `npm run contraste` (scripts/contraste.mjs).
+ */
+
+:root,
+:root[data-tema='claro'] {
+  color-scheme: light;
+
+  /* Superficies */
+  --paper: oklch(0.988 0.003 215);
+  --rail: oklch(0.962 0.006 215);
+  --field: oklch(0.999 0.002 215);
+  --overlay: oklch(0.999 0.002 215);
+  --hover: oklch(0.953 0.007 215);
+  --pressed: oklch(0.932 0.009 215);
+  --selected: oklch(0.945 0.026 212);
+  --scrim: oklch(0.22 0.03 245 / 0.42);
+
+  /* Reguas */
+  --line: oklch(0.9 0.011 215);
+  --line-strong: oklch(0.62 0.014 215);
+
+  /* Texto */
+  --ink: oklch(0.225 0.025 245);
+  --ink-muted: oklch(0.45 0.02 235);
+  --ink-faint: oklch(0.5 0.018 230);
+
+  /* Acento: petroleo */
+  --accent: oklch(0.45 0.075 212);
+  --accent-hover: oklch(0.4 0.075 212);
+  --accent-ink: oklch(0.4 0.08 212);
+  --accent-wash: oklch(0.955 0.022 212);
+  --accent-line: oklch(0.82 0.05 212);
+  --on-accent: oklch(0.99 0.004 212);
+  --focus: oklch(0.55 0.1 212);
+
+  /* Tinta de correcao: atencao, erro e acoes destrutivas */
+  --danger: oklch(0.52 0.19 27);
+  --danger-hover: oklch(0.47 0.19 27);
+  --danger-ink: oklch(0.46 0.17 27);
+  --danger-wash: oklch(0.965 0.025 27);
+  --danger-line: oklch(0.86 0.07 27);
+
+  --warning: oklch(0.62 0.14 70);
+  --warning-ink: oklch(0.43 0.09 70);
+  --warning-wash: oklch(0.97 0.04 85);
+  --warning-line: oklch(0.87 0.09 82);
+
+  --success: oklch(0.52 0.12 155);
+  --success-ink: oklch(0.41 0.1 155);
+  --success-wash: oklch(0.965 0.03 155);
+  --success-line: oklch(0.86 0.07 155);
+
+  /* Elevacao: um anel de 1px + sustentacao + ambiente (so para o que flutua) */
+  --shadow-float:
+    0 0 0 1px oklch(0 0 0 / 0.07), 0 1px 2px -1px oklch(0 0 0 / 0.08), 0 8px 24px -6px oklch(0.2 0.03 245 / 0.18);
+  --shadow-ring: 0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 2px -1px oklch(0 0 0 / 0.06), 0 2px 4px 0 oklch(0 0 0 / 0.04);
+  --image-outline: oklch(0 0 0 / 0.1);
+
+  /* Palco da tela de acesso: petroleo profundo com tinta clara */
+  --stage: oklch(0.29 0.05 214);
+  --stage-ink: oklch(0.965 0.01 205);
+  --stage-muted: oklch(0.8 0.025 210);
+  --stage-line: oklch(0.42 0.045 212);
+}
+
+:root[data-tema='escuro'] {
+  color-scheme: dark;
+
+  --paper: oklch(0.205 0.012 235);
+  --rail: oklch(0.175 0.012 235);
+  --field: oklch(0.235 0.013 235);
+  --overlay: oklch(0.27 0.014 235);
+  --hover: oklch(0.255 0.014 235);
+  --pressed: oklch(0.29 0.016 235);
+  --selected: oklch(0.31 0.045 212);
+  --scrim: oklch(0.1 0.01 235 / 0.62);
+
+  --line: oklch(0.31 0.014 235);
+  --line-strong: oklch(0.56 0.02 235);
+
+  --ink: oklch(0.95 0.008 215);
+  --ink-muted: oklch(0.77 0.015 220);
+  --ink-faint: oklch(0.68 0.018 225);
+
+  --accent: oklch(0.78 0.065 215);
+  --accent-hover: oklch(0.84 0.06 215);
+  --accent-ink: oklch(0.83 0.06 215);
+  --accent-wash: oklch(0.285 0.04 212);
+  --accent-line: oklch(0.45 0.06 212);
+  --on-accent: oklch(0.2 0.02 235);
+  --focus: oklch(0.8 0.08 215);
+
+  --danger: oklch(0.7 0.16 27);
+  --danger-hover: oklch(0.76 0.15 27);
+  --danger-ink: oklch(0.8 0.12 27);
+  --danger-wash: oklch(0.29 0.06 27);
+  --danger-line: oklch(0.48 0.12 27);
+
+  --warning: oklch(0.8 0.14 80);
+  --warning-ink: oklch(0.86 0.1 85);
+  --warning-wash: oklch(0.3 0.05 80);
+  --warning-line: oklch(0.5 0.09 80);
+
+  --success: oklch(0.74 0.13 155);
+  --success-ink: oklch(0.82 0.11 155);
+  --success-wash: oklch(0.285 0.045 155);
+  --success-line: oklch(0.47 0.09 155);
+
+  --shadow-float: 0 0 0 1px oklch(1 0 0 / 0.09), 0 12px 32px -8px oklch(0 0 0 / 0.55);
+  --shadow-ring: 0 0 0 1px oklch(1 0 0 / 0.08);
+  --image-outline: oklch(1 0 0 / 0.1);
+
+  --stage: oklch(0.155 0.025 225);
+  --stage-ink: oklch(0.95 0.01 205);
+  --stage-muted: oklch(0.76 0.02 215);
+  --stage-line: oklch(0.32 0.03 220);
+}
+
+@custom-variant dark (&:where([data-tema='escuro'], [data-tema='escuro'] *));
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-rail: var(--rail);
+  --color-field: var(--field);
+  --color-overlay: var(--overlay);
+  --color-hover: var(--hover);
+  --color-pressed: var(--pressed);
+  --color-selected: var(--selected);
+  --color-scrim: var(--scrim);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-line: var(--accent-line);
+  --color-on-accent: var(--on-accent);
+  --color-focus: var(--focus);
+
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-wash: var(--danger-wash);
+  --color-danger-line: var(--danger-line);
+
+  --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-wash: var(--warning-wash);
+  --color-warning-line: var(--warning-line);
+
+  --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
+  --color-success-wash: var(--success-wash);
+  --color-success-line: var(--success-line);
+
+  --color-stage: var(--stage);
+  --color-stage-ink: var(--stage-ink);
+  --color-stage-muted: var(--stage-muted);
+  --color-stage-line: var(--stage-line);
+
+  --shadow-float: var(--shadow-float);
+  --shadow-ring: var(--shadow-ring);
+}
+
+@theme {
+  --font-sans:
+    'Hanken Grotesk Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Escala curta e fixa (razao ~1.15): a hierarquia vem de peso, caixa e regua. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.375rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.1875rem;
+  --text-xl--line-height: 1.625rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.875rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Movimento: ease-out forte para entradas, ease-in-out para deslocamentos. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-icon: cubic-bezier(0.2, 0, 0, 1);
+}

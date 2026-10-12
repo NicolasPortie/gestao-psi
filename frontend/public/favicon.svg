@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="GestãoPsi">
+  <style>
+    .t { stroke: #0c606d; fill: none }
+    .p { fill: #0c606d }
+    @media (prefers-color-scheme: dark) { .t { stroke: #64c2cc } .p { fill: #64c2cc } }
+  </style>
+  <path class="t" d="M7.5 8v5.5a8.5 8.5 0 0 0 17 0V8M16 3.5V21" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="p" cx="16" cy="27.2" r="2.1"/>
+</svg>
