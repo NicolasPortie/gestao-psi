@@ -1,4 +1,4 @@
-# GestaoPsi
+# Vínculo
 
 Gestao de um consultorio de psicologo autonomo, com rotina administrativa e
 registros clinicos separados por responsabilidade e permissao.

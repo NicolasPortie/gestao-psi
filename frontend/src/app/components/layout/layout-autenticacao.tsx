@@ -1,23 +1,25 @@
 import { Outlet } from 'react-router';
 
-import { estadosConsulta } from '../../features/agenda/agenda.rotulos';
+import { MARCA } from '../../core/marca';
 import { useTituloRota } from '../../core/use-titulo-rota';
+import { estadosConsulta } from '../../features/agenda/agenda.rotulos';
 import { EstadoRotulado } from '../ui/marca-estado';
-import { Marca, SimboloMarca } from './marca';
+import { Marca } from './marca';
 
 const sequencia = [estadosConsulta.Agendada, estadosConsulta.AguardandoConfirmacao, estadosConsulta.Confirmada, estadosConsulta.Realizada];
 
 /**
- * Moldura das telas de acesso. O palco mostra o vocabulário do produto, o estado
- * como marca de preenchimento, preenchendo-se em sequência uma única vez ao abrir.
+ * Moldura das telas de acesso. É a porta de uma ferramenta de trabalho: formulário à esquerda e, no
+ * desktop, um painel sereno à direita com a promessa do produto e a sequência de estados de uma
+ * consulta. Sem imagem decorativa: a única arte é a marca.
  */
 export function LayoutAutenticacao() {
   useTituloRota();
   return (
-    <div className="min-h-dvh bg-paper lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+    <div className="min-h-dvh bg-paper lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <main className="flex min-h-dvh flex-col px-5 py-6 sm:px-10 lg:px-16">
         <header>
-          <Marca />
+          <Marca tamanho={32} />
         </header>
         <div className="flex flex-1 items-center py-10">
           <div className="mx-auto w-full max-w-[24rem]">
@@ -25,36 +27,22 @@ export function LayoutAutenticacao() {
           </div>
         </div>
         <footer className="text-xs text-ink-muted">
-          <p>© 2026 GestãoPsi. Cada conta é privada e isolada das demais.</p>
+          <p>© 2026 {MARCA.nome}. Cada conta é privada e isolada das demais.</p>
         </footer>
       </main>
 
-      <aside
-        aria-label="Sobre o GestãoPsi"
-        className="relative hidden overflow-hidden bg-stage text-stage-ink lg:flex lg:flex-col lg:justify-between lg:p-14 xl:p-20"
-      >
-        <SimboloMarca
-          tamanho={420}
-          className="pointer-events-none absolute bottom-14 right-14 text-stage-line [&_*]:stroke-[0.8]"
-        />
-        <div className="relative max-w-md">
-          <p className="text-3xl font-semibold leading-[1.15] tracking-[-0.02em] xl:text-[2.125rem]">Seu consultório em ordem.</p>
-          <p className="mt-4 text-lg text-stage-muted">
-            Agenda, pacientes, financeiro e registros em um só lugar, com cada informação no estado em que ela está.
-          </p>
+      <aside aria-label={`Sobre o ${MARCA.nome}`} className="hidden border-l border-line bg-rail lg:flex lg:items-center lg:px-16 xl:px-24">
+        <div className="grid max-w-md gap-6">
+          <p className="font-display text-4xl font-semibold leading-[1.1] tracking-[-0.02em] text-ink">{MARCA.chamada}</p>
+          <p className="text-lg text-ink-muted">Agenda, pacientes, financeiro e registros em um só lugar, para você e para quem trabalha com você.</p>
+          <ul className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-line pt-5" aria-label="Estados de uma consulta">
+            {sequencia.map((estado) => (
+              <li key={estado.rotulo}>
+                <EstadoRotulado estado={estado} />
+              </li>
+            ))}
+          </ul>
         </div>
-
-        <ul className="relative grid max-w-xs gap-0 border-t border-stage-line" aria-label="Estados de uma consulta">
-          {sequencia.map((estado, indice) => (
-            <li
-              key={estado.rotulo}
-              className="animar-revelar flex items-center border-b border-stage-line py-3.5 text-stage-ink"
-              style={{ '--ordem': indice + 2 } as React.CSSProperties}
-            >
-              <EstadoRotulado estado={{ ...estado, tom: 'neutro' }} className="!text-stage-ink [--marca-contraste:var(--stage)] [&_svg]:!text-stage-ink" />
-            </li>
-          ))}
-        </ul>
       </aside>
     </div>
   );

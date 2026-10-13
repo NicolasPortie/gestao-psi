@@ -23,51 +23,72 @@ const corTexto: Record<TomEstado, string> = {
   perigo: 'text-danger-ink',
 };
 
-const TRACO = 1.75;
+const TRACO = 1.5;
+const TESSELA = { x: 1.25, y: 1.25, width: 13.5, height: 13.5, rx: 2.25 } as const;
+const contraste = 'var(--marca-contraste, var(--paper))';
 
+/** O azulejo vazio: o contorno em que todo estado se desenha. */
+function Contorno() {
+  return <rect {...TESSELA} fill="none" stroke="currentColor" strokeWidth={TRACO} />;
+}
+
+/** O azulejo cheio. */
+function Cheio() {
+  return <rect {...TESSELA} fill="currentColor" />;
+}
+
+/**
+ * Cada estado e o mesmo azulejo em um ponto do preenchimento: vazio, quarto de circulo, cheio.
+ * Cancelado, remarcado e nao compareceu mantem o contorno (ou o cheio) e acrescentam um traco.
+ */
 function Forma({ forma }: { forma: FormaMarca }) {
   switch (forma) {
     case 'anel':
-      return <circle cx="8" cy="8" r="5.75" fill="none" stroke="currentColor" strokeWidth={TRACO} />;
+      return (
+        <>
+          <Contorno />
+          <path d="M1.25 14.75A13.5 13.5 0 0 1 14.75 1.25" fill="none" stroke="currentColor" strokeWidth={1.1} opacity={0.55} />
+        </>
+      );
     case 'meio':
       return (
         <>
-          <circle cx="8" cy="8" r="5.75" fill="none" stroke="currentColor" strokeWidth={TRACO} />
-          <path d="M8 2.25a5.75 5.75 0 0 1 0 11.5Z" fill="currentColor" />
+          <Contorno />
+          <path d="M14.75 14.75H6.5A8.25 8.25 0 0 1 14.75 6.5Z" fill="currentColor" />
         </>
       );
     case 'cheio':
-      return <circle cx="8" cy="8" r="6.6" fill="currentColor" />;
+      return <Cheio />;
     case 'check':
       return (
         <>
-          <circle cx="8" cy="8" r="6.6" fill="currentColor" />
-          <path d="m5.2 8.2 2 2 3.6-4.1" fill="none" stroke="var(--marca-contraste, var(--paper))" strokeWidth={TRACO} strokeLinecap="round" strokeLinejoin="round" />
+          <Cheio />
+          <path d="m4.6 8.2 2.3 2.3 4.5-5" fill="none" stroke={contraste} strokeWidth={TRACO} strokeLinecap="round" strokeLinejoin="round" />
         </>
       );
     case 'riscado':
       return (
         <>
-          <circle cx="8" cy="8" r="5.75" fill="none" stroke="currentColor" strokeWidth={TRACO} />
-          <path d="m4.4 11.6 7.2-7.2" fill="none" stroke="currentColor" strokeWidth={TRACO} strokeLinecap="round" />
+          <Contorno />
+          <path d="m4 12 8-8" fill="none" stroke="currentColor" strokeWidth={TRACO} strokeLinecap="round" />
         </>
       );
     case 'seta':
       return (
         <>
-          <circle cx="8" cy="8" r="5.75" fill="none" stroke="currentColor" strokeWidth={TRACO} />
-          <path d="M5.4 8h5m-2-2.1 2.1 2.1-2.1 2.1" fill="none" stroke="currentColor" strokeWidth={TRACO} strokeLinecap="round" strokeLinejoin="round" />
+          <Contorno />
+          <path d="M4.6 8h6.3m-2.4-2.4L10.9 8l-2.4 2.4" fill="none" stroke="currentColor" strokeWidth={TRACO} strokeLinecap="round" strokeLinejoin="round" />
         </>
       );
     case 'x':
       return (
         <>
-          <circle cx="8" cy="8" r="6.6" fill="currentColor" />
-          <path d="m5.6 5.6 4.8 4.8m0-4.8-4.8 4.8" fill="none" stroke="var(--marca-contraste, var(--paper))" strokeWidth={TRACO} strokeLinecap="round" />
+          <Cheio />
+          <path d="m5.5 5.5 5 5m0-5-5 5" fill="none" stroke={contraste} strokeWidth={TRACO} strokeLinecap="round" />
         </>
       );
     case 'ponto':
-      return <circle cx="8" cy="8" r="3.4" fill="currentColor" />;
+      return <rect x="4.75" y="4.75" width="6.5" height="6.5" rx="1.5" fill="currentColor" />;
   }
 }
 
@@ -80,7 +101,7 @@ interface MarcaEstadoProps {
   animar?: boolean;
 }
 
-/** Forma desenhada do estado, como a marca de preenchimento numa folha de respostas. Sempre decorativa: o texto acompanha. */
+/** Forma desenhada do estado: um azulejo em um ponto do preenchimento. Sempre decorativa: o texto acompanha. */
 export function MarcaEstado({ forma, tom = 'neutro', tamanho = 16, className, animar = false }: MarcaEstadoProps) {
   return (
     <svg

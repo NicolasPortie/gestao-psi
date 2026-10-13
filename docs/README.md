@@ -1,4 +1,4 @@
-# Documentacao do GestaoPsi
+# Documentacao do Vínculo
 
 Esta pasta organiza a documentacao do projeto por responsabilidade.
 
@@ -41,7 +41,7 @@ docs/
 
 ## Decisao Atual do Produto
 
-O GestaoPsi e um SaaS multi-conta para psicologos autonomos.
+O Vínculo e um SaaS multi-conta para psicologos autonomos.
 
 Cada psicologo possui uma `ContaPsicologo`. Todos os dados do consultorio, como pacientes, agenda, prontuario, documentos, pagamentos e WhatsApp, devem ser escopados por `ContaPsicologoId`.
 

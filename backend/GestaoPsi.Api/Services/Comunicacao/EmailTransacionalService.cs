@@ -39,7 +39,7 @@ public sealed class EmailTransacionalService(
 
         return await EnviarAsync(
             destinatario,
-            "Recuperação de acesso ao GestãoPsi",
+            $"Recuperação de acesso ao {_configuracao.NomeRemetente}",
             corpo,
             cancellationToken);
     }

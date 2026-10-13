@@ -2,6 +2,7 @@ import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { usePermissoes } from '../../core/autenticacao/permissoes';
+import { MARCA } from '../../core/marca';
 import { rotuloPerfil } from '../../core/dominio/perfil';
 import { Avatar } from '../ui/avatar';
 import { cn } from '../ui/cn';
@@ -28,7 +29,7 @@ export function Trilho({ recolhido, aoAlternar }: TrilhoProps) {
   return (
     <aside className="sticky top-0 hidden h-dvh min-h-0 flex-col border-r border-line bg-rail lg:flex" aria-label="Navegação principal">
       <div className={cn('flex h-14 shrink-0 items-center', recolhido ? 'justify-center' : 'justify-between pl-4 pr-2.5')}>
-        <Link to="/painel" aria-label="GestãoPsi, ir para Hoje" className="rounded-md no-underline">
+        <Link to="/painel" aria-label={`${MARCA.nome}, ir para Hoje`} className="rounded-md no-underline">
           <Marca somenteSimbolo={recolhido} />
         </Link>
         {recolhido ? null : <SinoNotificacoes />}
@@ -87,7 +88,7 @@ export function Trilho({ recolhido, aoAlternar }: TrilhoProps) {
                 recolhido && 'justify-center',
               )}
             >
-              <Avatar nome={usuario?.nomeCompleto ?? 'GestãoPsi'} />
+              <Avatar nome={usuario?.nomeCompleto ?? MARCA.nome} />
               {recolhido ? null : (
                 <span className="grid min-w-0 flex-1 leading-tight">
                   <span className="truncate text-sm font-medium text-ink">{usuario?.nomeCompleto}</span>

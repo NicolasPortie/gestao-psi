@@ -8,7 +8,7 @@ O foco e organizar entidades, relacionamentos e cardinalidades do dominio.
 
 ## Decisao Principal
 
-O GestaoPsi e um SaaS multi-conta.
+O Vínculo e um SaaS multi-conta.
 
 Cada psicologo possui uma `ContaPsicologo`.
 

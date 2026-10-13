@@ -1,6 +1,6 @@
-# Modelagem do GestaoPsi
+# Modelagem do Vínculo
 
-Esta pasta separa a modelagem do GestaoPsi em documentos menores.
+Esta pasta separa a modelagem do Vínculo em documentos menores.
 
 ## Ordem Recomendada de Leitura
 
@@ -33,4 +33,4 @@ Exemplos:
 
 ## Principio Central
 
-O GestaoPsi nao deve ser apenas uma agenda com anotacoes. Ele deve ser um sistema profissional de gestao para psicologos, com prontuario, evolucao do atendimento, documentos psicologicos, seguranca, auditoria e automacao administrativa por WhatsApp/chatbot.
+O Vínculo nao deve ser apenas uma agenda com anotacoes. Ele deve ser um sistema profissional de gestao para psicologos, com prontuario, evolucao do atendimento, documentos psicologicos, seguranca, auditoria e automacao administrativa por WhatsApp/chatbot.

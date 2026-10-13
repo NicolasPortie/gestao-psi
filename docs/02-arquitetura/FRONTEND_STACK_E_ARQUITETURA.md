@@ -2,7 +2,7 @@
 
 ## Decisão
 
-O front-end oficial do GestãoPsi é uma SPA em React, TypeScript e Vite. A aplicação Angular anterior foi descontinuada sem camada de compatibilidade, execução paralela ou adaptadores entre frameworks.
+O front-end oficial do Vínculo é uma SPA em React, TypeScript e Vite. A aplicação Angular anterior foi descontinuada sem camada de compatibilidade, execução paralela ou adaptadores entre frameworks.
 
 A decisão prioriza domínio da stack pelo mantenedor, simplicidade operacional e uma base moderna para um produto administrativo sensível. O backend e os contratos HTTP permanecem independentes do framework de interface.
 
@@ -30,7 +30,7 @@ Não existe biblioteca de componentes visuais pronta (nada de Material, PrimeNG 
 | `@base-ui/react` | Dialog, AlertDialog, Menu, Tabs, Tooltip, Combobox | Foco preso, teclado, ARIA e portal corretos sem reimplementar; zero estilo imposto |
 | `sonner` | Toasts | Fila, pausa ao passar o mouse e leitor de tela resolvidos; estilizado por tokens |
 | `class-variance-authority` + `clsx` | Variantes de botão, marca e etiqueta | Composição de classes tipada, sem CSS-in-JS |
-| `@fontsource-variable/hanken-grotesk` | Tipografia | Fonte local, sem requisição a terceiros (privacidade) |
+| `@fontsource-variable/jost` e `@fontsource-variable/atkinson-hyperlegible-next` | Tipografia (títulos e texto) | Fontes locais, sem requisição a terceiros (privacidade) |
 
 Qualquer outra dependência de interface exige registrar a decisão antes de entrar.
 
@@ -120,7 +120,7 @@ Endereços anteriores à reorganização continuam funcionando por redirecioname
 
 ## Interface e acessibilidade
 
-- Direção visual: "folha de respostas" (ver `DESIGN.md`): régua, marcas de estado e um acento petróleo.
+- Direção visual: ferramenta calma de trabalho, em verde-musgo sobre porcelana, com o azulejo como módulo da marca e dos estados (ver `DESIGN.md`). Sem imagens decorativas.
 - Meta WCAG 2.2 AA, navegação por teclado e semântica nativa. Os pares de cor dos tokens são medidos por contraste.
 - Componentes interativos têm estados padrão, hover, foco, ativo, desabilitado, carregando e erro.
 - Toda lista e tela de dados tem esqueleto de carregamento, estado vazio com próximo passo e estado de erro com nova tentativa.

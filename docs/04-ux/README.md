@@ -1,4 +1,4 @@
-# UX do GestãoPsi
+# UX do Vínculo
 
 A referência visual é o código e o [`DESIGN.md`](../../DESIGN.md). Não há mais mockups externos como fonte de verdade. A decisão está em [`docs/adr/0001-reestruturacao-do-frontend.md`](../adr/0001-reestruturacao-do-frontend.md).
 

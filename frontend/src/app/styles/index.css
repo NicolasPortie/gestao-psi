@@ -3,6 +3,20 @@
 @import './sobreposicoes.css';
 
 /*
+ * Algarismos: a Atkinson Hyperlegible tem o zero cortado, o que em horarios e valores ("09:00",
+ * "R$ 120,00") parece codigo. Uma face so de digitos, emprestada da Jost, entra na frente dela e
+ * deixa todos os numeros limpos e tabulares sem trocar o resto do texto.
+ */
+@font-face {
+  font-family: 'Jost Algarismos';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../../../node_modules/@fontsource-variable/jost/files/jost-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0030-0039;
+}
+
+/*
  * Base global. Tudo que o navegador desenha sem pedir (selecao de texto, cursor,
  * barras de rolagem, foco, numerais) tambem pertence ao sistema visual.
  */
@@ -38,6 +52,7 @@
   h1,
   h2,
   h3 {
+    font-family: var(--font-display);
     text-wrap: balance;
     margin: 0;
   }

@@ -1,15 +1,17 @@
 /*
- * Tokens de design do GestaoPsi.
+ * Tokens de design do Vinculo.
  *
  * Camada 1 (abaixo): papeis semanticos, um conjunto por tema. Componentes so
  * leem estes papeis, nunca valores literais.
  * Camada 2 (@theme inline): expoe os papeis como utilitarios Tailwind
  * (bg-paper, text-ink, border-line...) sem duplicar valores.
  *
- * Mundo visual: papel de leitura optica. Neutros frios quase sem croma, tinta
- * azul-grafite, regua "drop-out" em petroleo claro, um unico acento petroleo e
- * uma tinta de correcao vermelha reservada a atencao e erro.
- * Todos os pares de texto sao medidos por `npm run contraste` (scripts/contraste.mjs).
+ * Mundo visual: ferramenta de trabalho do psicologo e da equipe, usada o dia inteiro, entao calma.
+ * Porcelana branca como fundo, grafite quente no texto, verde-musgo como unico acento (o verde e a
+ * cor da saude mental, aqui em tom sobrio), ambar para atencao, tijolo para erro e pinho para o que
+ * foi concluido. O tema escuro e grafite quente, sem azul. O azulejo modular aparece so onde tem
+ * funcao: na marca e nas marcas de estado. Todos os pares de texto sao medidos por
+ * `npm run contraste` (scripts/contraste.mjs).
  */
 
 :root,
@@ -17,114 +19,117 @@
   color-scheme: light;
 
   /* Superficies */
-  --paper: oklch(0.988 0.003 215);
-  --rail: oklch(0.962 0.006 215);
-  --field: oklch(0.999 0.002 215);
-  --overlay: oklch(0.999 0.002 215);
-  --hover: oklch(0.953 0.007 215);
-  --pressed: oklch(0.932 0.009 215);
-  --selected: oklch(0.945 0.026 212);
-  --scrim: oklch(0.22 0.03 245 / 0.42);
+  --paper: oklch(0.993 0.002 100);
+  --rail: oklch(0.968 0.007 140);
+  --field: oklch(1 0 0);
+  --overlay: oklch(1 0 0);
+  --hover: oklch(0.958 0.008 140);
+  --pressed: oklch(0.938 0.012 140);
+  --selected: oklch(0.93 0.03 150);
+  --scrim: oklch(0.2 0.02 150 / 0.4);
 
   /* Reguas */
-  --line: oklch(0.9 0.011 215);
-  --line-strong: oklch(0.62 0.014 215);
+  --line: oklch(0.91 0.008 140);
+  --line-strong: oklch(0.6 0.015 140);
 
-  /* Texto */
-  --ink: oklch(0.225 0.025 245);
-  --ink-muted: oklch(0.45 0.02 235);
-  --ink-faint: oklch(0.5 0.018 230);
+  /* Texto: grafite quente, sem azul */
+  --ink: oklch(0.24 0.012 150);
+  --ink-muted: oklch(0.46 0.018 150);
+  --ink-faint: oklch(0.5 0.016 150);
 
-  /* Acento: petroleo */
-  --accent: oklch(0.45 0.075 212);
-  --accent-hover: oklch(0.4 0.075 212);
-  --accent-ink: oklch(0.4 0.08 212);
-  --accent-wash: oklch(0.955 0.022 212);
-  --accent-line: oklch(0.82 0.05 212);
-  --on-accent: oklch(0.99 0.004 212);
-  --focus: oklch(0.55 0.1 212);
+  /* Acento: verde-musgo, a cor da saude mental em tom sobrio */
+  --accent: oklch(0.42 0.075 158);
+  --accent-hover: oklch(0.37 0.07 158);
+  --accent-ink: oklch(0.38 0.075 158);
+  --accent-wash: oklch(0.955 0.025 150);
+  --accent-line: oklch(0.8 0.055 152);
+  --on-accent: oklch(0.99 0.005 150);
+  --focus: oklch(0.52 0.1 158);
 
-  /* Tinta de correcao: atencao, erro e acoes destrutivas */
-  --danger: oklch(0.52 0.19 27);
-  --danger-hover: oklch(0.47 0.19 27);
-  --danger-ink: oklch(0.46 0.17 27);
-  --danger-wash: oklch(0.965 0.025 27);
-  --danger-line: oklch(0.86 0.07 27);
+  /* Tijolo: erro e acoes destrutivas */
+  --danger: oklch(0.5 0.15 32);
+  --danger-hover: oklch(0.45 0.15 32);
+  --danger-ink: oklch(0.45 0.14 32);
+  --danger-wash: oklch(0.965 0.025 40);
+  --danger-line: oklch(0.86 0.07 35);
 
-  --warning: oklch(0.62 0.14 70);
-  --warning-ink: oklch(0.43 0.09 70);
-  --warning-wash: oklch(0.97 0.04 85);
-  --warning-line: oklch(0.87 0.09 82);
+  /* Ambar: atencao */
+  --warning: oklch(0.63 0.13 72);
+  --warning-ink: oklch(0.42 0.08 68);
+  --warning-wash: oklch(0.975 0.04 90);
+  --warning-line: oklch(0.88 0.09 85);
 
-  --success: oklch(0.52 0.12 155);
-  --success-ink: oklch(0.41 0.1 155);
-  --success-wash: oklch(0.965 0.03 155);
-  --success-line: oklch(0.86 0.07 155);
+  /* Pinho: concluido (mais fundo que o acento, para a marca de check se distinguir) */
+  --success: oklch(0.48 0.1 170);
+  --success-ink: oklch(0.38 0.08 170);
+  --success-wash: oklch(0.965 0.025 170);
+  --success-line: oklch(0.86 0.06 170);
+
+  /* Marca: o azulejo musgo com duas metades, porcelana e ocre */
+  --ocre: oklch(0.78 0.11 80);
+  --marca-azulejo: var(--accent);
+  --marca-metade-a: oklch(0.985 0.004 100);
+  --marca-metade-b: var(--ocre);
 
   /* Elevacao: um anel de 1px + sustentacao + ambiente (so para o que flutua) */
   --shadow-float:
-    0 0 0 1px oklch(0 0 0 / 0.07), 0 1px 2px -1px oklch(0 0 0 / 0.08), 0 8px 24px -6px oklch(0.2 0.03 245 / 0.18);
-  --shadow-ring: 0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 2px -1px oklch(0 0 0 / 0.06), 0 2px 4px 0 oklch(0 0 0 / 0.04);
-  --image-outline: oklch(0 0 0 / 0.1);
-
-  /* Palco da tela de acesso: petroleo profundo com tinta clara */
-  --stage: oklch(0.29 0.05 214);
-  --stage-ink: oklch(0.965 0.01 205);
-  --stage-muted: oklch(0.8 0.025 210);
-  --stage-line: oklch(0.42 0.045 212);
+    0 0 0 1px oklch(0.2 0.02 150 / 0.08), 0 1px 2px -1px oklch(0.2 0.02 150 / 0.1), 0 8px 24px -6px oklch(0.2 0.03 150 / 0.2);
+  --shadow-ring: 0 0 0 1px oklch(0.2 0.02 150 / 0.07), 0 1px 2px -1px oklch(0.2 0.02 150 / 0.07), 0 2px 4px 0 oklch(0.2 0.02 150 / 0.04);
+  --image-outline: oklch(0.2 0.02 150 / 0.1);
 }
 
 :root[data-tema='escuro'] {
   color-scheme: dark;
 
-  --paper: oklch(0.205 0.012 235);
-  --rail: oklch(0.175 0.012 235);
-  --field: oklch(0.235 0.013 235);
-  --overlay: oklch(0.27 0.014 235);
-  --hover: oklch(0.255 0.014 235);
-  --pressed: oklch(0.29 0.016 235);
-  --selected: oklch(0.31 0.045 212);
-  --scrim: oklch(0.1 0.01 235 / 0.62);
+  /* Grafite quente com um sopro de verde: nada de azul-marinho */
+  --paper: oklch(0.205 0.008 150);
+  --rail: oklch(0.175 0.008 150);
+  --field: oklch(0.235 0.009 150);
+  --overlay: oklch(0.27 0.01 150);
+  --hover: oklch(0.25 0.01 150);
+  --pressed: oklch(0.285 0.012 150);
+  --selected: oklch(0.32 0.04 152);
+  --scrim: oklch(0.1 0.01 150 / 0.6);
 
-  --line: oklch(0.31 0.014 235);
-  --line-strong: oklch(0.56 0.02 235);
+  --line: oklch(0.31 0.01 150);
+  --line-strong: oklch(0.58 0.015 150);
 
-  --ink: oklch(0.95 0.008 215);
-  --ink-muted: oklch(0.77 0.015 220);
-  --ink-faint: oklch(0.68 0.018 225);
+  --ink: oklch(0.95 0.005 100);
+  --ink-muted: oklch(0.78 0.012 120);
+  --ink-faint: oklch(0.7 0.012 130);
 
-  --accent: oklch(0.78 0.065 215);
-  --accent-hover: oklch(0.84 0.06 215);
-  --accent-ink: oklch(0.83 0.06 215);
-  --accent-wash: oklch(0.285 0.04 212);
-  --accent-line: oklch(0.45 0.06 212);
-  --on-accent: oklch(0.2 0.02 235);
-  --focus: oklch(0.8 0.08 215);
+  --accent: oklch(0.78 0.08 155);
+  --accent-hover: oklch(0.84 0.075 155);
+  --accent-ink: oklch(0.82 0.08 155);
+  --accent-wash: oklch(0.3 0.04 155);
+  --accent-line: oklch(0.46 0.06 155);
+  --on-accent: oklch(0.19 0.012 150);
+  --focus: oklch(0.8 0.09 155);
 
-  --danger: oklch(0.7 0.16 27);
-  --danger-hover: oklch(0.76 0.15 27);
-  --danger-ink: oklch(0.8 0.12 27);
-  --danger-wash: oklch(0.29 0.06 27);
-  --danger-line: oklch(0.48 0.12 27);
+  --danger: oklch(0.72 0.13 32);
+  --danger-hover: oklch(0.78 0.12 32);
+  --danger-ink: oklch(0.82 0.1 32);
+  --danger-wash: oklch(0.3 0.05 32);
+  --danger-line: oklch(0.5 0.1 32);
 
-  --warning: oklch(0.8 0.14 80);
-  --warning-ink: oklch(0.86 0.1 85);
+  --warning: oklch(0.8 0.13 80);
+  --warning-ink: oklch(0.87 0.09 85);
   --warning-wash: oklch(0.3 0.05 80);
   --warning-line: oklch(0.5 0.09 80);
 
-  --success: oklch(0.74 0.13 155);
-  --success-ink: oklch(0.82 0.11 155);
-  --success-wash: oklch(0.285 0.045 155);
-  --success-line: oklch(0.47 0.09 155);
+  --success: oklch(0.76 0.1 170);
+  --success-ink: oklch(0.83 0.09 170);
+  --success-wash: oklch(0.285 0.04 170);
+  --success-line: oklch(0.47 0.07 170);
 
-  --shadow-float: 0 0 0 1px oklch(1 0 0 / 0.09), 0 12px 32px -8px oklch(0 0 0 / 0.55);
+  --ocre: oklch(0.78 0.11 80);
+  --marca-azulejo: var(--accent);
+  --marca-metade-a: oklch(0.19 0.012 150);
+  --marca-metade-b: var(--ocre);
+
+  --shadow-float: 0 0 0 1px oklch(1 0 0 / 0.09), 0 12px 32px -8px oklch(0 0 0 / 0.6);
   --shadow-ring: 0 0 0 1px oklch(1 0 0 / 0.08);
   --image-outline: oklch(1 0 0 / 0.1);
-
-  --stage: oklch(0.155 0.025 225);
-  --stage-ink: oklch(0.95 0.01 205);
-  --stage-muted: oklch(0.76 0.02 215);
-  --stage-line: oklch(0.32 0.03 220);
 }
 
 @custom-variant dark (&:where([data-tema='escuro'], [data-tema='escuro'] *));
@@ -170,20 +175,21 @@
   --color-success-wash: var(--success-wash);
   --color-success-line: var(--success-line);
 
-  --color-stage: var(--stage);
-  --color-stage-ink: var(--stage-ink);
-  --color-stage-muted: var(--stage-muted);
-  --color-stage-line: var(--stage-line);
+  --color-ocre: var(--ocre);
+
 
   --shadow-float: var(--shadow-float);
   --shadow-ring: var(--shadow-ring);
 }
 
 @theme {
+  /* Texto: Atkinson Hyperlegible Next, desenhada para a leitura sem esforco.
+     Titulos e marca: Jost, geometrica de heranca modernista, par dos modulos do azulejo. */
   --font-sans:
-    'Hanken Grotesk Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    'Jost Algarismos', 'Atkinson Hyperlegible Next Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Jost Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
 
-  /* Escala curta e fixa (razao ~1.15): a hierarquia vem de peso, caixa e regua. */
+  /* Escala curta e fixa (razao ~1.15): a hierarquia vem de peso e de regua. */
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
   --text-sm: 0.8125rem;
@@ -199,11 +205,12 @@
   --text-3xl: 1.875rem;
   --text-3xl--line-height: 2.25rem;
 
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  /* Cantos curtos: o azulejo e quadrado, so as bordas sao suavizadas. */
+  --radius-xs: 0.1875rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
 
   /* Movimento: ease-out forte para entradas, ease-in-out para deslocamentos. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);

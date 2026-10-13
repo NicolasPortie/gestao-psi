@@ -1,16 +1,17 @@
 import { Link } from 'react-router';
 
+import { MARCA } from '../../core/marca';
 import { DocumentoLegal, SecaoLegal } from './documento-legal';
 
 export default function TermosPage() {
   return (
     <DocumentoLegal
       titulo="Termos de uso"
-      resumo="As regras para usar o GestãoPsi, um sistema de gestão para psicólogos autônomos. Leia com atenção antes de criar sua conta."
+      resumo={`As regras para usar o ${MARCA.nome}, um sistema de gestão para psicólogos autônomos. Leia com atenção antes de criar sua conta.`}
     >
       <SecaoLegal numero={1} titulo="O serviço">
         <p>
-          O GestãoPsi é um sistema web para a rotina de um consultório individual: agenda, pacientes, consultas, prontuário, documentos, pagamentos,
+          O {MARCA.nome} é um sistema web para a rotina de um consultório individual: agenda, pacientes, consultas, prontuário, documentos, pagamentos,
           lembretes e comunicação administrativa. Cada conta pertence a um consultório e seus dados ficam isolados dos de qualquer outra conta.
         </p>
       </SecaoLegal>
@@ -34,7 +35,7 @@ export default function TermosPage() {
       <SecaoLegal numero={4} titulo="Responsabilidade pelos dados dos pacientes">
         <p>
           O psicólogo é o responsável pelos dados dos pacientes que cadastra e pelo sigilo profissional. Cabe a ele registrar apenas o necessário,
-          obter e documentar a base legal e o consentimento aplicáveis e cumprir as normas do seu conselho profissional. O GestãoPsi trata esses dados
+          obter e documentar a base legal e o consentimento aplicáveis e cumprir as normas do seu conselho profissional. O {MARCA.nome} trata esses dados
           em nome do psicólogo, conforme descrito na <Link to="/privacidade">política de privacidade</Link>.
         </p>
       </SecaoLegal>

@@ -1,3 +1,4 @@
+import { MARCA } from '../../core/marca';
 import { cn } from '../ui/cn';
 
 interface SimboloProps {
@@ -6,21 +7,16 @@ interface SimboloProps {
 }
 
 /**
- * Símbolo do GestaoPsi: a letra psi em traço contínuo, com a bolha vazia abaixo,
- * a mesma bolha que o produto preenche para marcar o estado de cada coisa.
+ * Simbolo: um azulejo cobalto com duas metades de um semicirculo, porcelana e acafrao, que se
+ * encontram no meio. E o vinculo entre duas pessoas e, ao mesmo tempo, o modulo que o produto
+ * preenche para mostrar o estado de cada coisa. As cores vem dos tokens, entao acompanham o tema.
  */
 export function SimboloMarca({ tamanho = 28, className }: SimboloProps) {
   return (
-    <svg viewBox="0 0 32 32" width={tamanho} height={tamanho} aria-hidden="true" focusable="false" className={className}>
-      <path
-        d="M7.5 8v5.5a8.5 8.5 0 0 0 17 0V8M16 3.5V21"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="16" cy="27.2" r="2.1" fill="currentColor" />
+    <svg viewBox="0 0 64 64" width={tamanho} height={tamanho} aria-hidden="true" focusable="false" className={className}>
+      <rect width="64" height="64" rx="7" fill="var(--marca-azulejo)" />
+      <path d="M10 43A22 22 0 0 1 32 21V43z" fill="var(--marca-metade-a)" />
+      <path d="M54 43A22 22 0 0 0 32 21V43z" fill="var(--marca-metade-b)" />
     </svg>
   );
 }
@@ -33,14 +29,12 @@ interface MarcaProps {
 
 export function Marca({ somenteSimbolo = false, className, tamanho = 28 }: MarcaProps) {
   return (
-    <span className={cn('inline-flex items-center gap-2.5 text-accent', className)}>
+    <span className={cn('inline-flex items-center gap-2.5', className)}>
       <SimboloMarca tamanho={tamanho} />
       {somenteSimbolo ? (
-        <span className="sr-only">GestãoPsi</span>
+        <span className="sr-only">{MARCA.nome}</span>
       ) : (
-        <span className="text-lg font-semibold tracking-[-0.02em] text-ink">
-          Gestão<span className="font-medium text-accent-ink">Psi</span>
-        </span>
+        <span className="font-display text-xl font-semibold leading-none tracking-[-0.02em] text-ink">{MARCA.nome.toLowerCase()}</span>
       )}
     </span>
   );

@@ -14,11 +14,12 @@ Oferecer um sistema individual, privado e configuravel que substitua planilhas, 
 
 ## Brand Personality
 
-Confiavel, sereno e preciso. A voz e profissional, humana e direta, sem infantilizar o trabalho clinico nem transformar a interface em material promocional.
+Confiavel, sereno e preciso. A voz e profissional, humana e direta, sem infantilizar o trabalho clinico nem transformar a interface em material promocional. O produto se chama Vínculo, o conceito central da clinica: o vínculo entre duas pessoas. A interface e uma ferramenta de trabalho aberta o dia inteiro, entao e calma.
 
 ## Anti-references
 
 - Aparencia de landing page, painel comercial agressivo ou template SaaS generico.
+- Cores saturadas (azul vibrante, padroes coloridos) e imagens decorativas, em especial na tela de login: o sistema e usado pelo psicologo e por quem trabalha com ele, nao e vitrine.
 - Interface hospitalar fria, excesso de verde-saude ou decoracao terapeutica literal.
 - Multi-clinica, troca de profissional ou sensacao de painel compartilhado.
 - Cards repetitivos, dados falsos, efeitos gratuitos e componentes inventados quando existe um padrao conhecido.

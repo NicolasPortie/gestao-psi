@@ -34,7 +34,7 @@ Nao pode fazer:
 ```txt
 Paciente no WhatsApp
   -> Bridge WhatsApp
-  -> API do GestaoPsi
+  -> API do Vínculo
   -> Identificacao da ContaPsicologo
   -> Motor administrativo do bot
   -> Regras de agenda/consulta

@@ -1,8 +1,12 @@
-# GestãoPsi
+# Vínculo
 
 Aplicação de gestão para consultórios de psicólogos autônomos. Organiza pacientes,
 agenda, consultas, prontuário e pagamentos, com separação entre acesso administrativo
 e clínico e isolamento dos dados por conta.
+
+> **Nome técnico.** O produto se chama Vínculo. Pastas, projetos, namespaces e o banco continuam como
+> `GestaoPsi` para não quebrar migrações, dados e integrações; o nome visível ao usuário vive em
+> `frontend/src/app/core/marca.ts` e no `appsettings.json` (remetente de e-mail).
 
 ## Stack e organização
 

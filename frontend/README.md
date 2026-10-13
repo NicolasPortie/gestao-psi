@@ -1,4 +1,4 @@
-# Frontend GestãoPsi
+# Frontend Vínculo
 
 SPA oficial em React, TypeScript e Vite. O front-end Angular anterior foi removido e não existe modo de compatibilidade.
 
@@ -6,7 +6,7 @@ SPA oficial em React, TypeScript e Vite. O front-end Angular anterior foi removi
 
 - Node.js 22.12 ou superior;
 - npm 11;
-- API GestãoPsi disponível em `http://127.0.0.1:5178` durante o desenvolvimento.
+- API Vínculo disponível em `http://127.0.0.1:5178` durante o desenvolvimento.
 
 ## Comandos
 

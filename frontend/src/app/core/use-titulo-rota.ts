@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useMatches } from 'react-router';
 
+import { MARCA } from './marca';
+
 interface HandleRota {
   titulo?: string;
 }
@@ -14,7 +16,7 @@ export function useTituloRota() {
     .find(Boolean);
 
   useEffect(() => {
-    document.title = titulo ? `${titulo} · GestãoPsi` : 'GestãoPsi';
+    document.title = titulo ? `${titulo} · ${MARCA.nome}` : MARCA.nome;
   }, [titulo]);
 
   return titulo ?? '';

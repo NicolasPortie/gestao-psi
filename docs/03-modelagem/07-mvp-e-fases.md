@@ -81,5 +81,5 @@ LogsAuditoria
 - faturas;
 - modulos por plano;
 - modulos por conta;
-- painel interno administrativo do GestaoPsi;
+- painel interno administrativo do Vínculo;
 - metricas operacionais sem exposicao clinica.

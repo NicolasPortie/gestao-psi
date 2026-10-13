@@ -17,8 +17,8 @@ A migração de Angular para React deixou o front-end funcional, mas com problem
 
 ## Decisão
 
-1. **Sistema de design próprio**, documentado em `DESIGN.md` e implementado em `frontend/src/app/styles/tokens.css` e `components/ui/`. Direção: "folha de respostas" (régua, marcas de estado, acento petróleo, tinta de correção vermelha), tema claro e escuro por papéis semânticos em OKLCH.
-2. **Primitivos sem estilo para o que é difícil de acertar à mão**: `@base-ui/react` (diálogo, gaveta, menu, abas, dica, combobox) e `sonner` (toasts). `class-variance-authority` e `clsx` compõem variantes. A fonte Hanken Grotesk é servida localmente.
+1. **Sistema de design próprio**, documentado em `DESIGN.md` e implementado em `frontend/src/app/styles/tokens.css` e `components/ui/`. Direção inicial: régua e marcas de estado desenhadas; a identidade final foi fixada na [ADR 0002](0002-identidade-visual.md). Tema claro e escuro por papéis semânticos em OKLCH.
+2. **Primitivos sem estilo para o que é difícil de acertar à mão**: `@base-ui/react` (diálogo, gaveta, menu, abas, dica, combobox) e `sonner` (toasts). `class-variance-authority` e `clsx` compõem variantes. As fontes são servidas localmente.
 3. **Navegação reorganizada**: trilho lateral recolhível no desktop e barra inferior no celular. Configurações viram um hub com subnavegação (`/configuracoes/*`); endereços antigos redirecionam. Existe página 404.
 4. **Estado de domínio como marca + texto** (`core/dominio/estado.ts` e `*.rotulos.ts` por feature), nunca só cor.
 5. **Listas e filtros dirigidos pela URL**, busca de paciente por servidor e seleção de consulta no prontuário por lista.

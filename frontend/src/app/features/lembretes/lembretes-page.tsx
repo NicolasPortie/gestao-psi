@@ -107,7 +107,7 @@ export default function LembretesPage() {
               {data.itens.map((lembrete) => (
                 <LinhaTabela key={lembrete.id}>
                   <CelulaTabela className="w-full sm:w-auto">
-                    <Link to={`/consultas/${lembrete.consultaId}`} className="font-medium text-ink no-underline hover:underline">
+                    <Link to={`/consultas/${lembrete.consultaId}`} className="font-medium text-ink no-underline [overflow-wrap:anywhere] hover:underline">
                       {lembrete.paciente}
                     </Link>
                     <span className="block text-sm text-ink-muted md:hidden">{rotuloDe(rotulosTipoLembrete, lembrete.tipo)}</span>

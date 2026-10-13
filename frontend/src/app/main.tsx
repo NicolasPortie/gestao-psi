@@ -1,4 +1,5 @@
-import '@fontsource-variable/hanken-grotesk';
+import '@fontsource-variable/atkinson-hyperlegible-next';
+import '@fontsource-variable/jost';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';

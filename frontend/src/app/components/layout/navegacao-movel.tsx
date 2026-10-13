@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation } from 'react-router';
 
 import { usePermissoes } from '../../core/autenticacao/permissoes';
 import { rotuloPerfil } from '../../core/dominio/perfil';
+import { MARCA } from '../../core/marca';
 import { Avatar } from '../ui/avatar';
 import { cn } from '../ui/cn';
 import { Gaveta } from '../ui/dialogo';
@@ -34,7 +35,7 @@ export function NavegacaoMovel() {
   return (
     <>
       <header className="sticky top-0 z-40 flex h-13 items-center justify-between border-b border-line bg-paper px-4 lg:hidden">
-        <Link to="/painel" aria-label="GestãoPsi, ir para Hoje" className="rounded-md no-underline">
+        <Link to="/painel" aria-label={`${MARCA.nome}, ir para Hoje`} className="rounded-md no-underline">
           <Marca tamanho={24} />
         </Link>
         <SinoNotificacoes />
@@ -73,7 +74,7 @@ export function NavegacaoMovel() {
 
       <Gaveta aberto={aberta} aoMudar={setAberta} titulo="Menu" lado="esquerda" largura="20rem">
         <div className="-mt-1 mb-4 flex items-center gap-3 border-b border-line pb-4">
-          <Avatar nome={usuario?.nomeCompleto ?? 'GestãoPsi'} tamanho="grande" />
+          <Avatar nome={usuario?.nomeCompleto ?? MARCA.nome} tamanho="grande" />
           <div className="grid min-w-0 leading-tight">
             <span className="truncate text-base font-medium text-ink">{usuario?.nomeCompleto}</span>
             <span className="truncate text-sm text-ink-muted">{rotuloPerfil(usuario?.perfil)}</span>

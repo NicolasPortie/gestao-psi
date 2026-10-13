@@ -11,6 +11,6 @@ public sealed class EmailConfiguracao
     public string Usuario { get; set; } = string.Empty;
     public string Senha { get; set; } = string.Empty;
     public string EmailRemetente { get; set; } = string.Empty;
-    public string NomeRemetente { get; set; } = "GestãoPsi";
+    public string NomeRemetente { get; set; } = "Vínculo";
     public string UrlFrontend { get; set; } = "http://localhost:4200";
 }
