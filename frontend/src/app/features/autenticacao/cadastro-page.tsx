@@ -74,7 +74,7 @@ export default function CadastroPage() {
         <div className="grid gap-1.5">
           <OpcaoMarcavel
             rotulo={
-              <>
+              <span>
                 Li e aceito os{' '}
                 <Link to="/termos" target="_blank" rel="noreferrer" className="font-medium">
                   termos de uso
@@ -84,7 +84,7 @@ export default function CadastroPage() {
                   política de privacidade
                 </Link>
                 .
-              </>
+              </span>
             }
             aria-invalid={Boolean(errors.aceitouTermos) || undefined}
             {...register('aceitouTermos')}

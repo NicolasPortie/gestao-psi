@@ -92,7 +92,7 @@ Uma ferramenta de trabalho para o psicólogo e para quem trabalha com ele, abert
 
 O nome, **Vínculo**, é o conceito central da clínica. O símbolo é um azulejo com duas metades de um semicírculo, porcelana e ocre, que se encontram no meio: o vínculo entre duas pessoas.
 
-A interface é plana, tipográfica e moderadamente densa. Listas e tabelas são réguas de linhas finas; não há grade de cartões, métricas gigantes, faixas laterais coloridas nem imagens decorativas. A tela de acesso tem a marca, o formulário e a promessa do produto em texto, nada mais.
+A interface é plana, tipográfica e moderadamente densa. Listas e tabelas são réguas de linhas finas; não há grade de cartões, métricas gigantes, faixas laterais coloridas, ilustrações nem padrões decorativos. A única imagem é uma fotografia de ambiente de consultório (duas poltronas frente a frente, luz natural) na tela de acesso, sem pessoas e sem texto por cima; ver `docs/04-ux/imagens.md`.
 
 Rejeita: azul saturado e padrões vibrantes (parecem banco ou jogo, não consultório), estética hospitalar, ícones terapêuticos literais (folha, cérebro, psi), template SaaS genérico e qualquer sinal de painel multi-clínica.
 
@@ -200,7 +200,7 @@ Trilho lateral recolhível (desktop, `lg+`) com grupos Rotina, Comunicação, Cl
 
 ### Don't:
 
-- **Don't** usar imagens decorativas, padrões vibrantes ou azul saturado; a ferramenta é calma.
+- **Don't** usar ilustrações, padrões vibrantes ou azul saturado; a ferramenta é calma. A única imagem é a foto de ambiente do login: sem pessoas, tons neutros e quentes, sem texto sobre ela.
 - **Don't** criar aparência de landing page, métricas heroicas ou grade de cartões idênticos.
 - **Don't** usar faixas laterais coloridas, texto em gradiente, glassmorphism ou ciano neon.
 - **Don't** animar propriedades de layout (largura, altura, margem); use transform, opacidade, `clip-path` ou grid.

@@ -19,7 +19,7 @@ Confiavel, sereno e preciso. A voz e profissional, humana e direta, sem infantil
 ## Anti-references
 
 - Aparencia de landing page, painel comercial agressivo ou template SaaS generico.
-- Cores saturadas (azul vibrante, padroes coloridos) e imagens decorativas, em especial na tela de login: o sistema e usado pelo psicologo e por quem trabalha com ele, nao e vitrine.
+- Cores saturadas (azul vibrante, padroes coloridos) e arte decorativa abstrata, em especial na tela de login: o sistema e usado pelo psicologo e por quem trabalha com ele, nao e vitrine. A unica imagem aceita e fotografia real de ambiente de consultorio, sem pessoas.
 - Interface hospitalar fria, excesso de verde-saude ou decoracao terapeutica literal.
 - Multi-clinica, troca de profissional ou sensacao de painel compartilhado.
 - Cards repetitivos, dados falsos, efeitos gratuitos e componentes inventados quando existe um padrao conhecido.

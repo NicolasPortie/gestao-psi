@@ -43,4 +43,6 @@ Para qualquer mudança de interface:
 4. Console do navegador sem erros.
 5. `npm run test:e2e` com a API e o front rodando. A suíte inclui a ausência de rolagem horizontal em 390 px e 320 px e a varredura de acessibilidade (axe, WCAG A e AA) nos temas claro e escuro, com gavetas abertas.
 
+Imagens: ver [`imagens.md`](imagens.md) (única foto, origem e como trocar).
+
 Dados de demonstração para conferir telas: `npm run seed:demo` (somente com API local).

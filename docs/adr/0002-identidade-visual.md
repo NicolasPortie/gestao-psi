@@ -12,7 +12,7 @@ A primeira reestruturação entregou um sistema de design consistente, mas a ide
 - o símbolo (a letra psi com uma bolha) e as imagens da tela de acesso eram abstratos e sem relação com o consultório;
 - a paleta petróleo, e depois uma segunda tentativa em cobalto saturado com tema escuro azul-marinho e uma parede de azulejos colorida no login, pareceram frias, vibrantes e de banco, não de uma ferramenta que o psicólogo e a equipe abrem o dia inteiro.
 
-O feedback do usuário fixou os critérios: fundo branco, tema escuro opcional, uma cor que represente o sistema, nada genérico, nome com sentido para psicólogos, e **nada de decoração na tela de acesso**.
+O feedback do usuário fixou os critérios: fundo branco, tema escuro opcional, uma cor que represente o sistema, nada genérico, nome com sentido para psicólogos, e **nada de arte abstrata na tela de acesso**. Numa rodada seguinte ele pediu, no lugar, **fotos que remetam ao psicólogo e ao ambiente**.
 
 ## Decisão
 
@@ -20,7 +20,7 @@ O feedback do usuário fixou os critérios: fundo branco, tema escuro opcional, 
 2. **Cor: verde-musgo sobre porcelana branca.** O verde é a cor internacional da conscientização em saúde mental; em tom fechado e sóbrio, não em menta. Ambar para atenção, tijolo para erro e pinho para concluído. Tema escuro em grafite quente com um sopro de verde, sem azul. Tudo em papéis semânticos OKLCH, com contraste medido nos dois temas.
 3. **Tipografia: Jost nos títulos e na marca, Atkinson Hyperlegible Next no texto.** A primeira é geométrica de herança modernista; a segunda foi desenhada para a leitura sem esforço, o que serve a uma equipe que lê o dia inteiro e ao critério de acessibilidade do produto.
 4. **Marca: o azulejo como módulo.** Referência aos painéis modulares de Athos Bulcão. O símbolo é um azulejo musgo com duas metades de um semicírculo (porcelana e ocre) que se encontram: o vínculo entre duas pessoas. As marcas de estado são o mesmo azulejo em um ponto do preenchimento (contorno, quarto de círculo, cheio, cheio com check). O módulo aparece só onde tem função.
-5. **Tela de acesso sem imagem.** Formulário, marca e promessa em texto, mais a sequência de estados de uma consulta. A arte do produto é a marca.
+5. **Tela de acesso com foto de ambiente.** Formulário à esquerda e, no desktop, uma fotografia real de consultório (duas poltronas frente a frente, relógio, luz natural), sem pessoas, com a promessa do produto e a sequência de estados abaixo dela, nunca sobre ela. No celular, uma faixa da mesma foto. Origem, licença e como trocar estão em `docs/04-ux/imagens.md`. Ilustração, padrão e arte abstrata continuam fora.
 
 ## Alternativas consideradas
 
@@ -32,7 +32,7 @@ O feedback do usuário fixou os critérios: fundo branco, tema escuro opcional, 
 
 ## Consequências
 
-- Qualquer nova tela herda a calma: sem imagens decorativas, sem cores saturadas, no máximo uma ação primária.
+- Qualquer nova tela herda a calma: sem ilustrações nem padrões, sem cores saturadas, no máximo uma ação primária. Fotografia só de ambiente, sem pessoas, e só no acesso.
 - O acento verde não deve ser usado para estados de "concluído": para isso existe o pinho, com marca de check.
 - O ocre vive só na marca; não é cor de interface.
 - Se o nome mudar de novo, os pontos de troca são `core/marca.ts`, `index.html`, `public/favicon.svg` (e os ícones derivados), `appsettings.json` (nome do remetente de e-mail) e os documentos.

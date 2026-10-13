@@ -287,7 +287,7 @@ export function GrupoSegmentado<Valor extends string | number>({
                 )}
               />
               {opcao.rotulo}
-              {opcao.contagem !== undefined ? <span className="num text-xs font-normal opacity-80">{opcao.contagem}</span> : null}
+              {opcao.contagem !== undefined ? <span className="num text-xs font-normal">{opcao.contagem}</span> : null}
             </span>
           </label>
         ))}
