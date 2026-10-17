@@ -169,6 +169,14 @@ Oito formas SVG, todas o mesmo azulejo de 16 px: contorno com arco (agendada), q
 
 Azulejo musgo com semicírculo em duas metades (porcelana e ocre) e a palavra "vínculo" em Jost. As cores vêm dos tokens `--marca-*`, então a marca acompanha o tema. A fonte da verdade do símbolo é `frontend/public/favicon.svg`; os ícones raster saem dele.
 
+### Acesso ao consultório
+
+O login estende a identidade existente: cabeçalho comum com marca e menu de aparência (claro, escuro e sistema), fotografia à esquerda e formulário à direita em proporção 7:5 a partir de 1024 px, com largura total limitada a 1600 px. Abaixo de 1024 px, a foto é ocultada: cabeçalho compacto, formulário em coluna única e rodapé no fluxo da página. Os campos ficam próximos do topo, com rolagem natural em telas baixas e com o teclado aberto. A foto fica sem texto sobreposto; origem e licença em `docs/04-ux/imagens.md`.
+
+O formulário tem largura máxima de 384 px, título "Acessar meu consultório" em Jost (32 px, 40 px a partir de 640 px), campos e ação principal de 48 px. Recuperação de senha, cadastro e links legais têm alvos de pelo menos 44 px. Informações legais ficam no rodapé. Sem slogans, métricas ou marcas de estado usadas como decoração.
+
+Na chegada, as duas metades da marca se encontram em 280 ms; a foto abre por `clip-path` e opacidade em 300 ms; cabeçalho, formulário e convite de cadastro entram em 220 ms com intervalos de 40 ms. A seta de "Entrar" se desloca em 150 ms no foco ou no hover com ponteiro fino. Usa-se o `--ease-out` existente, sem repetição e sem impedir a digitação; `prefers-reduced-motion` remove esses movimentos. As telas internas seguem a mesma linha, em escala menor (ver "Movimento das telas internas").
+
 ### Tabela e lista (`Tabela`, `ListaRegulada`)
 
 - Sem moldura externa, linhas separadas por régua, linha inteira clicável por um único link.
@@ -186,6 +194,29 @@ Trilho lateral recolhível (desktop, `lg+`) com grupos Rotina, Comunicação, Cl
 
 - Toasts (Sonner) para confirmação transitória; avisos em linha para erro que bloqueia.
 - Todo carregamento usa esqueleto na forma do conteúdo; todo vazio explica o próximo passo num azulejo ainda por preencher; todo erro oferece "Tentar novamente".
+
+### Código de confirmação (`EntradaCodigo`)
+
+Seis casas sobre um único `<input>` real (`one-time-code`), então colar, preencher automaticamente e ler com leitor de tela funcionam como num campo comum. Cada dígito assenta em 160 ms; a casa ativa mostra um cursor que pisca. O sexto dígito envia sozinho. Código recusado: as casas ficam em tijolo, balançam uma vez (320 ms, `--ease-in-out`) e se esvaziam com o foco de volta. Código aceito pela API: as casas passam a pinho da esquerda para a direita, com 40 ms entre elas, e a marca de check anuncia "E-mail confirmado". Nunca se mostra sucesso antes da resposta da API.
+
+### Movimento das telas internas
+
+Vocabulário em `frontend/src/app/styles/movimento.css`, aplicado pelos primitivos, então toda tela nova herda:
+
+| Onde | Movimento | Por quê |
+| --- | --- | --- |
+| `Pagina` (cabeçalho e seções) | sobe 4 px e aparece em 200 ms, cascata de 30 ms até o 4º bloco | evita a troca seca de tela |
+| `ListaRegulada` | linhas sobem 4 px em 180 ms, cascata de 25 ms até a 5ª | mostra o que chegou |
+| `Tabela` | aparece em 140 ms | substitui o esqueleto sem salto |
+| `Abas` | sublinhado desliza por `clip-path` em 240 ms; painel aparece em 180 ms | indica para onde se foi |
+| Erro de `Campo`, `Aviso`, detalhe expandido, `<details>` | desce 3 px e aparece em 180 ms | a mensagem nasce onde se lê |
+| `EstadoVazio`, `EstadoErro` | o azulejo assenta (escala 0,94 → 1) e o texto vem 50 ms depois | estado novo, não erro de layout |
+| Selo do sino | assenta a cada mudança de contagem | sinaliza a novidade |
+| Barras da semana (Hoje) | crescem por `clip-path` até o valor na primeira pintura, 30 ms entre dias | leitura da carga da semana |
+| Barra inferior do celular | pílula de `accent-wash` abre atrás do ícone ativo; o ícone afunda a 0,94 no toque | estado ativo além da cor, retorno ao toque |
+| Troca de tema | um esmaecimento de 200 ms da tela inteira (View Transitions) | evita cada cor transicionar sozinha |
+
+Ficam de fora, de propósito: a grade semanal da agenda (dado denso, consultado dezenas de vezes ao dia), recolher o trilho (moveria o layout da página inteira) e qualquer movimento ligado a atalho de teclado. Entradas usam preenchimento `backwards`, para não deixar `transform` que prenderia filhos `fixed`. Com movimento reduzido, nada se desloca: restam esmaecimentos de 120 ms; o balanço, o cursor que pisca e as cascatas somem.
 
 ## Do's and Don'ts
 

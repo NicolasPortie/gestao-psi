@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './sobreposicoes.css';
+@import './movimento.css';
 
 /*
  * Algarismos: a Atkinson Hyperlegible tem o zero cortado, o que em horarios e valores ("09:00",

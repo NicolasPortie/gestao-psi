@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { flushSync } from 'react-dom';
 
 export type PreferenciaTema = 'sistema' | 'claro' | 'escuro';
 export type TemaAplicado = 'claro' | 'escuro';
@@ -34,6 +35,7 @@ function aplicar() {
 }
 
 export function definirPreferenciaTema(valor: PreferenciaTema) {
+  const mudaCores = resolverTema(valor) !== resolverTema(preferencia);
   preferencia = valor;
   try {
     if (valor === 'sistema') window.localStorage.removeItem(CHAVE);
@@ -41,7 +43,14 @@ export function definirPreferenciaTema(valor: PreferenciaTema) {
   } catch {
     // Sem armazenamento disponível, a preferência vale apenas para esta sessão.
   }
-  aplicar();
+  // Escolha explícita do usuário: a tela inteira esmaece de um tema para o outro uma única vez,
+  // em vez de cada cor transicionar sozinha. Sem suporte ou com movimento reduzido, troca direto.
+  const semMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (mudaCores && !semMovimento && typeof document.startViewTransition === 'function') {
+    document.startViewTransition(() => flushSync(aplicar));
+  } else {
+    aplicar();
+  }
 }
 
 export function iniciarTema() {

@@ -19,7 +19,7 @@ interface AbasProps {
 }
 
 /**
- * Abas com sublinhado na aba ativa (anima por transform, sem layout). Os painéis entram como filhos de <PainelAba>.
+ * Abas com sublinhado que desliza até a aba ativa (anima o recorte, sem layout). Os painéis entram como filhos de <PainelAba>.
  * Use para alternar visões do mesmo assunto, nunca para navegação entre módulos.
  */
 export function Abas({ valor, aoMudar, abas, rotulo, children, className }: AbasProps) {
@@ -38,14 +38,13 @@ export function Abas({ valor, aoMudar, abas, rotulo, children, className }: Abas
               'transition-colors duration-150 ease-out hover:text-ink',
               'focus-visible:rounded-md focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus',
               'data-active:text-ink pointer-coarse:h-11',
-              'after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-center after:scale-x-0 after:rounded-full after:bg-accent',
-              'after:transition-transform after:duration-200 after:ease-out data-active:after:scale-x-100',
             )}
           >
             {aba.rotulo}
             {aba.contagem !== undefined ? <span className="num text-xs font-normal text-ink-muted">{aba.contagem}</span> : null}
           </Tabs.Tab>
         ))}
+        <Tabs.Indicator className="indicador-aba" />
       </Tabs.List>
       {children}
     </Tabs.Root>
@@ -54,7 +53,7 @@ export function Abas({ valor, aoMudar, abas, rotulo, children, className }: Abas
 
 export function PainelAba({ valor, children, className }: { valor: string; children: ReactNode; className?: string }) {
   return (
-    <Tabs.Panel value={valor} className={cn('pt-6 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus', className)}>
+    <Tabs.Panel value={valor} className={cn('animar-painel pt-6 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus', className)}>
       {children}
     </Tabs.Panel>
   );

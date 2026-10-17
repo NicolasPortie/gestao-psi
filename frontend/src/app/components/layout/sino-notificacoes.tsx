@@ -32,8 +32,9 @@ export function SinoNotificacoes({ className }: { className?: string }) {
         <Bell size={17} strokeWidth={1.75} aria-hidden="true" />
         {naoLidas > 0 ? (
           <span
+            key={naoLidas}
             aria-hidden="true"
-            className="num absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[0.625rem] font-semibold leading-none text-on-accent"
+            className="animar-selo num absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[0.625rem] font-semibold leading-none text-on-accent"
           >
             {naoLidas > 99 ? '99+' : naoLidas}
           </span>

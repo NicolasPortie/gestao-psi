@@ -65,7 +65,7 @@ export function Campo({ rotulo, dica, erro, opcional, rotuloOculto, acaoRotulo, 
         ) : null}
         {children}
         {erro ? (
-          <p id={erroId} role="alert" className="flex items-start gap-1.5 text-xs text-danger-ink">
+          <p id={erroId} role="alert" className="animar-surgir flex items-start gap-1.5 text-xs text-danger-ink">
             <CircleAlert size={14} className="mt-px shrink-0" aria-hidden="true" />
             {erro}
           </p>

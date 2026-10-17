@@ -55,7 +55,7 @@ export function Botao({ variante, tamanho, carregando = false, className, childr
     >
       <span className={cn('inline-flex items-center justify-center gap-2', carregando && 'invisible')}>{children}</span>
       {carregando ? (
-        <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
+        <span className="animar-conteudo absolute inset-0 grid place-items-center" aria-hidden="true">
           <LoaderCircle size={16} className="animar-girar" />
         </span>
       ) : null}

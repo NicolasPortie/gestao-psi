@@ -4,7 +4,7 @@ import { cn } from './cn';
 
 /** Lista regulada: itens separados por régua, sem cartões. */
 export function ListaRegulada({ className, ...props }: HTMLAttributes<HTMLUListElement>) {
-  return <ul className={cn('divide-y divide-line border-y border-line', className)} {...props} />;
+  return <ul className={cn('animar-lista divide-y divide-line border-y border-line', className)} {...props} />;
 }
 
 export function ItemLista({ className, ...props }: HTMLAttributes<HTMLLIElement>) {

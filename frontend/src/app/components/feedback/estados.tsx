@@ -20,7 +20,7 @@ interface EstadoVazioProps {
  */
 export function EstadoVazio({ icone: Icone, titulo, descricao, acao, compacto = false, className }: EstadoVazioProps) {
   return (
-    <div className={cn('mx-auto grid max-w-md justify-items-center gap-3 text-center', compacto ? 'py-8' : 'py-14', className)}>
+    <div className={cn('animar-estado mx-auto grid max-w-md justify-items-center gap-3 text-center', compacto ? 'py-8' : 'py-14', className)}>
       <span className="relative grid size-14 place-items-center overflow-hidden rounded-md bg-accent-wash text-accent-ink">
         <svg viewBox="0 0 56 56" aria-hidden="true" focusable="false" className="absolute inset-0 size-full">
           <path d="M56 56H8A48 48 0 0 1 56 8Z" className="fill-accent opacity-15" />
@@ -60,7 +60,7 @@ export function EstadoErro({
   return (
     <div
       role="alert"
-      className={cn('grid max-w-md gap-3', centro ? 'mx-auto justify-items-center py-14 text-center' : 'justify-items-start', className)}
+      className={cn('animar-estado grid max-w-md gap-3', centro ? 'mx-auto justify-items-center py-14 text-center' : 'justify-items-start', className)}
     >
       <span className="grid size-11 place-items-center rounded-full bg-danger-wash text-danger-ink">
         <TriangleAlert size={20} aria-hidden="true" />

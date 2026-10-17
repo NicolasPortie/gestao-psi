@@ -1,0 +1,248 @@
+/*
+ * Movimento das telas internas.
+ *
+ * Ferramenta usada o dia inteiro: o movimento orienta (de onde veio, o que mudou) e some
+ * depressa. Trocar de tela e paginar acontecem dezenas de vezes por dia, então essas entradas
+ * ficam quase imperceptíveis (até 200 ms, 4 px, cascatas de 30 ms limitadas aos primeiros
+ * itens). Só transform, opacidade e clip-path, sempre com os tokens `--ease-*`.
+ * Entradas usam preenchimento `backwards`: ao terminar, o elemento não guarda transform, que
+ * criaria bloco de contenção para filhos `fixed` e `sticky`.
+ * Com `prefers-reduced-motion`, nada se desloca: resta um esmaecimento curto onde ajuda a
+ * perceber a troca.
+ */
+
+/* ---- Página: cabeçalho e blocos chegam em cascata curta ------------------- */
+
+.animar-pagina > * {
+  animation: subir-pouco 200ms var(--ease-out) backwards;
+}
+
+.animar-pagina > :nth-child(2) { animation-delay: 30ms; }
+.animar-pagina > :nth-child(3) { animation-delay: 60ms; }
+.animar-pagina > :nth-child(n + 4) { animation-delay: 90ms; }
+
+@keyframes subir-pouco {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+/* ---- Listas: as primeiras linhas chegam uma a uma ------------------------ */
+
+.animar-lista > * {
+  animation: subir-pouco 180ms var(--ease-out) backwards;
+}
+
+.animar-lista > :nth-child(2) { animation-delay: 25ms; }
+.animar-lista > :nth-child(3) { animation-delay: 50ms; }
+.animar-lista > :nth-child(4) { animation-delay: 75ms; }
+.animar-lista > :nth-child(n + 5) { animation-delay: 100ms; }
+
+/* ---- Surgir: mensagem que aparece no lugar (erro de campo, aviso, detalhe) - */
+
+.animar-surgir {
+  animation: descer-pouco 180ms var(--ease-out) backwards;
+}
+
+@keyframes descer-pouco {
+  from { opacity: 0; transform: translateY(-3px); }
+}
+
+/* Seção recolhível nativa: o conteúdo surge ao abrir, em vez de saltar. */
+details[open] > summary ~ * {
+  animation: descer-pouco 180ms var(--ease-out) backwards;
+}
+
+/* ---- Abas: o painel troca sem salto e o sublinhado desliza --------------- */
+
+.animar-painel {
+  animation: subir-pouco 180ms var(--ease-out) backwards;
+}
+
+/*
+ * Uma régua da largura rolável da lista, recortada para mostrar só a aba ativa. O Base UI informa
+ * as distâncias da aba às bordas; a soma não muda entre abas, então só o recorte anima.
+ */
+.indicador-aba {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--active-tab-left, 0px) + var(--active-tab-width, 0px) + var(--active-tab-right, 0px));
+  height: 2px;
+  background: var(--accent);
+  clip-path: inset(0 var(--active-tab-right, 0px) 0 var(--active-tab-left, 0px) round 9999px);
+  transition: clip-path 240ms var(--ease-in-out);
+}
+
+/* ---- Estados vazio e de erro: o azulejo assenta, o texto vem atrás -------- */
+
+.animar-estado > :first-child {
+  animation: assentar 220ms var(--ease-out) backwards;
+}
+
+.animar-estado > :not(:first-child) {
+  animation: subir-pouco 200ms var(--ease-out) 50ms backwards;
+}
+
+@keyframes assentar {
+  from { opacity: 0; transform: scale(0.94); }
+}
+
+/* ---- Selo de contagem: chega quando o número muda ------------------------ */
+
+.animar-selo {
+  animation: assentar-selo 200ms var(--ease-out) backwards;
+}
+
+@keyframes assentar-selo {
+  from { opacity: 0; transform: scale(0.8); }
+}
+
+/* ---- Barras da semana: crescem até o valor na primeira pintura ------------ */
+
+.barra-semana {
+  clip-path: inset(0 calc(100% - var(--preenchimento)) 0 0 round 9999px);
+  transition: clip-path 280ms var(--ease-out);
+  transition-delay: calc(var(--ordem, 0) * 30ms);
+}
+
+@starting-style {
+  .barra-semana {
+    clip-path: inset(0 100% 0 0 round 9999px);
+  }
+}
+
+/* ---- Barra inferior do celular: pílula atrás do ícone ativo -------------- */
+
+.pilula-navegacao {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 1.75rem;
+  transition: transform 140ms var(--ease-out);
+}
+
+.pilula-navegacao::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--accent-wash);
+  opacity: 0;
+  transform: scaleX(0.6);
+  transition:
+    transform 220ms var(--ease-out),
+    opacity 150ms var(--ease-out);
+}
+
+.pilula-navegacao > svg {
+  position: relative;
+}
+
+[aria-current='page'] > .pilula-navegacao::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+:active > .pilula-navegacao {
+  transform: scale(0.94);
+}
+
+/* ---- Código de confirmação: casas que respondem a cada dígito ------------ */
+
+.casa-codigo {
+  display: grid;
+  place-items: center;
+  height: 3.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--field);
+  color: var(--ink);
+  font-size: var(--text-2xl);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color 150ms var(--ease-out),
+    background-color 150ms var(--ease-out),
+    color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out);
+}
+
+.casa-codigo[data-ativa] {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 1px var(--focus);
+}
+
+.entrada-codigo:has([aria-invalid='true']) .casa-codigo,
+.entrada-codigo[data-estado='erro'] .casa-codigo {
+  border-color: var(--danger);
+}
+
+.entrada-codigo[data-estado='erro'] .casa-codigo[data-ativa] {
+  box-shadow: 0 0 0 1px var(--danger);
+}
+
+/* Confirmado: as casas assumem o pinho uma após a outra, da esquerda para a direita. */
+.entrada-codigo[data-estado='confirmado'] .casa-codigo {
+  border-color: var(--success-line);
+  background: var(--success-wash);
+  color: var(--success-ink);
+  transition-duration: 220ms;
+  transition-delay: calc(var(--i, 0) * 40ms);
+}
+
+.digito-codigo {
+  animation: digito-assentar 160ms var(--ease-out) backwards;
+}
+
+@keyframes digito-assentar {
+  from { opacity: 0; transform: translateY(3px) scale(0.92); }
+}
+
+.cursor-codigo {
+  width: 1.5px;
+  height: 1.5rem;
+  border-radius: 1px;
+  background: var(--accent);
+  animation: cursor-piscar 1s steps(1) infinite;
+}
+
+@keyframes cursor-piscar {
+  50% { opacity: 0; }
+}
+
+/* ---- Troca de tema: um só esmaecimento da tela inteira ------------------- */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animar-pagina > *,
+  .animar-lista > *,
+  .animar-surgir,
+  details[open] > summary ~ *,
+  .animar-painel,
+  .animar-estado > *,
+  .animar-selo,
+  .digito-codigo {
+    animation: conteudo-entrar 120ms linear backwards;
+    animation-delay: 0ms;
+  }
+
+  .cursor-codigo {
+    animation: none;
+  }
+
+  .entrada-codigo[data-estado='confirmado'] .casa-codigo {
+    transition-delay: 0ms;
+  }
+
+  .indicador-aba,
+  .barra-semana,
+  .pilula-navegacao,
+  .pilula-navegacao::before {
+    transition: none;
+  }
+}

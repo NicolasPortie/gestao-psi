@@ -13,7 +13,7 @@ import { RegiaoRolavel } from './regiao-rolavel';
 export function Tabela({ rotulo, children, className }: { rotulo: string; children: ReactNode; className?: string }) {
   return (
     <RegiaoRolavel rotulo={rotulo} className={cn('-mx-4 sm:mx-0', className)}>
-      <table aria-label={rotulo} className="w-full min-w-full border-collapse text-left text-base">
+      <table aria-label={rotulo} className="animar-conteudo w-full min-w-full border-collapse text-left text-base">
         {children}
       </table>
     </RegiaoRolavel>

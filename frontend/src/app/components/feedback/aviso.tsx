@@ -26,7 +26,7 @@ export function Aviso({ tom = 'info', titulo, children, acao, className }: Aviso
   return (
     <div
       role={tom === 'perigo' ? 'alert' : 'status'}
-      className={cn('flex items-start gap-3 rounded-lg border px-3.5 py-3 text-sm', classe, className)}
+      className={cn('animar-surgir flex items-start gap-3 rounded-lg border px-3.5 py-3 text-sm', classe, className)}
     >
       <Icone size={18} className="mt-px shrink-0" aria-hidden="true" />
       <div className="grid min-w-0 flex-1 gap-0.5">

@@ -15,7 +15,7 @@ export function SemanaEmBarras({ dias }: { dias: PainelResumo['visaoSemana'] }) 
 
   return (
     <ul className="grid gap-1">
-      {dias.map((dia) => {
+      {dias.map((dia, ordem) => {
         const data = new Date(`${dia.data}T12:00:00`);
         const ehHoje = mesmoDia(data, hoje);
         return (
@@ -30,8 +30,8 @@ export function SemanaEmBarras({ dias }: { dias: PainelResumo['visaoSemana'] }) 
               </span>
               <span className="h-1.5 rounded-full bg-pressed" aria-hidden="true">
                 <span
-                  className={cn('block h-full rounded-full transition-[clip-path] duration-300 ease-out', ehHoje ? 'bg-accent' : 'bg-ink-faint')}
-                  style={{ clipPath: `inset(0 ${100 - preenchimento(dia.consultas, maior)}% 0 0 round 9999px)` }}
+                  className={cn('barra-semana block h-full rounded-full', ehHoje ? 'bg-accent' : 'bg-ink-faint')}
+                  style={{ '--preenchimento': `${preenchimento(dia.consultas, maior)}%`, '--ordem': ordem } as React.CSSProperties}
                 />
               </span>
               <span className="num text-right text-sm font-medium">

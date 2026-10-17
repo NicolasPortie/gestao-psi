@@ -22,7 +22,7 @@ interface PaginaProps {
 export function Pagina({ largura = 'padrao', children, className }: PaginaProps) {
   const alinhamento = use(ContextoAlinhamentoPagina);
   return (
-    <div className={cn('animar-conteudo flex w-full flex-col gap-10', alinhamento === 'inicio' ? 'mr-auto' : 'mx-auto', larguras[largura], className)}>
+    <div className={cn('animar-pagina flex w-full flex-col gap-10', alinhamento === 'inicio' ? 'mr-auto' : 'mx-auto', larguras[largura], className)}>
       {children}
     </div>
   );
