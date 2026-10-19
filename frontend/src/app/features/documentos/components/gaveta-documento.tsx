@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
@@ -43,7 +43,16 @@ type Formulario = z.infer<typeof schema>;
 const iniciais: Formulario = { pacienteId: '', tipo: 'Declaracao', titulo: '', finalidade: '', solicitante: '', conteudo: '' };
 const opcoesTipo = paraOpcoes(rotulosTipoDocumento);
 
-export function GavetaDocumento({ aberto, aoMudar }: { aberto: boolean; aoMudar: (aberto: boolean) => void }) {
+export function GavetaDocumento({
+  aberto,
+  aoMudar,
+  pacienteInicial,
+}: {
+  aberto: boolean;
+  aoMudar: (aberto: boolean) => void;
+  /** Abre com o paciente já escolhido (vindo da ficha). */
+  pacienteInicial?: string;
+}) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [erroApi, setErroApi] = useState('');
@@ -54,6 +63,10 @@ export function GavetaDocumento({ aberto, aoMudar }: { aberto: boolean; aoMudar:
     reset,
     formState: { errors },
   } = useForm<Formulario>({ resolver: zodResolver(schema), defaultValues: iniciais });
+
+  useEffect(() => {
+    if (aberto && pacienteInicial) reset({ ...iniciais, pacienteId: pacienteInicial });
+  }, [aberto, pacienteInicial, reset]);
 
   const criar = useMutation({
     mutationFn: (valores: Formulario) =>

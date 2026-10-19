@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 import { cn } from './cn';
 
-const estiloEtiqueta = cva('inline-flex h-5 items-center whitespace-nowrap rounded-sm px-1.5 text-xs font-medium leading-none', {
+const estiloEtiqueta = cva('inline-flex h-6 items-center whitespace-nowrap rounded-full px-2.5 text-xs font-medium leading-none', {
   variants: {
     tom: {
       neutro: 'bg-hover text-ink-muted',
@@ -21,7 +21,7 @@ interface EtiquetaProps extends VariantProps<typeof estiloEtiqueta> {
   className?: string;
 }
 
-/** Rótulo curto e retangular (perfil, contagem). Estados do consultório usam EstadoRotulado, não esta etiqueta. */
+/** Rótulo curto em pílula (perfil, contagem). Estados do consultório usam EstadoRotulado, não esta etiqueta. */
 export function Etiqueta({ tom, className, children }: EtiquetaProps) {
   return <span className={cn(estiloEtiqueta({ tom }), className)}>{children}</span>;
 }

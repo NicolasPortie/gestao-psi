@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.Lembretes;
 using GestaoPsi.Api.Services.Lembretes;
 using GestaoPsi.Api.Shared.Paginacao;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoAdministrativa")]
+[Authorize(Policy = Politicas.Mensagens)]
 [Route("api/v1/lembretes")]
 public sealed class LembretesController(ILembretesService lembretesService) : ControllerAutenticadoBase
 {

@@ -19,6 +19,9 @@ import { descreverEstado } from '../../core/dominio/estado';
 import { mensagemDeErro } from '../../core/erros/mensagem-de-erro';
 import { useParametrosUrl } from '../../core/hooks/use-parametros-url';
 import { formatarData } from '../../core/formatacao/datas';
+import { Aviso } from '../../components/feedback/aviso';
+import { formatarDiaCompleto } from '../../core/formatacao/datas';
+import { capitalizar } from '../../core/formatacao/texto';
 import { GavetaListaEspera } from './components/gaveta-lista-espera';
 import { alterarStatusListaEspera, listaEsperaKeys, listarListaEspera, type ListaEsperaItem, type StatusListaEspera } from './lista-espera.api';
 import { estadosListaEspera, rotulosPrioridade } from './lista-espera.rotulos';
@@ -59,6 +62,9 @@ export default function ListaEsperaPage() {
   });
 
   const { data, isPending, error, isFetching, isPlaceholderData, refetch } = listaQuery;
+  // Chegando de um cancelamento, a vaga liberada vai junto para o agendamento.
+  const vaga = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(params.get('vaga') ?? '') ? (params.get('vaga') as string) : null;
+  const sufixoVaga = vaga ? `&data=${vaga.slice(0, 10)}&hora=${vaga.slice(11, 16)}` : '';
 
   return (
     <Pagina largura="ampla" className="gap-6">
@@ -72,6 +78,12 @@ export default function ListaEsperaPage() {
           </Botao>
         }
       />
+
+      {vaga ? (
+        <Aviso tom="info">
+          Vaga liberada em {capitalizar(formatarDiaCompleto(new Date(`${vaga}:00`)))} às {vaga.slice(11, 16)}. Ao agendar alguém da lista, data e horário já vêm preenchidos.
+        </Aviso>
+      ) : null}
 
       <GrupoSegmentado
         rotulo="Filtrar por estado"
@@ -148,7 +160,7 @@ export default function ListaEsperaPage() {
                       {aberto ? (
                         <div className="flex items-center justify-end gap-1">
                           <BotaoLink
-                            to={`/consultas/nova?pacienteId=${item.pacienteId}&listaEsperaId=${item.id}`}
+                            to={`/consultas/nova?pacienteId=${item.pacienteId}&listaEsperaId=${item.id}${sufixoVaga}`}
                             variante="secundario"
                             tamanho="pequeno"
                             aria-label={`Agendar ${item.paciente}`}

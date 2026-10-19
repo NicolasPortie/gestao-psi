@@ -74,7 +74,7 @@ export function diaUtilFuturo(dias: number, hora: number, minuto: number) {
  * até achar uma janela sem sobreposição.
  */
 export async function horarioLivre(request: APIRequestContext, token: string, diasBase: number, hora: number, minuto: number) {
-  for (let tentativa = 0; tentativa < 12; tentativa++) {
+  for (let tentativa = 0; tentativa < 40; tentativa++) {
     const candidato = diaUtilFuturo(diasBase + tentativa * 7, hora, minuto);
     const instante = new Date(candidato.iso).getTime();
     const lista = await chamarApi(

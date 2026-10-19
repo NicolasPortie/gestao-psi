@@ -7,7 +7,7 @@ import { EstadoErro, EstadoVazio } from '../../components/feedback/estados';
 import { notificar } from '../../components/feedback/notificar';
 import { CabecalhoPagina, Pagina } from '../../components/layout/pagina';
 import { BotaoLink, Botao } from '../../components/ui/botao';
-import { CampoBusca, GrupoSegmentado } from '../../components/ui/campo';
+import { CampoBusca, GrupoSegmentado, OpcaoMarcavel } from '../../components/ui/campo';
 import { EstadoRotulado } from '../../components/ui/marca-estado';
 import { Avatar } from '../../components/ui/avatar';
 import { MenuAcoes } from '../../components/ui/menu';
@@ -38,6 +38,8 @@ export default function ListaPacientesPage() {
 
   const status = lerOpcao('status', statusValidos);
   const busca = params.get('busca') ?? '';
+  // "Sumidos": já foram atendidos e não têm consulta há 30 dias nem nada marcado.
+  const sumidos = params.get('sumidos') === '1';
 
   // O campo de busca responde na hora; a URL e a consulta seguem com atraso.
   const [textoBusca, setTextoBusca] = useState(busca);
@@ -48,7 +50,7 @@ export default function ListaPacientesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reage somente ao termo digitado
   }, [buscaAtrasada]);
 
-  const filtro = { busca, status, pagina, tamanhoPagina: TAMANHO_PAGINA };
+  const filtro = { busca, status, pagina, tamanhoPagina: TAMANHO_PAGINA, semConsultaHaDias: sumidos ? 30 : undefined };
   const { data, error, isPending, isFetching, isPlaceholderData, refetch } = useQuery({
     queryKey: pacientesKeys.lista(filtro),
     queryFn: ({ signal }) => listarPacientes(filtro, { signal }),
@@ -69,7 +71,7 @@ export default function ListaPacientesPage() {
 
   const resumo = data?.resumo;
   const total = (resumo?.ativos ?? 0) + (resumo?.inativos ?? 0) + (resumo?.arquivados ?? 0);
-  const filtrado = Boolean(busca || status);
+  const filtrado = Boolean(busca || status || sumidos);
 
   return (
     <Pagina largura="ampla" className="gap-6">
@@ -106,6 +108,13 @@ export default function ListaPacientesPage() {
             ]}
           />
         </div>
+        <OpcaoMarcavel
+          tipo="interruptor"
+          rotulo="Só quem não vem há mais de 30 dias"
+          descricao="Pacientes ativos já atendidos, sem consulta recente nem marcada. Bom momento para um contato."
+          checked={sumidos}
+          onChange={(evento) => atualizarParametros({ sumidos: evento.target.checked ? '1' : null, pagina: null })}
+        />
 
         {isPending ? (
           <EsqueletoLinhas quantidade={8} />
@@ -167,6 +176,9 @@ export default function ListaPacientesPage() {
                             {paciente.nomeCompleto}
                           </LinkDaLinha>
                           <span className="num truncate text-sm text-ink-muted md:hidden">{contatoPrincipal(paciente)}</span>
+                          {paciente.proximaConsulta ? (
+                            <span className="num truncate text-sm text-accent-ink md:hidden">Próxima: {formatarDataHora(paciente.proximaConsulta)}</span>
+                          ) : null}
                         </div>
                       </div>
                     </CelulaTabela>

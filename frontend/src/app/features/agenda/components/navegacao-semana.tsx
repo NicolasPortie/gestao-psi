@@ -8,21 +8,30 @@ interface NavegacaoSemanaProps {
   aoProxima: () => void;
   aoHoje: () => void;
   desabilitarHoje?: boolean;
+  /** Unidade da navegação, para os rótulos: semana (padrão), dia ou mês. */
+  unidade?: 'semana' | 'dia' | 'mes';
 }
 
-export function NavegacaoSemana({ aoAnterior, aoProxima, aoHoje, desabilitarHoje }: NavegacaoSemanaProps) {
+const rotulos = {
+  semana: ['Semana anterior', 'Próxima semana'],
+  dia: ['Dia anterior', 'Próximo dia'],
+  mes: ['Mês anterior', 'Próximo mês'],
+} as const;
+
+export function NavegacaoSemana({ aoAnterior, aoProxima, aoHoje, desabilitarHoje, unidade = 'semana' }: NavegacaoSemanaProps) {
+  const [anterior, proxima] = rotulos[unidade];
   return (
-    <div role="group" aria-label="Navegar entre semanas" className="inline-flex items-center gap-1">
-      <Dica texto="Semana anterior">
-        <Botao variante="secundario" tamanho="icone" aria-label="Semana anterior" onClick={aoAnterior}>
+    <div role="group" aria-label="Navegar na agenda" className="inline-flex items-center gap-1">
+      <Dica texto={anterior}>
+        <Botao variante="secundario" tamanho="icone" aria-label={anterior} onClick={aoAnterior}>
           <ChevronLeft size={17} aria-hidden="true" />
         </Botao>
       </Dica>
       <Botao variante="secundario" onClick={aoHoje} disabled={desabilitarHoje}>
         Hoje
       </Botao>
-      <Dica texto="Próxima semana">
-        <Botao variante="secundario" tamanho="icone" aria-label="Próxima semana" onClick={aoProxima}>
+      <Dica texto={proxima}>
+        <Botao variante="secundario" tamanho="icone" aria-label={proxima} onClick={aoProxima}>
           <ChevronRight size={17} aria-hidden="true" />
         </Botao>
       </Dica>

@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.Pacientes;
 using GestaoPsi.Api.Services.Pacientes;
 using GestaoPsi.Api.Shared.Enums;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoAdministrativa")]
+[Authorize(Policy = Politicas.Pacientes)]
 [Route("api/v1/pacientes")]
 public sealed class PacientesController(IPacientesService pacientesService) : ControllerAutenticadoBase
 {
@@ -20,12 +21,13 @@ public sealed class PacientesController(IPacientesService pacientesService) : Co
         [FromQuery] StatusPaciente? status,
         [FromQuery] int pagina = 1,
         [FromQuery] int tamanhoPagina = 20,
+        [FromQuery] int? semConsultaHaDias = null,
         CancellationToken cancellationToken = default)
     {
         var resposta = await pacientesService.ListarAsync(
             ObterUsuarioId(),
             ObterContaPsicologoId(),
-            new ListarPacientesRequest(busca, status, pagina, tamanhoPagina),
+            new ListarPacientesRequest(busca, status, pagina, tamanhoPagina, semConsultaHaDias),
             cancellationToken);
 
         return Ok(RespostaApi<PacientesListagemResponse>.ComSucesso(resposta));
@@ -127,4 +129,12 @@ public sealed class PacientesController(IPacientesService pacientesService) : Co
             resposta,
             "Paciente inativado com sucesso."));
     }
+
+    [HttpPost("{id:guid}/consentimento")]
+    public async Task<IActionResult> RegistrarConsentimento(Guid id, CancellationToken cancellationToken) =>
+        Ok(RespostaApi<PacienteDetalheResponse>.ComSucesso(await pacientesService.RegistrarConsentimentoAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken)));
+
+    [HttpGet("{id:guid}/exportacao")]
+    public async Task<IActionResult> Exportar(Guid id, CancellationToken cancellationToken) =>
+        Ok(RespostaApi<ExportacaoPacienteResponse>.ComSucesso(await pacientesService.ExportarAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken)));
 }

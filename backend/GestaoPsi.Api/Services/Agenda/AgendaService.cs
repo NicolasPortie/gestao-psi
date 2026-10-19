@@ -41,6 +41,8 @@ public sealed class AgendaService(
         configuracao.ProgramarLembreteAoConfirmar = request.ProgramarLembreteAoConfirmar;
         configuracao.AntecedenciaLembreteHoras = request.AntecedenciaLembreteHoras;
         configuracao.CanalLembretePadrao = request.CanalLembretePadrao;
+        configuracao.CobrarAoRealizar = request.CobrarAoRealizar;
+        configuracao.CobrarFalta = request.CobrarFalta;
         configuracao.AtualizadoEm = DateTimeOffset.UtcNow;
         var depois = Mapear(configuracao);
         auditoria.Registrar(contaId, usuarioId, "ConfiguracaoAtendimentoAtualizada", nameof(ConfiguracaoAtendimento), configuracao.Id, "Configurações de atendimento atualizadas.", antes, depois, ip, userAgent);
@@ -70,6 +72,58 @@ public sealed class AgendaService(
         auditoria.Registrar(contaId, usuarioId, id is null ? "TipoAtendimentoCriado" : "TipoAtendimentoAtualizado", nameof(TipoAtendimento), tipo.Id, $"Tipo de atendimento {tipo.Nome} salvo.", antes, depois, ip, userAgent);
         await dbContext.SaveChangesAsync(ct);
         return depois;
+    }
+
+    /// <summary>
+    /// Inícios livres ("HH:mm", relógio do consultório) para uma consulta da duração pedida no dia: dentro dos
+    /// horários de atendimento, fora de bloqueios e consultas, respeitando a antecedência mínima. Passo de 30 minutos.
+    /// </summary>
+    public async Task<IReadOnlyCollection<string>> ListarHorariosLivresAsync(Guid usuarioId, Guid contaId, DateOnly data, int duracaoMinutos, CancellationToken ct)
+    {
+        await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
+        if (duracaoMinutos is < 10 or > 480) throw new RegraNegocioException("A duração deve estar entre 10 e 480 minutos.");
+        var configuracao = await ObterConfiguracaoAsync(contaId, false, ct);
+        var fuso = FusoHorarioConta.Resolver(configuracao.FusoHorario);
+        DateTimeOffset ParaInstante(DateTime local) => new(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), fuso.GetUtcOffset(local));
+
+        var inicioDia = ParaInstante(data.ToDateTime(TimeOnly.MinValue));
+        var fimDia = ParaInstante(data.AddDays(1).ToDateTime(TimeOnly.MinValue));
+        var diaSemana = (DiaSemana)(int)data.DayOfWeek;
+        var temGrade = await dbContext.HorariosDisponiveis.AnyAsync(x => x.ContaPsicologoId == contaId && x.Ativo, ct);
+        var faixas = temGrade
+            ? await dbContext.HorariosDisponiveis.AsNoTracking()
+                .Where(x => x.ContaPsicologoId == contaId && x.Ativo && x.DiaSemana == diaSemana)
+                .OrderBy(x => x.HoraInicio)
+                .Select(x => new { x.HoraInicio, x.HoraFim })
+                .ToListAsync(ct)
+            : [new { HoraInicio = new TimeOnly(7, 0), HoraFim = new TimeOnly(21, 0) }];
+
+        var ocupados = await dbContext.Consultas.AsNoTracking()
+            .Where(x => x.ContaPsicologoId == contaId && x.Status != StatusConsulta.Cancelada && x.Status != StatusConsulta.Remarcada && x.InicioEm < fimDia && x.FimEm > inicioDia)
+            .Select(x => new { x.InicioEm, x.FimEm })
+            .ToListAsync(ct);
+        ocupados.AddRange(await dbContext.BloqueiosAgenda.AsNoTracking()
+            .Where(x => x.ContaPsicologoId == contaId && x.InicioEm < fimDia && x.FimEm > inicioDia)
+            .Select(x => new { x.InicioEm, x.FimEm })
+            .ToListAsync(ct));
+
+        var minimo = DateTimeOffset.UtcNow.AddHours(configuracao.AntecedenciaMinimaAgendamentoHoras ?? 0);
+        var duracao = TimeSpan.FromMinutes(duracaoMinutos);
+        var livres = new List<string>();
+        foreach (var faixa in faixas)
+        {
+            for (var hora = faixa.HoraInicio; hora.Add(duracao) <= faixa.HoraFim && hora >= faixa.HoraInicio; hora = hora.AddMinutes(30))
+            {
+                var inicio = ParaInstante(data.ToDateTime(hora));
+                var fim = inicio + duracao;
+                if (inicio < minimo) continue;
+                if (ocupados.Any(x => x.InicioEm < fim && x.FimEm > inicio)) continue;
+                var rotulo = hora.ToString("HH:mm");
+                if (!livres.Contains(rotulo)) livres.Add(rotulo);
+                if (hora.AddMinutes(30) < hora) break;
+            }
+        }
+        return livres;
     }
 
     public async Task<IReadOnlyCollection<HorarioDisponivelResponse>> ListarHorariosAsync(Guid usuarioId, Guid contaId, CancellationToken ct)
@@ -153,7 +207,9 @@ public sealed class AgendaService(
         x.ProgramarLembreteAoCriarConsulta,
         x.ProgramarLembreteAoConfirmar,
         x.AntecedenciaLembreteHoras,
-        x.CanalLembretePadrao);
+        x.CanalLembretePadrao,
+        x.CobrarAoRealizar,
+        x.CobrarFalta);
     private static TipoAtendimentoResponse Mapear(TipoAtendimento x) => new(x.Id, x.Nome, x.Descricao, x.DuracaoMinutos, x.ValorPadrao, x.ModalidadePadrao, x.Ativo);
     private static HorarioDisponivelResponse Mapear(HorarioDisponivel x) => new(x.Id, x.DiaSemana, x.HoraInicio, x.HoraFim, x.Ativo);
     private static BloqueioAgendaResponse Mapear(BloqueioAgenda x) => new(x.Id, x.Titulo, x.Descricao, x.InicioEm, x.FimEm, x.DiaInteiro);

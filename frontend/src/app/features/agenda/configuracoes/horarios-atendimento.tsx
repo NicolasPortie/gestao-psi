@@ -105,14 +105,14 @@ export function HorariosAtendimento() {
   return (
     <div className="grid max-w-3xl gap-5">
       <p className="max-w-[60ch] text-base text-ink-muted">
-        Os horários definem quando a agenda aceita consultas. Fora deles, o backend recusa o agendamento.
+        Os horários definem quando a agenda aceita consultas. Fora deles, não é possível agendar.
       </p>
-      <ul className="divide-y divide-line border-y border-line">
+      <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
         {ordemDaSemana.map((dia) => {
           const faixas = porDia(dia);
           const novo = editando === `novo:${dia}`;
           return (
-            <li key={dia} className="grid gap-x-6 gap-y-2 py-4 sm:grid-cols-[9rem_1fr]">
+            <li key={dia} className="grid gap-x-6 gap-y-2 px-4 py-4 sm:grid-cols-[9rem_1fr] sm:px-5">
               <h3 className="text-base font-medium text-ink">{rotulosDiaSemana[dia]}</h3>
               <div className="grid gap-2.5">
                 {faixas.length === 0 && !novo ? <p className="text-base text-ink-muted">Sem atendimento</p> : null}

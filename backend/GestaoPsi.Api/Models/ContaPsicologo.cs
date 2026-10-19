@@ -9,4 +9,5 @@ public class ContaPsicologo
     public StatusContaPsicologo Status { get; set; } = StatusContaPsicologo.Ativa;
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? AtualizadoEm { get; set; }
+    public DateTimeOffset? PerfilProfissionalAdiadoEm { get; set; }
 }

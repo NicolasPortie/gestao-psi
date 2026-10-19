@@ -58,7 +58,24 @@ export const sessoesKeys = {
   todos: ['sessoes'] as const,
   evolucoes: (pacienteId: string, filtro: ListarEvolucoesFiltro = {}) =>
     [...sessoesKeys.todos, 'evolucoes', pacienteId, filtro] as const,
+  registros: (pacienteId: string, filtro: ListarEvolucoesFiltro = {}) =>
+    [...sessoesKeys.todos, 'registros', pacienteId, filtro] as const,
 };
+
+/** Registros de sessão do paciente, do mais recente ao mais antigo (conteúdo clínico descriptografado no servidor). */
+export async function listarRegistrosSessao(
+  pacienteId: string,
+  filtro: ListarEvolucoesFiltro = {},
+  { signal }: { signal?: AbortSignal } = {},
+) {
+  const params = new URLSearchParams();
+  aplicarPaginacaoAQuery(params, filtro);
+  const resposta = await requisicaoApi<RespostaApi<ResultadoPaginado<RegistroSessao>>>(
+    `/sessoes/registros/${pacienteId}?${params}`,
+    { signal },
+  );
+  return extrairDados(resposta, 'Não foi possível carregar os registros de sessão.');
+}
 
 export async function listarEvolucoes(
   pacienteId: string,

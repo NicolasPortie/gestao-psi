@@ -7,6 +7,7 @@ using GestaoPsi.Api.Services.Notificacoes;
 using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Shared.Excecoes;
+using GestaoPsi.Api.Shared.Texto;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestaoPsi.Api.Services.WhatsApp;
@@ -201,12 +202,26 @@ public sealed partial class BridgeWhatsAppService(
         conversa.AtualizadoEm = DateTimeOffset.UtcNow;
 
         if (sensivel)
-            await NotificarEquipeAsync(integracao.ContaPsicologoId, conversa, cancellationToken);
+        {
+            RegistrarRespostaBot(integracao.ContaPsicologoId, conversa, RespostaConteudoSensivel);
+            await NotificarEquipeAsync(
+                integracao.ContaPsicologoId,
+                "Paciente precisa de atenção",
+                "Uma mensagem pode ser sensível. Abra a conversa e responda assim que possível.",
+                cancellationToken);
+            RegistrarEncaminhamentoHumano(integracao.ContaPsicologoId, conversa, motivoSensivel ?? "A mensagem pode tratar de um assunto delicado.");
+        }
 
         // Sessão bot administrativa (executa regras de agenda/consulta, sem fluxo clínico).
         if (!sensivel && conversa.Status == StatusConversaWhatsApp.Aberta)
         {
             var intencao = DetectarIntencaoAdministrativa(conteudoBruto);
+            if (intencao == IntencaoFalarComHumano)
+            {
+                await EncaminharParaHumanoAsync(integracao.ContaPsicologoId, conversa, MotivoPedidoDoPaciente, RespostaPedidoHumano, cancellationToken);
+                return conversa.Id;
+            }
+
             var sessao = await dbContext.SessoesBot.FirstOrDefaultAsync(
                 item => item.ContaPsicologoId == integracao.ContaPsicologoId &&
                         item.ConversaWhatsAppId == conversa.Id &&
@@ -221,7 +236,7 @@ public sealed partial class BridgeWhatsAppService(
                     ConversaWhatsAppId = conversa.Id,
                     PacienteId = conversa.PacienteId,
                     IntencaoAtual = intencao,
-                    EtapaAtual = "inicio",
+                    EtapaAtual = intencao,
                     Status = StatusSessaoBot.Aberta,
                     ExpiraEm = DateTimeOffset.UtcNow.AddHours(2),
                     CriadoEm = DateTimeOffset.UtcNow
@@ -304,33 +319,26 @@ public sealed partial class BridgeWhatsAppService(
             yield return protecao.HashDeterministico(numero);
     }
 
-    private async Task NotificarEquipeAsync(Guid contaId, ConversaWhatsApp conversa, CancellationToken cancellationToken)
+    private async Task NotificarEquipeAsync(Guid contaId, string titulo, string mensagem, CancellationToken cancellationToken)
     {
-        var usuarios = await dbContext.Usuarios.AsNoTracking()
-            .Where(item => item.ContaPsicologoId == contaId &&
-                           item.Status == StatusUsuario.Ativo &&
-                           (item.Perfil == PerfilUsuario.Psicologo ||
-                            item.Perfil == PerfilUsuario.Recepcionista ||
-                            item.Perfil == PerfilUsuario.Administrador))
-            .Select(item => item.Id)
+        // Quem responde conversas: pessoas ativas com a permissão de conversas (inclui perfis personalizados).
+        var equipe = await dbContext.Usuarios.AsNoTracking()
+            .Include(item => item.PerfilAcesso)
+            .Where(item => item.ContaPsicologoId == contaId && item.Status == StatusUsuario.Ativo)
             .ToArrayAsync(cancellationToken);
 
-        foreach (var usuarioId in usuarios)
-        {
-            await notificacoes.CriarAsync(
-                contaId,
-                usuarioId,
-                "Atendimento humano necessário",
-                conversa.MotivoAtendimentoHumano ?? "Conversa WhatsApp requer intervenção humana.",
-                "whatsapp",
-                cancellationToken);
-        }
+        foreach (var usuario in equipe.Where(PermissoesEfetivas.PodeConversar))
+            await notificacoes.CriarAsync(contaId, usuario.Id, titulo, mensagem, "whatsapp", cancellationToken);
     }
 
     private static string DetectarIntencaoAdministrativa(string? conteudo)
     {
         if (string.IsNullOrWhiteSpace(conteudo))
             return "desconhecida";
+
+        var normalizado = TextoNormalizado.ParaComparacao(conteudo);
+        if (TermosFalarComHumano.Any(termo => normalizado.Contains(termo, StringComparison.Ordinal)))
+            return IntencaoFalarComHumano;
 
         var texto = conteudo.ToLowerInvariant();
         if (texto.Contains("agendar") || texto.Contains("marcar consulta")) return "agendar_consulta";

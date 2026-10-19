@@ -2,9 +2,9 @@ import { requisicaoApi } from '../../core/api/cliente-api';
 import { aplicarPaginacaoAQuery, type ResultadoPaginado } from '../../core/api/paginacao';
 import { ErroApi, extrairDados, type RespostaApi } from '../../core/api/resposta-api';
 
-
 export type StatusIntegracao = 'Ativa' | 'Inativa' | 'Erro' | 'Pendente';
-export type StatusConversaWhatsApp = 'Aberta' | 'Finalizada' | 'Expirada' | 'AtendimentoHumano' | 'Bloqueada';
+export type StatusConversaWhatsApp =
+  'Aberta' | 'Finalizada' | 'Expirada' | 'AtendimentoHumano' | 'Bloqueada';
 
 export interface IntegracaoWhatsApp {
   id: string;
@@ -87,12 +87,16 @@ export const whatsappKeys = {
   todos: ['whatsapp'] as const,
   integracao: () => [...whatsappKeys.todos, 'integracao'] as const,
   eventos: () => [...whatsappKeys.todos, 'eventos'] as const,
-  conversas: (filtro: ListarConversasFiltro) => [...whatsappKeys.todos, 'conversas', filtro] as const,
+  conversas: (filtro: ListarConversasFiltro) =>
+    [...whatsappKeys.todos, 'conversas', filtro] as const,
   conversa: (id: string) => [...whatsappKeys.todos, 'conversa', id] as const,
 };
 
 export async function obterIntegracaoWhatsApp({ signal }: { signal?: AbortSignal } = {}) {
-  const resposta = await requisicaoApi<RespostaApi<IntegracaoWhatsApp | null>>('/whatsapp/integracao', { signal });
+  const resposta = await requisicaoApi<RespostaApi<IntegracaoWhatsApp | null>>(
+    '/whatsapp/integracao',
+    { signal },
+  );
   if (!resposta.sucesso) {
     throw new ErroApi(
       resposta.erros?.[0] ?? resposta.mensagem ?? 'Não foi possível carregar a integração.',
@@ -104,7 +108,6 @@ export async function obterIntegracaoWhatsApp({ signal }: { signal?: AbortSignal
   return resposta.dados ?? null;
 }
 
-
 export async function salvarIntegracaoWhatsApp(request: SalvarIntegracaoRequest) {
   const resposta = await requisicaoApi<RespostaApi<IntegracaoWhatsApp>>('/whatsapp/integracao', {
     method: 'PUT',
@@ -114,14 +117,20 @@ export async function salvarIntegracaoWhatsApp(request: SalvarIntegracaoRequest)
 }
 
 export async function testarConexaoWhatsApp() {
-  const resposta = await requisicaoApi<RespostaApi<TesteConexaoBridge>>('/whatsapp/integracao/testar-conexao', {
-    method: 'POST',
-  });
+  const resposta = await requisicaoApi<RespostaApi<TesteConexaoBridge>>(
+    '/whatsapp/integracao/testar-conexao',
+    {
+      method: 'POST',
+    },
+  );
   return extrairDados(resposta, 'Não foi possível testar a conexão.');
 }
 
 export async function listarEventosBridge({ signal }: { signal?: AbortSignal } = {}) {
-  const resposta = await requisicaoApi<RespostaApi<EventoBridgeResumo[]>>('/whatsapp/integracao/eventos', { signal });
+  const resposta = await requisicaoApi<RespostaApi<EventoBridgeResumo[]>>(
+    '/whatsapp/integracao/eventos',
+    { signal },
+  );
   return extrairDados(resposta, 'Não foi possível carregar os eventos.');
 }
 
@@ -142,37 +151,61 @@ export async function listarConversasWhatsApp(
 }
 
 export async function obterConversaWhatsApp(id: string, { signal }: { signal?: AbortSignal } = {}) {
-  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(`/whatsapp/conversas/${id}`, { signal });
+  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(`/whatsapp/conversas/${id}`, {
+    signal,
+  });
   return extrairDados(resposta, 'Não foi possível carregar a conversa.');
 }
 
 export async function assumirAtendimentoHumano(id: string, motivo?: string) {
-  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(`/whatsapp/conversas/${id}/assumir-humano`, {
-    method: 'POST',
-    body: { motivo: motivo ?? null },
-  });
+  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(
+    `/whatsapp/conversas/${id}/assumir-humano`,
+    {
+      method: 'POST',
+      body: { motivo: motivo ?? null },
+    },
+  );
   return extrairDados(resposta, 'Não foi possível assumir o atendimento.');
 }
 
+export async function devolverConversaAoAssistente(id: string) {
+  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(
+    `/whatsapp/conversas/${id}/devolver-ao-assistente`,
+    {
+      method: 'POST',
+    },
+  );
+  return extrairDados(resposta, 'Não foi possível devolver a conversa ao assistente.');
+}
+
 export async function finalizarConversa(id: string) {
-  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(`/whatsapp/conversas/${id}/finalizar`, {
-    method: 'POST',
-  });
+  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(
+    `/whatsapp/conversas/${id}/finalizar`,
+    {
+      method: 'POST',
+    },
+  );
   return extrairDados(resposta, 'Não foi possível finalizar a conversa.');
 }
 
 export async function enviarMensagemConversa(id: string, conteudo: string) {
-  const resposta = await requisicaoApi<RespostaApi<MensagemWhatsApp>>(`/whatsapp/conversas/${id}/mensagens`, {
-    method: 'POST',
-    body: { conteudo },
-  });
+  const resposta = await requisicaoApi<RespostaApi<MensagemWhatsApp>>(
+    `/whatsapp/conversas/${id}/mensagens`,
+    {
+      method: 'POST',
+      body: { conteudo },
+    },
+  );
   return extrairDados(resposta, 'Não foi possível enviar a mensagem.');
 }
 
 export async function vincularPacienteConversa(id: string, pacienteId: string) {
-  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(`/whatsapp/conversas/${id}/vincular-paciente`, {
-    method: 'POST',
-    body: { pacienteId },
-  });
+  const resposta = await requisicaoApi<RespostaApi<ConversaDetalhe>>(
+    `/whatsapp/conversas/${id}/vincular-paciente`,
+    {
+      method: 'POST',
+      body: { pacienteId },
+    },
+  );
   return extrairDados(resposta, 'Não foi possível vincular o paciente.');
 }

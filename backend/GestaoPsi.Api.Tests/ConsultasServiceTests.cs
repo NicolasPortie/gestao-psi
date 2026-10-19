@@ -16,6 +16,172 @@ namespace GestaoPsi.Api.Tests;
 
 public sealed class ConsultasServiceTests
 {
+    private static async Task<Consulta> ConsultaPassadaAsync(AppDbContext contexto, Cenario cenario)
+    {
+        var inicio = DateTimeOffset.UtcNow.AddHours(-3);
+        var consulta = new Consulta
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = cenario.ContaId,
+            PacienteId = cenario.Paciente.Id,
+            TipoAtendimentoId = cenario.Tipo.Id,
+            InicioEm = inicio,
+            FimEm = inicio.AddMinutes(50),
+            Modalidade = ModalidadeAtendimento.Presencial,
+            Status = StatusConsulta.Confirmada,
+            Origem = OrigemConsulta.Painel
+        };
+        contexto.Consultas.Add(consulta);
+        await contexto.SaveChangesAsync();
+        return consulta;
+    }
+
+    [Fact]
+    public async Task MarcarRealizada_CriaCobrancaComValorDoPacienteSemDuplicar()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        cenario.Paciente.ValorSessao = 200;
+        await contexto.SaveChangesAsync();
+        var consulta = await ConsultaPassadaAsync(contexto, cenario);
+        var service = CriarService(contexto);
+
+        await service.AlterarStatusAsync(cenario.UsuarioId, cenario.ContaId, consulta.Id, new AlterarStatusConsultaRequest { Status = StatusConsulta.Realizada }, null, null, CancellationToken.None);
+
+        var pagamento = await contexto.Pagamentos.SingleAsync(x => x.ConsultaId == consulta.Id);
+        Assert.Equal(200, pagamento.Valor);
+        Assert.Equal(StatusPagamento.Pendente, pagamento.Status);
+    }
+
+    [Fact]
+    public async Task Falta_SoGeraCobrancaQuandoAContaCobraFalta()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        cenario.Paciente.ValorSessao = 150;
+        await contexto.SaveChangesAsync();
+        var service = CriarService(contexto);
+
+        var semPolitica = await ConsultaPassadaAsync(contexto, cenario);
+        await service.AlterarStatusAsync(cenario.UsuarioId, cenario.ContaId, semPolitica.Id, new AlterarStatusConsultaRequest { Status = StatusConsulta.NaoCompareceu }, null, null, CancellationToken.None);
+        Assert.False(await contexto.Pagamentos.AnyAsync(x => x.ConsultaId == semPolitica.Id));
+
+        var configuracao = await contexto.ConfiguracoesAtendimento.SingleAsync(x => x.ContaPsicologoId == cenario.ContaId);
+        configuracao.CobrarFalta = true;
+        await contexto.SaveChangesAsync();
+        var comPolitica = await ConsultaPassadaAsync(contexto, cenario);
+        await service.AlterarStatusAsync(cenario.UsuarioId, cenario.ContaId, comPolitica.Id, new AlterarStatusConsultaRequest { Status = StatusConsulta.NaoCompareceu }, null, null, CancellationToken.None);
+        Assert.Equal(150, (await contexto.Pagamentos.SingleAsync(x => x.ConsultaId == comPolitica.Id)).Valor);
+    }
+
+    [Fact]
+    public async Task GerarMensalidades_CriaUmaPorMensalistaENaoDuplica()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        cenario.Paciente.ValorSessao = 640;
+        cenario.Paciente.ModoCobranca = ModoCobranca.Mensal;
+        contexto.Pacientes.Add(new Paciente { Id = Guid.NewGuid(), ContaPsicologoId = cenario.ContaId, NomeCompleto = "Mensalista sem valor", Status = StatusPaciente.Ativo, ModoCobranca = ModoCobranca.Mensal });
+        await contexto.SaveChangesAsync();
+        var autorizacao = new AutorizacaoContaService(contexto);
+        var pagamentos = new Services.Pagamentos.PagamentosService(contexto, autorizacao, new AuditoriaCaptura(), new ProtecaoFakeConsultas());
+        var pedido = new DTOs.Pagamentos.GerarMensalidadesRequest { Ano = 2026, Mes = 11, DiaVencimento = 10 };
+
+        var primeira = await pagamentos.GerarMensalidadesAsync(cenario.UsuarioId, cenario.ContaId, pedido, null, null, CancellationToken.None);
+        var segunda = await pagamentos.GerarMensalidadesAsync(cenario.UsuarioId, cenario.ContaId, pedido, null, null, CancellationToken.None);
+
+        Assert.Equal(1, primeira.Criadas);
+        Assert.Single(primeira.SemValor);
+        Assert.Equal(0, segunda.Criadas);
+        Assert.Equal(1, segunda.JaExistiam);
+        var mensalidade = await contexto.Pagamentos.SingleAsync();
+        Assert.Equal(new DateOnly(2026, 11, 1), mensalidade.Competencia);
+        Assert.Equal(640, mensalidade.Valor);
+    }
+
+    [Fact]
+    public async Task MarcarRealizada_NaoCobraSessaoDeMensalista()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        cenario.Paciente.ValorSessao = 600;
+        cenario.Paciente.ModoCobranca = ModoCobranca.Mensal;
+        await contexto.SaveChangesAsync();
+        var consulta = await ConsultaPassadaAsync(contexto, cenario);
+
+        await CriarService(contexto).AlterarStatusAsync(cenario.UsuarioId, cenario.ContaId, consulta.Id, new AlterarStatusConsultaRequest { Status = StatusConsulta.Realizada }, null, null, CancellationToken.None);
+
+        Assert.False(await contexto.Pagamentos.AnyAsync());
+    }
+
+    [Fact]
+    public async Task CriarSerie_Semanal_RepeteNoMesmoHorarioEPulaOcupado()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var service = CriarService(contexto);
+        var inicio = DateTimeOffset.UtcNow.AddDays(3);
+        // A terceira semana já está ocupada por outra consulta.
+        contexto.Consultas.Add(new Consulta
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = cenario.ContaId,
+            PacienteId = cenario.Paciente.Id,
+            TipoAtendimentoId = cenario.Tipo.Id,
+            InicioEm = inicio.AddDays(14),
+            FimEm = inicio.AddDays(14).AddMinutes(50),
+            Modalidade = ModalidadeAtendimento.Presencial,
+            Status = StatusConsulta.Confirmada,
+            Origem = OrigemConsulta.Painel
+        });
+        await contexto.SaveChangesAsync();
+
+        var serie = await service.CriarSerieAsync(cenario.UsuarioId, cenario.ContaId,
+            new CriarConsultaRequest
+            {
+                PacienteId = cenario.Paciente.Id,
+                TipoAtendimentoId = cenario.Tipo.Id,
+                InicioEm = inicio,
+                FimEm = inicio.AddMinutes(50),
+                Modalidade = ModalidadeAtendimento.Presencial,
+                Recorrencia = new RecorrenciaConsultaRequest { Frequencia = FrequenciaRecorrencia.Semanal, Ocorrencias = 4 }
+            }, null, null, CancellationToken.None);
+
+        Assert.NotNull(serie.SerieId);
+        Assert.Equal(3, serie.Criadas.Count);
+        Assert.Single(serie.Ignoradas);
+        Assert.All(serie.Criadas, consulta => Assert.Equal(serie.SerieId, consulta.SerieId));
+        Assert.Equal(inicio.AddDays(21).UtcDateTime, serie.Criadas.Last().InicioEm.UtcDateTime, TimeSpan.FromMinutes(1));
+    }
+
+    [Fact]
+    public async Task CancelarSerie_CancelaDaSelecionadaEmDiante()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var service = CriarService(contexto);
+        var inicio = DateTimeOffset.UtcNow.AddDays(3);
+        var serie = await service.CriarSerieAsync(cenario.UsuarioId, cenario.ContaId,
+            new CriarConsultaRequest
+            {
+                PacienteId = cenario.Paciente.Id,
+                TipoAtendimentoId = cenario.Tipo.Id,
+                InicioEm = inicio,
+                FimEm = inicio.AddMinutes(50),
+                Modalidade = ModalidadeAtendimento.Online,
+                Recorrencia = new RecorrenciaConsultaRequest { Frequencia = FrequenciaRecorrencia.Quinzenal, Ocorrencias = 3 }
+            }, null, null, CancellationToken.None);
+        var segunda = serie.Criadas.ElementAt(1);
+
+        var resultado = await service.CancelarSerieAsync(cenario.UsuarioId, cenario.ContaId, segunda.Id, new CancelarSerieRequest(), null, null, CancellationToken.None);
+
+        Assert.Equal(2, resultado.Canceladas);
+        var estados = await contexto.Consultas.Where(x => x.SerieId == serie.SerieId).OrderBy(x => x.InicioEm).Select(x => x.Status).ToListAsync();
+        Assert.NotEqual(StatusConsulta.Cancelada, estados[0]);
+        Assert.Equal(StatusConsulta.Cancelada, estados[1]);
+        Assert.Equal(StatusConsulta.Cancelada, estados[2]);
+    }
+
     [Fact]
     public async Task Remarcar_DeveCriarNovaConsultaEMarcarAntigaComoRemarcada()
     {

@@ -4,14 +4,11 @@ namespace GestaoPsi.Api.DTOs.Autenticacao;
 
 public sealed class CriarContaRequest
 {
-    [Required, MinLength(3), MaxLength(180)]
-    public string NomeCompleto { get; init; } = string.Empty;
+    [Required(ErrorMessage = "Confirme seu e-mail antes de criar a conta."), RegularExpression(@"^[a-f0-9]{64}$", ErrorMessage = "A confirmação de e-mail é inválida.")]
+    public string TokenEmail { get; init; } = string.Empty;
 
     [Required, EmailAddress, MaxLength(180)]
     public string Email { get; init; } = string.Empty;
-
-    [Required, RegularExpression(@"^\d{2}/\d{4,6}$")]
-    public string Crp { get; init; } = string.Empty;
 
     [Required, MinLength(8), MaxLength(200)]
     public string Senha { get; init; } = string.Empty;

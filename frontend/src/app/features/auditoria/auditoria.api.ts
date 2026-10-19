@@ -22,6 +22,7 @@ export interface LogAuditoriaDetalhe extends LogAuditoria {
 export interface FiltroAuditoria {
   tipoAcao?: string;
   entidade?: string;
+  incluirTecnicos?: boolean;
   de?: string;
   ate?: string;
   pagina?: number;
@@ -34,18 +35,27 @@ export const auditoriaKeys = {
   detalhe: (id: string) => [...auditoriaKeys.todos, 'detalhe', id] as const,
 };
 
-export async function listarAuditoria(filtro: FiltroAuditoria, { signal }: { signal?: AbortSignal } = {}) {
+export async function listarAuditoria(
+  filtro: FiltroAuditoria,
+  { signal }: { signal?: AbortSignal } = {},
+) {
   const params = new URLSearchParams();
   aplicarPaginacaoAQuery(params, filtro);
   if (filtro.tipoAcao) params.set('tipoAcao', filtro.tipoAcao);
   if (filtro.entidade) params.set('entidade', filtro.entidade);
+  if (filtro.incluirTecnicos) params.set('incluirTecnicos', 'true');
   if (filtro.de) params.set('de', filtro.de);
   if (filtro.ate) params.set('ate', filtro.ate);
-  const resposta = await requisicaoApi<RespostaApi<ResultadoPaginado<LogAuditoria>>>(`/auditoria?${params}`, { signal });
+  const resposta = await requisicaoApi<RespostaApi<ResultadoPaginado<LogAuditoria>>>(
+    `/auditoria?${params}`,
+    { signal },
+  );
   return extrairDados(resposta, 'Não foi possível carregar a auditoria.');
 }
 
 export async function obterLogAuditoria(id: string, { signal }: { signal?: AbortSignal } = {}) {
-  const resposta = await requisicaoApi<RespostaApi<LogAuditoriaDetalhe>>(`/auditoria/${id}`, { signal });
+  const resposta = await requisicaoApi<RespostaApi<LogAuditoriaDetalhe>>(`/auditoria/${id}`, {
+    signal,
+  });
   return extrairDados(resposta, 'Não foi possível carregar o detalhe.');
 }

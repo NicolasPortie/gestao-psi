@@ -248,6 +248,12 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
             await using var db = isolado.CriarContexto();
             var migrator = db.GetService<IMigrator>();
             await migrator.MigrateAsync("20261004124651_VersionarAutenticacaoUsuario");
+            // O cenário é montado com o modelo atual, que já tem colunas criadas por migrações posteriores; elas são simuladas aqui e removidas antes de migrar.
+            foreach (var (tabela, coluna, tipo) in ColunasPosteriores)
+            {
+                var adicionar = $"ALTER TABLE [{tabela}] ADD [{coluna}] {tipo} NULL";
+                await db.Database.ExecuteSqlRawAsync(adicionar);
+            }
             var c = await CriarCenarioAsync(db);
             var documento = new DocumentoProntuario { Id = Guid.NewGuid(), ContaPsicologoId = c.Conta, PacienteId = c.Paciente, ProntuarioId = c.Prontuario, CriadoPorUsuarioId = c.Usuario, Titulo = "Documento legado", Status = StatusDocumentoProntuario.Entregue, HashConteudoFinal = "hash-legado" };
             db.Add(documento);
@@ -264,6 +270,11 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
                 VALUES ({protocoloId}, {c.Conta}, {documento.Id}, {c.Usuario}, N'Presencial', N'Registrada', {agora}, {agora})
                 """);
             db.ChangeTracker.Clear();
+            foreach (var (tabela, coluna, _) in ColunasPosteriores)
+            {
+                var remover = $"ALTER TABLE [{tabela}] DROP COLUMN [{coluna}]";
+                await db.Database.ExecuteSqlRawAsync(remover);
+            }
 
             if (caso == "Rastreavel")
             {
@@ -271,8 +282,8 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
                 var protocolo = await db.ProtocolosEntregaDocumento.Include(x => x.VersaoDocumentoProntuario).SingleAsync(x => x.Id == protocoloId);
                 Assert.Equal(versao.Id, protocolo.VersaoDocumentoProntuarioId);
                 Assert.Equal("conteudo-legado-protegido", protocolo.VersaoDocumentoProntuario.ConteudoJson);
-                Assert.Equal(13, (await db.Database.GetAppliedMigrationsAsync()).Count());
-                Assert.Equal(77, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM sys.foreign_keys").SingleAsync());
+                Assert.Equal(17, (await db.Database.GetAppliedMigrationsAsync()).Count());
+                Assert.Equal(79, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM sys.foreign_keys").SingleAsync());
                 Assert.Equal(0, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM sys.foreign_keys WHERE is_disabled = 1 OR is_not_trusted = 1").SingleAsync());
             }
             else
@@ -283,7 +294,7 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
                 Assert.Equal(1, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM [ProtocolosEntregaDocumento]").SingleAsync());
                 Assert.Equal(0, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM sys.columns WHERE object_id = OBJECT_ID('ProtocolosEntregaDocumento') AND name = 'VersaoDocumentoProntuarioId'").SingleAsync());
                 Assert.Equal(caso == "SemVersao" ? 0 : caso == "Ambigua" ? 2 : 1, await db.VersoesDocumentoProntuario.CountAsync());
-                if (caso == "PacienteIncoerente") Assert.Equal(c.OutroPaciente, (await db.Pagamentos.SingleAsync()).PacienteId);
+                if (caso == "PacienteIncoerente") Assert.Equal(c.OutroPaciente, await db.Pagamentos.Select(x => x.PacienteId).SingleAsync());
             }
         }
         finally
@@ -330,6 +341,7 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
         }
         else if (caso == "Documento")
         {
+            await AdicionarDadosProfissionaisAsync(db, c);
             var service = new DocumentosService(db, autorizacao, protecao, auditoria);
             var criado = await service.CriarAsync(c.Usuario, c.Conta, new CriarDocumentoRequest { PacienteId = c.Paciente, Tipo = TipoDocumentoPsicologico.RelatorioPsicologico, Titulo = "Relatorio", Conteudo = texto }, null, null, CancellationToken.None);
             await service.FinalizarAsync(c.Usuario, c.Conta, criado.Id, null, null, CancellationToken.None);
@@ -394,6 +406,7 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
         var sessoes = new SessoesService(db, autorizacao, protecao, auditoria);
         await sessoes.CriarEvolucaoAsync(c.Usuario, c.Conta, new CriarEvolucaoProntuarioRequest { PacienteId = c.Paciente, RegistroSessaoId = c.Registro, Conteudo = "Evolução vinculada" }, null, null, CancellationToken.None);
         await sessoes.CriarEvolucaoAsync(c.Usuario, c.Conta, new CriarEvolucaoProntuarioRequest { PacienteId = c.Paciente, Conteudo = "Evolução avulsa" }, null, null, CancellationToken.None);
+        await AdicionarDadosProfissionaisAsync(db, c);
         db.Add(new Pagamento { Id = Guid.NewGuid(), ContaPsicologoId = c.Conta, PacienteId = c.Paciente, ConsultaId = null, Valor = 100 });
         db.Add(new Lembrete { Id = Guid.NewGuid(), ContaPsicologoId = c.Conta, PacienteId = c.Paciente, ConsultaId = c.Consulta, ModeloMensagemId = null });
         await db.SaveChangesAsync();
@@ -419,6 +432,26 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
 
     private static ProtecaoDadosService CriarProtecao() => new(new EphemeralDataProtectionProvider(),
         Options.Create(new SegurancaConfiguracao { ChaveHashDados = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)) }));
+
+    /// <summary>Colunas que o modelo atual grava mas que só existem depois da migração de versionamento de autenticação.</summary>
+    private static readonly (string Tabela, string Coluna, string Tipo)[] ColunasPosteriores =
+    [
+        ("Usuarios", "PerfilAcessoId", "uniqueidentifier"),
+        ("ContasPsicologo", "PerfilProfissionalAdiadoEm", "datetimeoffset"),
+        ("Pacientes", "ValorSessao", "decimal(12,2)"),
+        ("Consultas", "SerieId", "uniqueidentifier"),
+        ("Pacientes", "ModoCobranca", "nvarchar(80)"),
+        ("Pacientes", "ConsentimentoRegistradoEm", "datetimeoffset"),
+        ("Pagamentos", "Competencia", "date"),
+    ];
+
+    /// <summary>Finalizar documento exige nome e CRP do psicólogo da conta.</summary>
+    private static async Task AdicionarDadosProfissionaisAsync(AppDbContext db, Cenario c)
+    {
+        db.Add(new DadosProfissionaisPsicologo { Id = Guid.NewGuid(), ContaPsicologoId = c.Conta, UsuarioId = c.Usuario, NomeProfissional = "Psicologa", Crp = "protegido:06123456", CrpHash = $"hash:{c.Conta:N}" });
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+    }
 
     private static async Task<Cenario> CriarCenarioAsync(AppDbContext db)
     {

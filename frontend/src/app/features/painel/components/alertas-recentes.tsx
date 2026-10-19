@@ -1,12 +1,12 @@
 import { Link } from 'react-router';
 
-import { ItemLista, ListaRegulada } from '../../../components/ui/lista';
+import { ItemLista, ListaRegulada, PainelVazio } from '../../../components/ui/lista';
 import { formatarTempoRelativo } from '../../../core/formatacao/datas';
 import type { PainelResumo } from '../painel.types';
 
 export function AlertasRecentes({ alertas }: { alertas: PainelResumo['alertas'] }) {
   if (alertas.length === 0) {
-    return <p className="border-y border-line py-4 text-base text-ink-muted">Sem alertas recentes.</p>;
+    return <PainelVazio>Sem alertas recentes.</PainelVazio>;
   }
 
   return (

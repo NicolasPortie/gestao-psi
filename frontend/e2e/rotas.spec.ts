@@ -9,8 +9,8 @@ const conta = {
   senha: process.env.E2E_SENHA ?? senhaPadrao,
 };
 
-const rotas: Array<{ caminho: string; titulo: string }> = [
-  { caminho: '/painel', titulo: 'Hoje' },
+const rotas: Array<{ caminho: string; titulo: string | RegExp }> = [
+  { caminho: '/painel', titulo: /^(Bom dia|Boa tarde|Boa noite)/ },
   { caminho: '/agenda', titulo: 'Agenda' },
   { caminho: '/consultas/nova', titulo: 'Nova consulta' },
   { caminho: '/pacientes', titulo: 'Pacientes' },
@@ -52,7 +52,7 @@ test.describe('Rotas autenticadas', () => {
 
     for (const rota of rotas) {
       await page.goto(rota.caminho);
-      await expect(page.getByRole('heading', { level: 1, name: rota.titulo, exact: true }), rota.caminho).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: rota.titulo, exact: typeof rota.titulo === 'string' }), rota.caminho).toBeVisible();
     }
 
     expect(semRuido(errosConsole), `Erros de console: ${semRuido(errosConsole).join(' | ')}`).toEqual([]);
@@ -67,7 +67,7 @@ test.describe('Rotas autenticadas', () => {
 
       for (const rota of rotas) {
         await page.goto(rota.caminho);
-        await expect(page.getByRole('heading', { level: 1, name: rota.titulo, exact: true }), rota.caminho).toBeVisible();
+        await expect(page.getByRole('heading', { level: 1, name: rota.titulo, exact: typeof rota.titulo === 'string' }), rota.caminho).toBeVisible();
         const estouros = await page.evaluate(() => {
           const raiz = document.documentElement;
           // Faixas de rolagem declaradas (`sem-barra`) são intencionais; tabelas e a própria página não.

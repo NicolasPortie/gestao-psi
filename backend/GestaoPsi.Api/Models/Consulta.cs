@@ -16,6 +16,8 @@ public class Consulta : EntidadeDaConta
     public string? EnderecoAtendimento { get; set; }
     public string? ObservacaoAdministrativa { get; set; }
     public string? JustificativaCancelamento { get; set; }
+    /// <summary>Consultas criadas juntas como uma série (semanal ou quinzenal) compartilham este identificador.</summary>
+    public Guid? SerieId { get; set; }
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? AtualizadoEm { get; set; }
 

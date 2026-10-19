@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.ListaEspera;
 using GestaoPsi.Api.Services.ListaEspera;
 using GestaoPsi.Api.Shared.Paginacao;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoAdministrativa")]
+[Authorize(Policy = Politicas.Agenda)]
 [Route("api/v1/lista-espera")]
 public sealed class ListaEsperaController(IListaEsperaService listaEsperaService) : ControllerAutenticadoBase
 {

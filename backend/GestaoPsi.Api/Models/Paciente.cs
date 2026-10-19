@@ -14,6 +14,11 @@ public class Paciente : EntidadeDaConta
     public string? Email { get; set; }
     public StatusPaciente Status { get; set; } = StatusPaciente.Ativo;
     public string? ObservacaoAdministrativa { get; set; }
+    /// <summary>Valor combinado da sessão; usado como padrão nos pagamentos criados ao agendar.</summary>
+    public decimal? ValorSessao { get; set; }
+    public ModoCobranca ModoCobranca { get; set; } = ModoCobranca.PorSessao;
+    /// <summary>Quando o consentimento de tratamento de dados (LGPD) foi registrado pela equipe.</summary>
+    public DateTimeOffset? ConsentimentoRegistradoEm { get; set; }
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? AtualizadoEm { get; set; }
 

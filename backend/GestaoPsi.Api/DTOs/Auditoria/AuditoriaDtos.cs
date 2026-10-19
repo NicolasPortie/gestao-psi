@@ -19,6 +19,8 @@ public sealed class FiltroAuditoriaRequest
     public string? TipoAcao { get; init; }
     public string? Entidade { get; init; }
     public Guid? UsuarioId { get; init; }
+    /// <summary>Inclui os eventos gerados pelo funcionamento do WhatsApp (uma linha por mensagem recebida).</summary>
+    public bool IncluirTecnicos { get; init; }
     public DateTimeOffset? De { get; init; }
     public DateTimeOffset? Ate { get; init; }
     public int Pagina { get; init; } = 1;

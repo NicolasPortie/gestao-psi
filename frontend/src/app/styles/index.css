@@ -214,12 +214,10 @@
   from {
     opacity: 0;
     transform: translateY(12px);
-    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 
@@ -244,7 +242,81 @@
   animation-delay: calc(var(--ordem, 0) * 100ms);
 }
 
+/* No acesso, as duas metades do vínculo se encontram uma única vez. */
+.marca-acesso svg path {
+  animation: vinculo-encontrar 280ms var(--ease-out);
+}
+
+.marca-acesso svg path:first-of-type {
+  --origem-vinculo: -6px;
+}
+
+.marca-acesso svg path:last-of-type {
+  --origem-vinculo: 6px;
+}
+
+.acesso-fotografia {
+  animation: consultorio-abrir 300ms var(--ease-out);
+}
+
+.acesso-formulario > header,
+.acesso-formulario > form,
+.acesso-formulario > p {
+  animation: acesso-apresentar 220ms var(--ease-out) backwards;
+}
+
+.acesso-formulario > form { animation-delay: 40ms; }
+.acesso-formulario > p { animation-delay: 80ms; }
+
+.acesso-seta {
+  transition: transform 150ms var(--ease-out);
+}
+
+.cadastro-etapa {
+  animation: cadastro-avancar 180ms var(--ease-out);
+}
+
+@keyframes cadastro-avancar {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .cadastro-etapa { animation: none; }
+}
+
+.acesso-enviar:focus-visible .acesso-seta { transform: translateX(3px); }
+
+@media (hover: hover) and (pointer: fine) {
+  .acesso-enviar:enabled:hover .acesso-seta { transform: translateX(3px); }
+}
+
+@keyframes acesso-apresentar {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vinculo-encontrar {
+  from { opacity: 0.25; transform: translateX(var(--origem-vinculo)); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes consultorio-abrir {
+  from { opacity: 0.5; clip-path: inset(0 0 0 6%); }
+  to { opacity: 1; clip-path: inset(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marca-acesso svg path,
+  .acesso-fotografia,
+  .acesso-formulario > header,
+  .acesso-formulario > form,
+  .acesso-formulario > p {
+    animation: none;
+  }
+
+  .acesso-seta { transition: none; transform: none !important; }
+
   .animar-esqueleto,
   .animar-marca,
   .animar-revelar {
@@ -400,4 +472,25 @@
   content: '';
   position: absolute;
   inset: -0.5rem;
+}
+
+/* ---- Impressão (recibo) ------------------------------------------------------ */
+
+@media print {
+  .nao-imprimir {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  #conteudo-principal {
+    padding: 0 !important;
+  }
+
+  @page {
+    margin: 18mm;
+  }
 }

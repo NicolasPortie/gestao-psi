@@ -93,7 +93,7 @@ test.describe('Jornada do consultório', () => {
     await page.getByLabel('Tipo de atendimento').selectOption(tipoId);
     await page.getByLabel('Data', { exact: true }).fill(horario.data);
     await page.getByLabel('Horário', { exact: true }).fill(horario.hora);
-    await page.getByLabel('Criar pagamento pendente').check();
+    await page.getByLabel('Cobrar já no agendamento').check();
     await page.getByLabel(/Valor da consulta/).fill('300');
     await page.getByRole('button', { name: 'Agendar consulta' }).click();
     await expect(page).toHaveURL(/\/consultas\/[0-9a-f-]+$/i);
@@ -132,16 +132,19 @@ test.describe('Jornada do consultório', () => {
     await expect(page.getByText('Registro de sessão criado.')).toBeVisible();
 
     // Pagamento avulso, com vencimento distante para ficar no topo da lista
-    await page.goto('/pagamentos');
-    await page.getByRole('button', { name: 'Novo pagamento' }).click();
-    const folhaPagamento = page.getByRole('dialog', { name: 'Novo pagamento' });
+    // Todo o período: a cobrança vence em 2099, fora do mês corrente
+    await page.goto('/pagamentos?mes=todos');
+    await page.getByRole('button', { name: 'Nova cobrança' }).click();
+    const folhaPagamento = page.getByRole('dialog', { name: 'Nova cobrança' });
     await escolherPaciente(page, nomePaciente, folhaPagamento);
     await folhaPagamento.getByLabel('Valor', { exact: true }).fill('250');
     await folhaPagamento.getByLabel(/Vencimento/).fill('2099-12-31');
     await folhaPagamento.getByRole('button', { name: 'Registrar', exact: true }).click();
-    await expect(page.getByText('Pagamento registrado.')).toBeVisible();
-    await page.getByRole('button', { name: `Marcar pago: ${nomePaciente}` }).first().click();
-    await expect(page.getByText('Pagamento marcado como pago.')).toBeVisible();
+    await expect(page.getByText('Cobrança registrada.')).toBeVisible();
+    await page.getByRole('button', { name: new RegExp(`^Receber: .* de ${nomePaciente}$`) }).first().click();
+    await expect(page.getByRole('alertdialog', { name: 'Registrar recebimento' })).toBeVisible();
+    await page.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect(page.getByText('Pagamento recebido.')).toBeVisible();
 
     // Relatório oficial do servidor
     await page.goto('/relatorios');
@@ -151,7 +154,8 @@ test.describe('Jornada do consultório', () => {
 
     // A auditoria rastreia a rotina
     await page.goto('/configuracoes/auditoria');
-    await expect(page.getByText('ConsultaCriada').first()).toBeVisible();
+    await page.getByLabel('O que aconteceu').selectOption('ConsultaCriada');
+    await expect(page.getByRole('table', { name: 'Registros de auditoria' }).getByText('Consulta marcada').first()).toBeVisible();
 
     expect(semRuido(errosConsole), `Erros de console: ${semRuido(errosConsole).join(' | ')}`).toEqual([]);
   });

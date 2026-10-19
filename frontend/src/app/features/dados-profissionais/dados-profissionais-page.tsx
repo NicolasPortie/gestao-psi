@@ -13,11 +13,13 @@ import { Botao } from '../../components/ui/botao';
 import { AreaTexto, Campo, Entrada } from '../../components/ui/campo';
 import { mensagemDeErro } from '../../core/erros/mensagem-de-erro';
 import { formatarCrp, formatarTelefone } from '../../core/formatacao/pessoas';
+import { atualizarNomeProfissionalNaSessao } from '../../core/autenticacao/autenticacao.service';
+import { painelKeys } from '../painel/painel.api';
 import { dadosProfissionaisKeys, obterDadosProfissionais, salvarDadosProfissionais } from './dados-profissionais.api';
 
 const schema = z.object({
   nomeProfissional: z.string().trim().min(3, 'Informe o nome profissional.'),
-  crp: z.string().min(4, 'Informe o CRP.'),
+  crp: z.string().regex(/^\d{2}\/\d{4,6}$/, 'Informe o CRP com a região, como 06/123456.'),
   bio: z.string().max(2000, 'Use até 2000 caracteres.'),
   emailProfissional: z.union([z.literal(''), z.string().email('Informe um e-mail válido.')]),
   telefoneProfissional: z.string().max(30, 'Use até 30 caracteres.'),
@@ -61,7 +63,9 @@ export default function DadosProfissionaisPage() {
         emailProfissional: valores.emailProfissional.trim() || null,
         telefoneProfissional: valores.telefoneProfissional.trim() || null,
       }),
-    onSuccess: async () => {
+    onSuccess: async (dados) => {
+      atualizarNomeProfissionalNaSessao(dados.nomeProfissional);
+      await queryClient.invalidateQueries({ queryKey: painelKeys.resumo() });
       await queryClient.invalidateQueries({ queryKey: dadosProfissionaisKeys.todos });
       notificar.sucesso('Dados profissionais salvos.');
       setErroApi('');
@@ -81,7 +85,7 @@ export default function DadosProfissionaisPage() {
         descricao="Identificação do psicólogo responsável pela conta. O CRP completo nunca é exibido, e ele é pedido novamente a cada alteração."
       />
 
-      <form className="grid gap-4" noValidate onSubmit={(evento) => void handleSubmit((valores) => salvar.mutate(valores))(evento)}>
+      <form className="grid gap-4 rounded-lg border border-line bg-surface p-4 sm:p-6" noValidate onSubmit={(evento) => void handleSubmit((valores) => salvar.mutate(valores))(evento)}>
         <Campo rotulo="Nome profissional" erro={errors.nomeProfissional?.message}>
           <Entrada autoComplete="name" {...register('nomeProfissional')} />
         </Campo>
@@ -114,7 +118,7 @@ export default function DadosProfissionaisPage() {
           <AreaTexto rows={5} maxLength={2000} {...register('bio')} />
         </Campo>
         {erroApi ? <Aviso tom="perigo">{erroApi}</Aviso> : null}
-        <div className="flex items-center gap-3 border-t border-line pt-6">
+        <div className="flex items-center gap-3">
           <Botao type="submit" variante="primario" carregando={salvar.isPending} disabled={!isDirty}>
             Salvar dados
           </Botao>

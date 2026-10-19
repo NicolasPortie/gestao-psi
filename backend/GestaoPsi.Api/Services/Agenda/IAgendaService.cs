@@ -8,6 +8,7 @@ public interface IAgendaService
     Task<ConfiguracaoAtendimentoResponse> AtualizarConfiguracaoAsync(Guid usuarioId, Guid contaId, AtualizarConfiguracaoAtendimentoRequest request, string? ip, string? userAgent, CancellationToken ct);
     Task<IReadOnlyCollection<TipoAtendimentoResponse>> ListarTiposAsync(Guid usuarioId, Guid contaId, CancellationToken ct);
     Task<TipoAtendimentoResponse> SalvarTipoAsync(Guid usuarioId, Guid contaId, Guid? id, SalvarTipoAtendimentoRequest request, string? ip, string? userAgent, CancellationToken ct);
+    Task<IReadOnlyCollection<string>> ListarHorariosLivresAsync(Guid usuarioId, Guid contaId, DateOnly data, int duracaoMinutos, CancellationToken ct);
     Task<IReadOnlyCollection<HorarioDisponivelResponse>> ListarHorariosAsync(Guid usuarioId, Guid contaId, CancellationToken ct);
     Task<HorarioDisponivelResponse> SalvarHorarioAsync(Guid usuarioId, Guid contaId, Guid? id, SalvarHorarioDisponivelRequest request, string? ip, string? userAgent, CancellationToken ct);
     Task<IReadOnlyCollection<BloqueioAgendaResponse>> ListarBloqueiosAsync(Guid usuarioId, Guid contaId, DateTimeOffset inicio, DateTimeOffset fim, CancellationToken ct);

@@ -248,3 +248,44 @@
     opacity: 0;
   }
 }
+
+/* ---- Cortina de privacidade ------------------------------------------------- */
+
+.cortina-privacidade {
+  transition: opacity 200ms var(--ease-out);
+}
+
+.cortina-privacidade[data-starting-style],
+.cortina-privacidade[data-ending-style] {
+  opacity: 0;
+}
+
+.cortina-privacidade[data-ending-style] {
+  transition-duration: 140ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cortina-privacidade {
+    transition-duration: 0ms;
+  }
+}
+
+/* ---- Busca global ------------------------------------------------------------ */
+
+.busca-global {
+  transition:
+    opacity 160ms var(--ease-out),
+    scale 160ms var(--ease-out);
+}
+
+.busca-global[data-starting-style],
+.busca-global[data-ending-style] {
+  opacity: 0;
+  scale: 0.98;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .busca-global {
+    transition-property: opacity;
+  }
+}

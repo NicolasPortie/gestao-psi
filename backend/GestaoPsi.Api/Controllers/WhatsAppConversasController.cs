@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.WhatsApp;
 using GestaoPsi.Api.Services.WhatsApp;
 using GestaoPsi.Api.Shared.Enums;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoAdministrativa")]
+[Authorize(Policy = Politicas.Conversas)]
 [Route("api/v1/whatsapp/conversas")]
 public sealed class WhatsAppConversasController(IConversasWhatsAppService conversasService) : ControllerAutenticadoBase
 {
@@ -32,6 +33,11 @@ public sealed class WhatsAppConversasController(IConversasWhatsAppService conver
     public async Task<IActionResult> AssumirHumano(Guid id, AssumirAtendimentoHumanoRequest request, CancellationToken cancellationToken) =>
         Ok(RespostaApi<ConversaWhatsAppDetalheResponse>.ComSucesso(
             await conversasService.AssumirAtendimentoHumanoAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, request, Ip(), Ua(), cancellationToken)));
+
+    [HttpPost("{id:guid}/devolver-ao-assistente")]
+    public async Task<IActionResult> DevolverAoAssistente(Guid id, CancellationToken cancellationToken) =>
+        Ok(RespostaApi<ConversaWhatsAppDetalheResponse>.ComSucesso(
+            await conversasService.DevolverAoAssistenteAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, Ip(), Ua(), cancellationToken)));
 
     [HttpPost("{id:guid}/finalizar")]
     public async Task<IActionResult> Finalizar(Guid id, CancellationToken cancellationToken) =>

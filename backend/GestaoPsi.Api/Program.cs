@@ -17,6 +17,7 @@ using GestaoPsi.Api.Services.ListaEspera;
 using GestaoPsi.Api.Services.ModelosMensagem;
 using GestaoPsi.Api.Services.Notificacoes;
 using GestaoPsi.Api.Services.Painel;
+using GestaoPsi.Api.Services.PerfisAcesso;
 using GestaoPsi.Api.Services.Pagamentos;
 using GestaoPsi.Api.Services.Pacientes;
 using GestaoPsi.Api.Services.Relatorios;
@@ -24,6 +25,7 @@ using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Services.Sessoes;
 using GestaoPsi.Api.Services.Usuarios;
 using GestaoPsi.Api.Services.WhatsApp;
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Shared.Respostas;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -97,6 +99,7 @@ if (!string.IsNullOrWhiteSpace(conexaoRedis))
             Task.FromResult<IConnectionMultiplexer>(redis);
     });
     builder.Services.AddScoped<IEstadoAutenticacao, EstadoAutenticacaoRedis>();
+    builder.Services.AddScoped<IEstadoConfirmacaoEmail, EstadoConfirmacaoEmailRedis>();
     dataProtection.PersistKeysToStackExchangeRedis(
         redis,
         "GestaoPsi:protecao-dados:chaves");
@@ -111,6 +114,7 @@ else if (builder.Environment.IsDevelopment())
     Directory.CreateDirectory(diretorioChaves);
     builder.Services.AddDistributedMemoryCache();
     builder.Services.AddSingleton<IEstadoAutenticacao, EstadoAutenticacaoMemoria>();
+    builder.Services.AddSingleton<IEstadoConfirmacaoEmail, EstadoConfirmacaoEmailMemoria>();
     dataProtection.PersistKeysToFileSystem(new DirectoryInfo(diretorioChaves));
 }
 else
@@ -178,18 +182,21 @@ builder.Services
     });
 builder.Services.AddAuthorization(opcoes =>
 {
-    opcoes.AddPolicy("GestaoAdministrativa", politica => politica.RequireRole(
+    opcoes.AddPolicy(Politicas.GestaoAdministrativa, politica => politica.RequireRole(
         PerfilUsuario.Psicologo.ToString(),
         PerfilUsuario.Recepcionista.ToString(),
-        PerfilUsuario.Administrador.ToString()));
-    opcoes.AddPolicy("AcessoClinico", politica => politica.RequireRole(
+        PerfilUsuario.Administrador.ToString(),
+        PerfilUsuario.Personalizado.ToString()));
+    opcoes.AddPolicy(Politicas.AcessoClinico, politica => politica.RequireRole(
         PerfilUsuario.Psicologo.ToString()));
-    opcoes.AddPolicy("Auditoria", politica => politica.RequireRole(
+    opcoes.AddPolicy(Politicas.GestaoConta, politica => politica.RequireRole(
         PerfilUsuario.Psicologo.ToString(),
         PerfilUsuario.Administrador.ToString()));
-    opcoes.AddPolicy("GestaoConta", politica => politica.RequireRole(
-        PerfilUsuario.Psicologo.ToString(),
-        PerfilUsuario.Administrador.ToString()));
+
+    // Uma política por permissão do catálogo. As claims "permissao" são montadas a cada requisição
+    // a partir do banco (ValidacaoSessaoJwtService), nunca lidas do token.
+    foreach (var permissao in Enum.GetValues<PermissaoAcesso>())
+        opcoes.AddPolicy(Politicas.De(permissao), politica => politica.RequireClaim(ValidacaoSessaoJwtService.ClaimPermissao, permissao.ToString()));
 });
 
 // Atrás de um proxy reverso (nginx, balanceador), o IP do cliente vem em X-Forwarded-For. Só se confia
@@ -247,7 +254,9 @@ builder.Services.AddCors(opcoes =>
 
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
+builder.Services.AddScoped<IConfirmacaoEmailCadastroService, ConfirmacaoEmailCadastroService>();
 builder.Services.AddScoped<IUsuariosService, UsuariosService>();
+builder.Services.AddScoped<IPerfisAcessoService, PerfisAcessoService>();
 builder.Services.AddScoped<IDadosProfissionaisService, DadosProfissionaisService>();
 builder.Services.AddScoped<IPainelService, PainelService>();
 builder.Services.AddScoped<IPacientesService, PacientesService>();

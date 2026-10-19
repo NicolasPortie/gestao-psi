@@ -29,6 +29,24 @@ export interface Consulta {
   pagamentos?: PagamentoVinculado[];
   lembretes?: LembreteVinculado[];
   historico?: HistoricoConsultaItem[];
+  /** Consultas criadas juntas (semanal ou quinzenal) compartilham a série. */
+  serieId?: string | null;
+  /** Quantas consultas em aberto vêm depois desta na série (só no detalhe). */
+  proximasNaSerie?: number;
+}
+
+export type FrequenciaRecorrencia = 'Semanal' | 'Quinzenal';
+
+export interface RecorrenciaConsulta {
+  frequencia: FrequenciaRecorrencia;
+  /** Total de consultas da série, contando a primeira. */
+  ocorrencias: number;
+}
+
+export interface SerieConsultas {
+  serieId: string | null;
+  criadas: Consulta[];
+  ignoradas: Array<{ inicioEm: string; motivo: string }>;
 }
 
 export interface PagamentoVinculado {
@@ -63,6 +81,7 @@ export interface CriarConsultaRequest {
   programarLembrete?: boolean | null;
   criarPagamentoPendente?: boolean;
   valorPagamento?: number | null;
+  recorrencia?: RecorrenciaConsulta | null;
 }
 
 export interface AlterarStatusConsultaRequest {
@@ -89,6 +108,10 @@ export interface ConfiguracaoAtendimento {
   programarLembreteAoConfirmar: boolean;
   antecedenciaLembreteHoras: number;
   canalLembretePadrao: CanalComunicacao;
+  /** Cria a cobrança quando a sessão é marcada como realizada (paciente por sessão). */
+  cobrarAoRealizar: boolean;
+  /** Falta também gera cobrança. */
+  cobrarFalta: boolean;
 }
 
 export interface TipoAtendimento {

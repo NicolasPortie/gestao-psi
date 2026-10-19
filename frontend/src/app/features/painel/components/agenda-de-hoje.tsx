@@ -28,7 +28,7 @@ function MarcadorAgora({ rotulo }: { rotulo: string }) {
     <tr aria-hidden="true">
       <td colSpan={5} className="px-0 py-2">
         <div className="relative h-px bg-accent">
-          <span className="num absolute -top-2.5 left-4 bg-paper px-1.5 text-xs font-medium text-accent-ink sm:left-3">{rotulo}</span>
+          <span className="num absolute -top-2.5 left-4 rounded-full bg-surface px-2 text-xs font-medium text-accent-ink sm:left-3">{rotulo}</span>
         </div>
       </td>
     </tr>
@@ -46,17 +46,19 @@ export function AgendaDeHoje({ consultas }: { consultas: ConsultaDoDia[] }) {
 
   if (ordenadas.length === 0) {
     return (
-      <EstadoVazio
-        compacto
-        icone={CalendarPlus}
-        titulo="Nenhuma consulta hoje"
-        descricao="O dia está livre. Use o tempo para organizar os próximos atendimentos."
-        acao={
-          <BotaoLink to="/consultas/nova" variante="secundario">
-            Agendar consulta
-          </BotaoLink>
-        }
-      />
+      <div className="rounded-lg border border-dashed border-line px-4">
+        <EstadoVazio
+          compacto
+          icone={CalendarPlus}
+          titulo="Nenhuma consulta hoje"
+          descricao="O dia está livre. Use o tempo para organizar os próximos atendimentos."
+          acao={
+            <BotaoLink to="/consultas/nova" variante="secundario">
+              Agendar consulta
+            </BotaoLink>
+          }
+        />
+      </div>
     );
   }
 

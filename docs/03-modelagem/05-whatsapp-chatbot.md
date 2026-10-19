@@ -92,6 +92,19 @@ Regras:
 - se detectar mensagem sensivel, marcar atendimento humano;
 - listagens nao devem expor conteudo clinico.
 
+Passagem para a equipe (`Status = AtendimentoHumano`, `AtendimentoHumanoNecessario = true`):
+
+- o paciente pede uma pessoa ("atendente", "falar com a equipe", "recepcao" e termos parecidos);
+- o assistente nao entende duas mensagens seguidas;
+- o pedido depende do cadastro e o paciente nao foi identificado pelo telefone;
+- a agenda ainda nao foi configurada;
+- a mensagem tem conteudo sensivel (resposta inclui CVV 188 e SAMU 192).
+
+Em todos os casos o assistente responde ao paciente avisando a transicao, encerra as sessoes do bot,
+avisa quem tem a permissao Conversas e registra auditoria. Enquanto a conversa esta com a equipe, o
+assistente fica em silencio. A equipe pode devolver a conversa ao assistente
+(`POST /whatsapp/conversas/{id}/devolver-ao-assistente`), o que limpa a marca e o motivo.
+
 ## MensagensWhatsApp
 
 Campos principais:

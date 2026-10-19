@@ -11,5 +11,6 @@ export const rotulosTipoContato: Record<TipoContatoPaciente, string> = {
   Telefone: 'Telefone',
   WhatsApp: 'WhatsApp',
   Email: 'E-mail',
-  Responsavel: 'Responsável',
+  Responsavel: 'Responsável legal',
+  Emergencia: 'Contato de emergência',
 };

@@ -120,7 +120,7 @@ public sealed partial class ConversasWhatsAppService(
         conversa.Status = StatusConversaWhatsApp.AtendimentoHumano;
         conversa.AtendimentoHumanoNecessario = true;
         conversa.MotivoAtendimentoHumano = string.IsNullOrWhiteSpace(request.Motivo)
-            ? "Atendimento assumido pela equipe do consultório."
+            ? "A equipe do consultório assumiu a conversa."
             : request.Motivo.Trim();
         conversa.AtualizadoEm = DateTimeOffset.UtcNow;
 
@@ -141,9 +141,46 @@ public sealed partial class ConversasWhatsAppService(
             "ConversaWhatsAppAtendimentoHumano",
             nameof(ConversaWhatsApp),
             conversa.Id,
-            "Atendimento humano assumido na conversa WhatsApp.",
+            "Conversa assumida pela equipe.",
             null,
             new { conversa.Status, conversa.MotivoAtendimentoHumano },
+            ip,
+            userAgent);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return MapearDetalhe(await CarregarDetalheAsync(contaId, id, cancellationToken));
+    }
+
+    /// <summary>Devolve a conversa ao assistente: ele volta a responder as próximas mensagens do paciente.</summary>
+    public async Task<ConversaWhatsAppDetalheResponse> DevolverAoAssistenteAsync(
+        Guid usuarioId,
+        Guid contaId,
+        Guid id,
+        string? ip,
+        string? userAgent,
+        CancellationToken cancellationToken)
+    {
+        await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, cancellationToken);
+        var conversa = await dbContext.ConversasWhatsApp
+            .SingleOrDefaultAsync(item => item.Id == id && item.ContaPsicologoId == contaId, cancellationToken)
+            ?? throw new RegraNegocioException("Conversa não encontrada.", StatusCodes.Status404NotFound);
+
+        if (conversa.Status != StatusConversaWhatsApp.AtendimentoHumano)
+            throw new RegraNegocioException("Esta conversa não está com a equipe.");
+
+        conversa.Status = StatusConversaWhatsApp.Aberta;
+        conversa.AtendimentoHumanoNecessario = false;
+        conversa.MotivoAtendimentoHumano = null;
+        conversa.AtualizadoEm = DateTimeOffset.UtcNow;
+
+        auditoria.Registrar(
+            contaId,
+            usuarioId,
+            "ConversaWhatsAppDevolvidaAoAssistente",
+            nameof(ConversaWhatsApp),
+            conversa.Id,
+            "Conversa devolvida ao assistente.",
+            new { Status = StatusConversaWhatsApp.AtendimentoHumano },
+            new { Status = StatusConversaWhatsApp.Aberta },
             ip,
             userAgent);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -170,6 +207,11 @@ public sealed partial class ConversasWhatsAppService(
         var anterior = conversa.Status;
         conversa.Status = status;
         conversa.AtualizadoEm = DateTimeOffset.UtcNow;
+        if (status == StatusConversaWhatsApp.Aberta)
+        {
+            conversa.AtendimentoHumanoNecessario = false;
+            conversa.MotivoAtendimentoHumano = null;
+        }
         if (status is StatusConversaWhatsApp.Finalizada or StatusConversaWhatsApp.Bloqueada)
         {
             var sessoes = await dbContext.SessoesBot
@@ -190,7 +232,7 @@ public sealed partial class ConversasWhatsAppService(
             "StatusConversaWhatsAppAlterado",
             nameof(ConversaWhatsApp),
             conversa.Id,
-            "Status da conversa WhatsApp atualizado.",
+            "Situação da conversa alterada.",
             new { Status = anterior },
             new { Status = status },
             ip,

@@ -11,6 +11,9 @@ usuarios, pacientes, agenda e registros. _Evitar_: usuario, clinica multi-profis
 **Usuario**: pessoa que acessa uma conta com um perfil e permissoes determinados.
 _Evitar_: conta.
 
+**PerfilAcesso**: perfil criado pela propria conta, com nome e as permissoes administrativas que
+concede a quem o recebe. Nunca inclui conteudo clinico. _Evitar_: papel, role.
+
 **Paciente**: pessoa acompanhada no consultorio, com cadastro administrativo
 vinculado a uma conta. _Evitar_: usuario.
 

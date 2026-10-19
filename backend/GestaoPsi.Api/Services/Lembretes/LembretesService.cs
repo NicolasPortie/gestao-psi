@@ -516,7 +516,10 @@ public sealed class LembretesService(
             .Include(item => item.Consulta)
                 .ThenInclude(consulta => consulta.Paciente)
             .Include(item => item.Paciente)
-            .Where(item => item.Status == StatusLembrete.Agendado && item.AgendadoPara <= agora)
+            // Quem já foi tentado (e-mail desligado, canal interno) volta a cada 15 minutos, não a cada ciclo:
+            // assim lembretes travados não ocupam o lote e escondem os novos.
+            .Where(item => item.Status == StatusLembrete.Agendado && item.AgendadoPara <= agora &&
+                           (item.AtualizadoEm == null || item.AtualizadoEm <= agora.AddMinutes(-15)))
             .OrderBy(item => item.AgendadoPara)
             .Take(50)
             .ToListAsync(cancellationToken);
@@ -539,6 +542,28 @@ public sealed class LembretesService(
                     "Lembrete ignorado porque a consulta não está ativa.",
                     null,
                     new { lembrete.Status, ConsultaStatus = lembrete.Consulta.Status },
+                    null,
+                    null);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                processados++;
+                continue;
+            }
+
+            // A consulta já começou: lembrar depois não serve ao paciente.
+            if (lembrete.Consulta.InicioEm <= agora)
+            {
+                lembrete.Status = StatusLembrete.Ignorado;
+                lembrete.ErroEnvio = "A consulta já aconteceu antes do envio; lembrete encerrado.";
+                lembrete.AtualizadoEm = DateTimeOffset.UtcNow;
+                auditoria.Registrar(
+                    lembrete.ContaPsicologoId,
+                    null,
+                    "LembreteExpirado",
+                    nameof(Lembrete),
+                    lembrete.Id,
+                    "Lembrete encerrado porque a consulta já começou.",
+                    null,
+                    new { lembrete.Status, ConsultaInicioEm = lembrete.Consulta.InicioEm },
                     null,
                     null);
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -668,6 +693,7 @@ public sealed class LembretesService(
         {
             // Canal interno: permanece programado até a infraestrutura de notificações (Fase 3).
             lembrete.ErroEnvio = null;
+            lembrete.AtualizadoEm = DateTimeOffset.UtcNow;
             await dbContext.SaveChangesAsync(cancellationToken);
             return;
         }
@@ -849,15 +875,16 @@ public sealed class LembretesService(
 
     private async Task NotificarFalhaLembreteAsync(Lembrete lembrete, CancellationToken cancellationToken)
     {
-        var destinatarios = await dbContext.Usuarios.AsNoTracking()
+        var equipe = await dbContext.Usuarios.AsNoTracking()
+            .Include(usuario => usuario.PerfilAcesso)
             .Where(usuario =>
                 usuario.ContaPsicologoId == lembrete.ContaPsicologoId &&
-                usuario.Status == StatusUsuario.Ativo &&
-                (usuario.Perfil == PerfilUsuario.Psicologo ||
-                 usuario.Perfil == PerfilUsuario.Recepcionista ||
-                 usuario.Perfil == PerfilUsuario.Administrador))
-            .Select(usuario => usuario.Id)
+                usuario.Status == StatusUsuario.Ativo)
             .ToArrayAsync(cancellationToken);
+        var destinatarios = equipe
+            .Where(usuario => PermissoesEfetivas.Tem(usuario, PermissaoAcesso.Mensagens))
+            .Select(usuario => usuario.Id)
+            .ToArray();
 
         foreach (var destinatarioId in destinatarios)
         {

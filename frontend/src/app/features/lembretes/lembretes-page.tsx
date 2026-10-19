@@ -97,7 +97,7 @@ export default function LembretesPage() {
                 <ColunaTabela ocultarAte="md">Mensagem</ColunaTabela>
                 <ColunaTabela ocultarAte="sm">Programado para</ColunaTabela>
                 <ColunaTabela ocultarAte="lg">Consulta</ColunaTabela>
-                <ColunaTabela>Estado</ColunaTabela>
+                <ColunaTabela ocultarAte="sm">Estado</ColunaTabela>
                 <ColunaTabela className="w-px">
                   <span className="sr-only">Ações</span>
                 </ColunaTabela>
@@ -112,6 +112,10 @@ export default function LembretesPage() {
                     </Link>
                     <span className="block text-sm text-ink-muted md:hidden">{rotuloDe(rotulosTipoLembrete, lembrete.tipo)}</span>
                     <span className="num block text-sm text-ink-muted sm:hidden">{formatarDataHora(lembrete.agendadoPara)}</span>
+                    <span className="mt-1 block sm:hidden">
+                      <EstadoRotulado estado={descreverEstado(estadosLembrete, lembrete.status)} compacto />
+                    </span>
+                    {lembrete.erroEnvio ? <span className="mt-0.5 block text-xs text-danger-ink sm:hidden">{lembrete.erroEnvio}</span> : null}
                   </CelulaTabela>
                   <CelulaTabela ocultarAte="md" className="text-ink-muted">
                     {rotuloDe(rotulosTipoLembrete, lembrete.tipo)} · {rotuloDe(rotulosCanal, lembrete.canal)}
@@ -122,7 +126,7 @@ export default function LembretesPage() {
                   <CelulaTabela ocultarAte="lg" className="num text-ink-muted">
                     {formatarDataHora(lembrete.consultaInicioEm)}
                   </CelulaTabela>
-                  <CelulaTabela className="whitespace-nowrap">
+                  <CelulaTabela ocultarAte="sm" className="whitespace-nowrap">
                     <EstadoRotulado estado={descreverEstado(estadosLembrete, lembrete.status)} compacto />
                     {lembrete.erroEnvio ? <span className="mt-0.5 block max-w-40 whitespace-normal text-xs text-danger-ink sm:max-w-64">{lembrete.erroEnvio}</span> : null}
                   </CelulaTabela>

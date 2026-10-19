@@ -11,6 +11,7 @@ export const pacientesKeys = {
         status: filtro.status || '',
         pagina: filtro.pagina ?? 1,
         tamanhoPagina: filtro.tamanhoPagina ?? 20,
+        semConsultaHaDias: filtro.semConsultaHaDias ?? 0,
       },
     ] as const,
   detalhes: () => [...pacientesKeys.todos, 'detalhe'] as const,

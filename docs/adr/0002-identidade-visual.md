@@ -38,3 +38,14 @@ O feedback do usuário fixou os critérios: fundo branco, tema escuro opcional, 
 - Se o nome mudar de novo, os pontos de troca são `core/marca.ts`, `index.html`, `public/favicon.svg` (e os ícones derivados), `appsettings.json` (nome do remetente de e-mail) e os documentos.
 - Dependência trocada: sai `@fontsource-variable/hanken-grotesk`, entram `@fontsource-variable/jost` e `@fontsource-variable/atkinson-hyperlegible-next`.
 - Antes de operar comercialmente, o nome precisa de busca de anterioridade no INPI e de verificação de domínio; este registro não faz essa checagem.
+
+## Adendo — 14 de outubro de 2026
+
+A composição de acesso do item 5 foi revisada após avaliação do usuário: a imagem anterior não remetia ao consultório esperado; a promessa do produto e a sequência decorativa de estados também foram rejeitadas. O histórico acima registra a decisão original; este adendo descreve o acesso atual.
+
+- A imagem é agora uma foto de ambiente de consultório criada para o Vínculo, sem pessoas. Origem e termos de uso estão em [`docs/04-ux/imagens.md`](../04-ux/imagens.md); não representa um consultório real.
+- Um cabeçalho comum reúne a marca e o menu de aparência. No desktop, a foto fica à esquerda e o formulário à direita, em proporção 7:5; no celular, a sequência é marca, faixa de foto e formulário. Não há promessa promocional, estados decorativos ou texto sobre a imagem.
+- O formulário usa o título "Acessar meu consultório", controles de 48 px e links com alvos de pelo menos 44 px. Links legais ficam no rodapé.
+- Movimento curto apresenta o encontro das metades da marca, o recorte da foto e os grupos do formulário, uma única vez e sem impedir o uso. A preferência por movimento reduzido remove essas animações.
+
+Permanecem nome, símbolo, paleta, fontes, tokens e stack existentes. O escopo desta etapa é o login como referência antes de avaliar as telas internas; não é uma substituição da identidade visual.

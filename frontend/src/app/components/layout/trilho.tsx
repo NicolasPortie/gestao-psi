@@ -5,6 +5,8 @@ import { usePermissoes } from '../../core/autenticacao/permissoes';
 import { MARCA } from '../../core/marca';
 import { rotuloPerfil } from '../../core/dominio/perfil';
 import { Avatar } from '../ui/avatar';
+import { BotaoBuscaGlobal } from './busca-global';
+import { BotaoProtegerTela } from './cortina-privacidade';
 import { cn } from '../ui/cn';
 import { Dica } from '../ui/dica';
 import { MenuAcoes } from '../ui/menu';
@@ -27,20 +29,46 @@ export function Trilho({ recolhido, aoAlternar }: TrilhoProps) {
   const usuario = permissoes.usuario;
 
   return (
-    <aside className="sticky top-0 hidden h-dvh min-h-0 flex-col border-r border-line bg-rail lg:flex" aria-label="Navegação principal">
-      <div className={cn('flex h-14 shrink-0 items-center', recolhido ? 'justify-center' : 'justify-between pl-4 pr-2.5')}>
-        <Link to="/painel" aria-label={`${MARCA.nome}, ir para Hoje`} className="rounded-md no-underline">
+    <aside
+      className="nao-imprimir sticky top-0 hidden h-dvh min-h-0 flex-col border-r border-line bg-rail lg:flex"
+      aria-label="Navegação principal"
+    >
+      <div
+        className={cn(
+          'flex h-14 shrink-0 items-center',
+          recolhido ? 'justify-center' : 'justify-between pl-4 pr-2.5',
+        )}
+      >
+        <Link
+          to="/painel"
+          aria-label={`${MARCA.nome}, ir para Hoje`}
+          className="rounded-md no-underline"
+        >
           <Marca somenteSimbolo={recolhido} />
         </Link>
-        {recolhido ? null : <SinoNotificacoes />}
+        {recolhido ? null : (
+          <span className="flex items-center">
+            <BotaoProtegerTela />
+            <SinoNotificacoes />
+          </span>
+        )}
       </div>
 
-      <nav aria-label="Áreas do consultório" className="scroll-contido min-h-0 flex-1 overflow-y-auto px-2 pb-4">
+      <nav
+        aria-label="Áreas do consultório"
+        className="scroll-contido min-h-0 flex-1 overflow-y-auto px-2 pb-4"
+      >
         {recolhido ? (
-          <div className="mb-3 grid justify-center">
+          <div className="mb-3 grid justify-center gap-1">
+            <BotaoBuscaGlobal compacto />
+            <BotaoProtegerTela />
             <SinoNotificacoes />
           </div>
-        ) : null}
+        ) : (
+          <div className="mb-2 px-0.5 pt-1">
+            <BotaoBuscaGlobal />
+          </div>
+        )}
         {grupos.map((grupo) => (
           <div key={grupo.id} className="mt-4 first:mt-1">
             {recolhido ? (
@@ -70,7 +98,11 @@ export function Trilho({ recolhido, aoAlternar }: TrilhoProps) {
               recolhido ? 'justify-center' : 'px-2.5',
             )}
           >
-            {recolhido ? <PanelLeftOpen size={16} aria-hidden="true" /> : <PanelLeftClose size={16} aria-hidden="true" />}
+            {recolhido ? (
+              <PanelLeftOpen size={16} aria-hidden="true" />
+            ) : (
+              <PanelLeftClose size={16} aria-hidden="true" />
+            )}
             {recolhido ? null : 'Recolher'}
           </button>
         </Dica>
@@ -82,17 +114,21 @@ export function Trilho({ recolhido, aoAlternar }: TrilhoProps) {
           gatilho={
             <button
               type="button"
-              aria-label={`Menu da conta de ${usuario?.nomeCompleto ?? 'usuário'}`}
+              aria-label={`Menu da conta de ${usuario?.nomeCompleto || 'usuário'}`}
               className={cn(
                 'flex w-full items-center gap-2.5 rounded-md p-1.5 text-left transition-colors duration-150 ease-out hover:bg-hover',
                 recolhido && 'justify-center',
               )}
             >
-              <Avatar nome={usuario?.nomeCompleto ?? MARCA.nome} />
+              <Avatar nome={usuario?.nomeCompleto || MARCA.nome} />
               {recolhido ? null : (
                 <span className="grid min-w-0 flex-1 leading-tight">
-                  <span className="truncate text-sm font-medium text-ink">{usuario?.nomeCompleto}</span>
-                  <span className="truncate text-xs text-ink-muted">{rotuloPerfil(usuario?.perfil)}</span>
+                  <span className="truncate text-sm font-medium text-ink">
+                    {usuario?.nomeCompleto || 'Minha conta'}
+                  </span>
+                  <span className="truncate text-xs text-ink-muted">
+                    {rotuloPerfil(usuario?.perfil, usuario?.nomeDoPerfil)}
+                  </span>
                 </span>
               )}
             </button>

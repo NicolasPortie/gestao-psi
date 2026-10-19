@@ -37,7 +37,11 @@ function responder(itens: unknown[]) {
       const dados = detalhe
         ? { ...log, dadosAntesJson: null, dadosDepoisJson: '{"status":"Agendada"}' }
         : { itens, total: itens.length, pagina: 1, tamanhoPagina: 20 };
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ sucesso: true, dados }) });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ sucesso: true, dados }),
+      });
     }),
   );
 }
@@ -51,24 +55,50 @@ describe('AuditoriaPage', () => {
     responder([log]);
     renderAuditoria();
 
-    expect(await screen.findByText('ConsultaCriada')).toBeVisible();
+    expect(await screen.findByText('Consulta marcada', { selector: 'span' })).toBeVisible();
     expect(screen.getByText('Consulta criada pelo painel.')).toBeVisible();
-    expect(screen.getByText('Consulta')).toBeVisible();
+    expect(screen.getByText('Consulta', { selector: 'span' })).toBeVisible();
+    expect(screen.getByText('Helena Duarte')).toBeVisible();
+    expect(screen.queryByText('127.0.0.1')).not.toBeInTheDocument();
   });
 
   it('abre e fecha o detalhe do registro com o dado depois da ação', async () => {
     responder([log]);
     renderAuditoria();
 
-    const botao = await screen.findByRole('button', { name: 'Ver detalhe de ConsultaCriada' });
+    const botao = await screen.findByRole('button', { name: 'Ver detalhes de Consulta marcada' });
     expect(botao).toHaveAttribute('aria-expanded', 'false');
     await userEvent.click(botao);
 
-    expect(await screen.findByText(/"status": "Agendada"/)).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Ocultar detalhe de ConsultaCriada' })).toHaveAttribute('aria-expanded', 'true');
+    expect(await screen.findByText('Status')).toBeVisible();
+    expect(screen.getByText('Agendada')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Ocultar detalhes de Consulta marcada' }),
+    ).toHaveAttribute('aria-expanded', 'true');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Ocultar detalhe de ConsultaCriada' }));
-    expect(screen.queryByText(/"status": "Agendada"/)).not.toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Ocultar detalhes de Consulta marcada' }),
+    );
+    expect(screen.queryByText('Agendada')).not.toBeInTheDocument();
+  });
+
+  it('esconde as mensagens recebidas do WhatsApp até o usuário pedir', async () => {
+    responder([log]);
+    renderAuditoria();
+    await screen.findByText('Consulta marcada', { selector: 'span' });
+
+    expect(fetch).toHaveBeenCalled();
+    const urlInicial = String((fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]);
+    expect(urlInicial).not.toContain('incluirTecnicos');
+
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: /Incluir mensagens recebidas do WhatsApp/ }),
+    );
+    await screen.findByText('Consulta marcada', { selector: 'span' });
+    const chamadas = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c) =>
+      String(c[0]),
+    );
+    expect(chamadas.some((url) => url.includes('incluirTecnicos=true'))).toBe(true);
   });
 
   it('mostra estado vazio quando não há registros', async () => {

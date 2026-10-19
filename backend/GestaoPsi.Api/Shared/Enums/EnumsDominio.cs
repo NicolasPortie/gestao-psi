@@ -44,7 +44,9 @@ public enum PerfilUsuario
     Psicologo = 1,
     Recepcionista = 2,
     Paciente = 3,
-    Administrador = 4
+    Administrador = 4,
+    /// <summary>Equipe com perfil de acesso criado pela conta; as permissões vêm do <c>PerfilAcesso</c>.</summary>
+    Personalizado = 5
 }
 
 public enum StatusUsuario
@@ -67,7 +69,8 @@ public enum TipoContato
     Telefone = 1,
     WhatsApp = 2,
     Email = 3,
-    Responsavel = 4
+    Responsavel = 4,
+    Emergencia = 5
 }
 
 public enum DiaSemana
@@ -282,4 +285,11 @@ public enum StatusMensagemWhatsApp
     Lida = 4,
     Falhou = 5,
     Pendente = 6
+}
+
+/// <summary>Como o paciente paga: por sessão realizada ou uma mensalidade fixa.</summary>
+public enum ModoCobranca
+{
+    PorSessao = 1,
+    Mensal = 2
 }

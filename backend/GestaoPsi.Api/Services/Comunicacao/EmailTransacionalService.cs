@@ -26,8 +26,9 @@ public sealed class EmailTransacionalService(
         }
 
         var link = $"{_configuracao.UrlFrontend.TrimEnd('/')}/redefinir-senha?token={Uri.EscapeDataString(token)}";
+        var saudacao = string.IsNullOrWhiteSpace(nome) ? "Olá." : $"Olá, {nome}.";
         var corpo = $"""
-            Olá, {nome}.
+            {saudacao}
 
             Recebemos uma solicitação para redefinir sua senha no GestãoPsi.
             Use o link abaixo. Ele expira em poucos minutos e pode ser utilizado uma única vez.

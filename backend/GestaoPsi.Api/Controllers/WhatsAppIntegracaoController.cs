@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.WhatsApp;
 using GestaoPsi.Api.Services.WhatsApp;
 using GestaoPsi.Api.Shared.Respostas;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoAdministrativa")]
+[Authorize(Policy = Politicas.IntegracaoWhatsApp)]
 [Route("api/v1/whatsapp/integracao")]
 public sealed class WhatsAppIntegracaoController(IIntegracaoWhatsAppService integracaoService) : ControllerAutenticadoBase
 {

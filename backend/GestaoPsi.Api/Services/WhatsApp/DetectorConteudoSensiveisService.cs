@@ -27,7 +27,7 @@ public sealed class DetectorConteudoSensiveisService
         {
             if (normalizado.Contains(expressao, StringComparison.Ordinal))
             {
-                motivo = "Conteúdo potencialmente sensível detectado. Atendimento humano necessário.";
+                motivo = "A mensagem pode tratar de um assunto delicado.";
                 return true;
             }
         }

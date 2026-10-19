@@ -58,6 +58,8 @@ public sealed class DocumentosService(AppDbContext db, IAutorizacaoContaService 
     public async Task<DocumentoDetalheResponse> FinalizarAsync(Guid usuarioId, Guid contaId, Guid id, string? ip, string? userAgent, CancellationToken ct)
     {
         await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
+        if (!await db.DadosProfissionaisPsicologo.AnyAsync(x => x.ContaPsicologoId == contaId && x.UsuarioId == usuarioId && x.Status == StatusUsuario.Ativo && x.NomeProfissional != "" && x.CrpHash != "", ct))
+            throw new RegraNegocioException("Complete seu nome e CRP em Dados profissionais antes de finalizar um documento.", StatusCodes.Status409Conflict);
         var documento = await ObterDocumentoAsync(contaId, id, ct);
         if (documento.Status is not (StatusDocumentoProntuario.Rascunho or StatusDocumentoProntuario.EmRevisao or StatusDocumentoProntuario.Retificado)) throw new RegraNegocioException("Somente rascunhos em revisao podem ser finalizados.");
         var conteudo = protecao.Desproteger(documento.ConteudoAtualJson ?? throw new RegraNegocioException("Conteúdo do documento não informado."));

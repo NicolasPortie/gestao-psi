@@ -36,7 +36,7 @@ export default function DocumentosPage() {
   if (!acessoClinico) {
     return (
       <AcessoRestrito
-        mensagem="Documentos psicológicos exigem o perfil Psicólogo e autorização do servidor."
+        mensagem="Documentos psicológicos são abertos só pelo psicólogo responsável."
         acao={
           <BotaoLink to="/painel" variante="secundario">
             Voltar para Hoje

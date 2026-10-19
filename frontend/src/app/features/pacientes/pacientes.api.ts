@@ -3,6 +3,7 @@ import { extrairDados, type RespostaApi } from '../../core/api/resposta-api';
 import type {
   AtualizarPacienteRequest,
   CriarPacienteRequest,
+  ExportacaoPaciente,
   ListarPacientesFiltro,
   PacienteDetalhe,
   PacientesListagem,
@@ -16,6 +17,7 @@ function montarQueryListagem(filtro: ListarPacientesFiltro): string {
   const busca = filtro.busca?.trim();
   if (busca) params.set('busca', busca);
   if (filtro.status) params.set('status', filtro.status);
+  if (filtro.semConsultaHaDias) params.set('semConsultaHaDias', String(filtro.semConsultaHaDias));
 
   return params.toString();
 }
@@ -66,6 +68,18 @@ export async function inativarPaciente(id: string) {
     method: 'PATCH',
   });
   return extrairDados(resposta, 'Não foi possível inativar o paciente.');
+}
+
+/** Registra que o paciente consentiu com o tratamento dos dados (LGPD); fica na auditoria. */
+export async function registrarConsentimento(id: string) {
+  const resposta = await requisicaoApi<RespostaApi<PacienteDetalhe>>(`/pacientes/${id}/consentimento`, { method: 'POST' });
+  return extrairDados(resposta, 'Não foi possível registrar o consentimento.');
+}
+
+/** Dados administrativos do paciente para atender a um pedido de acesso. A exportação fica na auditoria. */
+export async function exportarDadosPaciente(id: string) {
+  const resposta = await requisicaoApi<RespostaApi<ExportacaoPaciente>>(`/pacientes/${id}/exportacao`);
+  return extrairDados(resposta, 'Não foi possível exportar os dados do paciente.');
 }
 
 export { montarQueryListagem };

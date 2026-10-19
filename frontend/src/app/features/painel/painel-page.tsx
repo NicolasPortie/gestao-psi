@@ -5,13 +5,18 @@ import { Link } from 'react-router';
 import { EstadoErro } from '../../components/feedback/estados';
 import { CarregandoPagina } from '../../components/feedback/esqueleto';
 import { BotaoLink } from '../../components/ui/botao';
+import { PainelVazio } from '../../components/ui/lista';
 import { CabecalhoPagina, Pagina, Secao } from '../../components/layout/pagina';
 import { mensagemDeErro } from '../../core/erros/mensagem-de-erro';
 import { formatarDiaCompleto } from '../../core/formatacao/datas';
 import { capitalizar } from '../../core/formatacao/texto';
 import { AgendaDeHoje } from './components/agenda-de-hoje';
+import { Aniversarios } from './components/aniversarios';
 import { AlertasRecentes } from './components/alertas-recentes';
 import { FilaDeAtencao } from './components/fila-de-atencao';
+import { PrimeirosPassos } from './components/primeiros-passos';
+import { ProximaSessao } from './components/proxima-sessao';
+import { SessoesSemDesfecho } from './components/sessoes-sem-desfecho';
 import { ReguaDoDia } from './components/regua-do-dia';
 import { SemanaEmBarras } from './components/semana-em-barras';
 import { obterResumoPainel, painelKeys } from './painel.api';
@@ -37,13 +42,16 @@ export default function PainelPage() {
 
   const agora = new Date();
   const atalhos = data.acoesRapidas.filter((acao) => acao.habilitada);
+  const proxima = data.proximasConsultas?.[0] ?? null;
+  const semDesfecho = data.consultasSemDesfecho ?? [];
+  const semConsultasHoje = data.consultasHoje.length === 0;
 
   return (
     <Pagina largura="ampla">
       <CabecalhoPagina
-        titulo="Hoje"
+        titulo={`${saudacao(agora.getHours())}${data.usuario.primeiroNome ? `, ${data.usuario.primeiroNome}` : ''}`}
         meta={capitalizar(formatarDiaCompleto(agora))}
-        descricao={`${saudacao(agora.getHours())}, ${data.usuario.primeiroNome}. ${resumoDoDia(data.indicadores)}`}
+        descricao={resumoDoDia(data.indicadores)}
         acoes={
           <>
             <BotaoLink to="/agenda" variante="secundario">
@@ -57,18 +65,33 @@ export default function PainelPage() {
         }
       />
 
-      <div className="grid gap-x-14 gap-y-10 xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <Secao id="agenda-hoje" titulo="Agenda de hoje">
-          <ReguaDoDia consultas={data.consultasHoje} />
-          <AgendaDeHoje consultas={data.consultasHoje} />
-        </Secao>
+      <div className="grid gap-x-14 gap-y-10 xl:grid-cols-[minmax(0,1fr)_21rem] 3xl:grid-cols-[minmax(0,1fr)_26rem] 3xl:gap-x-20">
+        <div className="grid content-start gap-10">
+          {data.primeirosPassos ? <PrimeirosPassos estado={data.primeirosPassos} /> : null}
+          {proxima ? <ProximaSessao consulta={proxima} /> : null}
+
+          <Secao id="agenda-hoje" titulo="Agenda de hoje">
+            {semConsultasHoje && proxima ? (
+              <PainelVazio>Nenhuma consulta hoje. O dia está livre para organizar o consultório.</PainelVazio>
+            ) : (
+              <>
+                <ReguaDoDia consultas={data.consultasHoje} />
+                <AgendaDeHoje consultas={data.consultasHoje} />
+              </>
+            )}
+          </Secao>
+
+          <SessoesSemDesfecho consultas={semDesfecho} />
+        </div>
 
         <div className="grid content-start gap-10">
           <Secao id="atencao" titulo="Atenção">
             <FilaDeAtencao prioridades={data.prioridades} />
           </Secao>
 
-          <Secao id="semana" titulo="Próximos dias" acoes={<Link to="/agenda" className="text-sm font-medium">Ver agenda</Link>}>
+          <Aniversarios aniversariantes={data.aniversariantes ?? []} />
+
+          <Secao id="semana" painel titulo="Próximos dias" acoes={<Link to="/agenda" className="text-sm font-medium">Ver agenda</Link>}>
             <SemanaEmBarras dias={data.visaoSemana} />
           </Secao>
 
@@ -77,7 +100,7 @@ export default function PainelPage() {
           </Secao>
 
           {atalhos.length > 0 ? (
-            <Secao id="atalhos" titulo="Atalhos">
+            <Secao id="atalhos" painel titulo="Atalhos">
               <ul className="grid gap-1">
                 {atalhos.map((atalho) => (
                   <li key={atalho.rota}>

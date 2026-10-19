@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Outlet, ScrollRestoration } from 'react-router';
 
 import { useTituloRota } from '../../core/use-titulo-rota';
+import { PerfilProfissionalInicial } from '../../features/dados-profissionais/perfil-profissional-inicial';
+import { BuscaGlobal } from './busca-global';
+import { CortinaPrivacidade } from './cortina-privacidade';
 import { NavegacaoMovel } from './navegacao-movel';
 import { Trilho } from './trilho';
 
@@ -34,7 +37,7 @@ export function Shell() {
 
   return (
     <div
-      className="min-h-dvh bg-paper lg:grid lg:grid-cols-[var(--largura-trilho)_minmax(0,1fr)]"
+      className="min-h-dvh bg-paper lg:grid lg:grid-cols-[var(--largura-trilho)_minmax(0,1fr)] print:block"
       style={{ '--largura-trilho': recolhido ? '4rem' : '14.5rem' } as React.CSSProperties}
     >
       <a
@@ -53,8 +56,11 @@ export function Shell() {
         <p role="status" aria-live="polite" className="sr-only">
           {titulo}
         </p>
+        <PerfilProfissionalInicial />
         <Outlet />
       </main>
+      <BuscaGlobal />
+      <CortinaPrivacidade />
       <ScrollRestoration />
     </div>
   );

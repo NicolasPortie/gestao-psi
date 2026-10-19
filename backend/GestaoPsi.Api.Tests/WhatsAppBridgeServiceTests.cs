@@ -256,6 +256,135 @@ public sealed class WhatsAppBridgeServiceTests
         Assert.Equal(2, contexto.MensagensWhatsApp.Count());
     }
 
+    [Theory]
+    [InlineData("Quero falar com um atendente")]
+    [InlineData("Posso falar com uma pessoa de verdade?")]
+    [InlineData("Preciso da recepção")]
+    public async Task PedidoParaFalarComPessoa_DevePassarParaEquipeEAvisarOPaciente(string texto)
+    {
+        await using var contexto = CriarContexto();
+        var protecao = new ProtecaoFake();
+        var (token, usuarioId) = await SemearContaAsync(contexto, protecao, comAgenda: true);
+
+        await CriarBridge(contexto, protecao).ReceberEventoAsync(token, Mensagem("evt-humano", texto), null, null, CancellationToken.None);
+
+        var conversa = Assert.Single(contexto.ConversasWhatsApp);
+        Assert.Equal(StatusConversaWhatsApp.AtendimentoHumano, conversa.Status);
+        Assert.True(conversa.AtendimentoHumanoNecessario);
+        Assert.Equal("O paciente pediu para falar com uma pessoa.", conversa.MotivoAtendimentoHumano);
+        Assert.Contains(contexto.MensagensWhatsApp, m => m.Direcao == DirecaoMensagem.Saida && protecao.Desproteger(m.Conteudo!).Contains("avisar a equipe"));
+        Assert.Contains(contexto.Notificacoes, n => n.Tipo == "whatsapp" && n.UsuarioId == usuarioId);
+    }
+
+    [Fact]
+    public async Task ConversaComEquipe_NaoDeveSerRespondidaPeloAssistente()
+    {
+        await using var contexto = CriarContexto();
+        var protecao = new ProtecaoFake();
+        var (token, _) = await SemearContaAsync(contexto, protecao, comAgenda: true);
+        var bridge = CriarBridge(contexto, protecao);
+
+        await bridge.ReceberEventoAsync(token, Mensagem("evt-1", "atendente"), null, null, CancellationToken.None);
+        var saidasAntes = contexto.MensagensWhatsApp.Count(m => m.Direcao == DirecaoMensagem.Saida);
+        await bridge.ReceberEventoAsync(token, Mensagem("evt-2", "quais horários?"), null, null, CancellationToken.None);
+
+        Assert.Equal(saidasAntes, contexto.MensagensWhatsApp.Count(m => m.Direcao == DirecaoMensagem.Saida));
+        Assert.Equal(StatusConversaWhatsApp.AtendimentoHumano, Assert.Single(contexto.ConversasWhatsApp).Status);
+    }
+
+    [Fact]
+    public async Task DuasMensagensIncompreensiveis_DevemPassarParaEquipe()
+    {
+        await using var contexto = CriarContexto();
+        var protecao = new ProtecaoFake();
+        var (token, _) = await SemearContaAsync(contexto, protecao, comAgenda: true);
+        var bridge = CriarBridge(contexto, protecao);
+
+        await bridge.ReceberEventoAsync(token, Mensagem("evt-1", "bom dia, tudo bem?"), null, null, CancellationToken.None);
+        Assert.Equal(StatusConversaWhatsApp.Aberta, Assert.Single(contexto.ConversasWhatsApp).Status);
+        Assert.Contains(contexto.MensagensWhatsApp, m => m.Direcao == DirecaoMensagem.Saida && protecao.Desproteger(m.Conteudo!).Contains("ATENDENTE"));
+
+        await bridge.ReceberEventoAsync(token, Mensagem("evt-2", "queria saber uma coisa"), null, null, CancellationToken.None);
+
+        var conversa = Assert.Single(contexto.ConversasWhatsApp);
+        Assert.Equal(StatusConversaWhatsApp.AtendimentoHumano, conversa.Status);
+        Assert.Equal("O assistente não entendeu o pedido.", conversa.MotivoAtendimentoHumano);
+    }
+
+    [Fact]
+    public async Task PedidoQueDependeDoCadastro_SemPacienteIdentificado_DevePassarParaEquipe()
+    {
+        await using var contexto = CriarContexto();
+        var protecao = new ProtecaoFake();
+        var (token, _) = await SemearContaAsync(contexto, protecao, comAgenda: true);
+
+        await CriarBridge(contexto, protecao).ReceberEventoAsync(token, Mensagem("evt-1", "quero cancelar minha consulta"), null, null, CancellationToken.None);
+
+        var conversa = Assert.Single(contexto.ConversasWhatsApp);
+        Assert.Equal(StatusConversaWhatsApp.AtendimentoHumano, conversa.Status);
+        Assert.Contains("Paciente não identificado", conversa.MotivoAtendimentoHumano);
+    }
+
+    [Fact]
+    public async Task ConteudoSensivel_DeveResponderAoPacienteComOsContatosDeApoio()
+    {
+        await using var contexto = CriarContexto();
+        var protecao = new ProtecaoFake();
+        var (token, _) = await SemearContaAsync(contexto, protecao, comAgenda: false);
+
+        await CriarBridge(contexto, protecao).ReceberEventoAsync(token, Mensagem("evt-1", "não quero viver"), null, null, CancellationToken.None);
+
+        var resposta = Assert.Single(contexto.MensagensWhatsApp, m => m.Direcao == DirecaoMensagem.Saida);
+        var texto = protecao.Desproteger(resposta.Conteudo!);
+        Assert.Contains("188", texto);
+        Assert.Contains("192", texto);
+    }
+
+    private static ReceberEventoBridgeRequest Mensagem(string eventoId, string conteudo) => new()
+    {
+        EventoExternoId = eventoId,
+        TipoEvento = "mensagem.recebida",
+        Telefone = "5511977776666",
+        Conteudo = conteudo,
+        MensagemExternaId = $"msg-{eventoId}"
+    };
+
+    private static async Task<(string Token, Guid UsuarioId)> SemearContaAsync(AppDbContext contexto, ProtecaoFake protecao, bool comAgenda)
+    {
+        var token = $"token-{Guid.NewGuid():N}";
+        var contaId = Guid.NewGuid();
+        var usuarioId = Guid.NewGuid();
+        contexto.AddRange(
+            new ContaPsicologo { Id = contaId, NomeConta = "Conta WA", Status = StatusContaPsicologo.Ativa },
+            new IntegracaoWhatsApp
+            {
+                Id = Guid.NewGuid(),
+                ContaPsicologoId = contaId,
+                Nome = "Bridge",
+                Provedor = "Bridge",
+                UrlBaseBridge = "https://bridge.local",
+                TokenCriptografado = protecao.Proteger(token),
+                TokenHash = protecao.HashToken(token),
+                NumeroWhatsApp = "5511888888888",
+                Status = StatusIntegracao.Ativa,
+                Ativo = true
+            },
+            new Usuario
+            {
+                Id = usuarioId,
+                ContaPsicologoId = contaId,
+                NomeCompleto = "Psi",
+                Email = $"{usuarioId:N}@teste.local",
+                SenhaHash = "x",
+                Perfil = PerfilUsuario.Psicologo,
+                Status = StatusUsuario.Ativo
+            });
+        if (comAgenda)
+            contexto.Add(new ConfiguracaoAtendimento { Id = Guid.NewGuid(), ContaPsicologoId = contaId });
+        await contexto.SaveChangesAsync();
+        return (token, usuarioId);
+    }
+
     private static BridgeWhatsAppService CriarBridge(AppDbContext contexto, ProtecaoFake? protecao = null)
     {
         protecao ??= new ProtecaoFake();

@@ -3,6 +3,7 @@ using GestaoPsi.Api.DTOs.DadosProfissionais;
 using GestaoPsi.Api.Models;
 using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Enums;
+using GestaoPsi.Api.Shared.Excecoes;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestaoPsi.Api.Services.DadosProfissionais;
@@ -13,6 +14,24 @@ public sealed class DadosProfissionaisService(
     IAuditoriaService auditoria,
     IProtecaoDadosService protecao) : IDadosProfissionaisService
 {
+    public async Task<SituacaoPerfilProfissionalResponse> ObterSituacaoAsync(Guid usuarioId, Guid contaId, CancellationToken ct)
+    {
+        var usuario = await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
+        if (usuario.Perfil != PerfilUsuario.Psicologo) return new(false, false);
+        var completo = await dbContext.DadosProfissionaisPsicologo.AnyAsync(x => x.ContaPsicologoId == contaId && x.UsuarioId == usuarioId && x.Status == StatusUsuario.Ativo && x.NomeProfissional != "" && x.CrpHash != "", ct);
+        var conta = await dbContext.ContasPsicologo.SingleAsync(x => x.Id == contaId, ct);
+        return new(!completo, !completo && conta.PerfilProfissionalAdiadoEm is null);
+    }
+
+    public async Task AdiarAsync(Guid usuarioId, Guid contaId, CancellationToken ct)
+    {
+        var usuario = await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
+        if (usuario.Perfil != PerfilUsuario.Psicologo) throw new RegraNegocioException("Apenas o psicólogo pode adiar seu perfil profissional.", StatusCodes.Status403Forbidden);
+        var conta = await dbContext.ContasPsicologo.SingleAsync(x => x.Id == contaId, ct);
+        conta.PerfilProfissionalAdiadoEm ??= DateTimeOffset.UtcNow;
+        await dbContext.SaveChangesAsync(ct);
+    }
+
     public async Task<DadosProfissionaisResponse?> ObterAsync(Guid usuarioId, Guid contaId, CancellationToken ct)
     {
         await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
@@ -24,6 +43,9 @@ public sealed class DadosProfissionaisService(
     public async Task<DadosProfissionaisResponse> SalvarAsync(Guid usuarioId, Guid contaId, SalvarDadosProfissionaisRequest request, string? ip, string? userAgent, CancellationToken ct)
     {
         await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
+        if (string.IsNullOrWhiteSpace(request.NomeProfissional) || request.NomeProfissional.Trim().Length < 3 || request.NomeProfissional.Trim().Length > 180 || string.IsNullOrWhiteSpace(request.Crp) || !System.Text.RegularExpressions.Regex.IsMatch(request.Crp, @"^\d{2}/\d{4,6}$"))
+            throw new RegraNegocioException("Informe o nome completo e um CRP válido, como 06/123456.");
+        var psicologo = await dbContext.Usuarios.SingleAsync(x => x.ContaPsicologoId == contaId && x.Perfil == PerfilUsuario.Psicologo && x.Status == StatusUsuario.Ativo, ct);
         var crpNormalizado = new string(request.Crp.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         var dados = await dbContext.DadosProfissionaisPsicologo
             .SingleOrDefaultAsync(x => x.ContaPsicologoId == contaId && x.Status == StatusUsuario.Ativo, ct);
@@ -34,7 +56,7 @@ public sealed class DadosProfissionaisService(
             {
                 Id = Guid.NewGuid(),
                 ContaPsicologoId = contaId,
-                UsuarioId = usuarioId,
+                UsuarioId = psicologo.Id,
                 Crp = protecao.Proteger(crpNormalizado),
                 CrpHash = protecao.HashDeterministico(crpNormalizado),
                 NomeProfissional = request.NomeProfissional.Trim(),
@@ -60,6 +82,9 @@ public sealed class DadosProfissionaisService(
                 dados.Id, "Dados profissionais atualizados.", null, new { dados.NomeProfissional }, ip, userAgent);
         }
 
+        psicologo.NomeCompleto = request.NomeProfissional.Trim();
+        var conta = await dbContext.ContasPsicologo.SingleAsync(x => x.Id == contaId, ct);
+        conta.NomeConta = psicologo.NomeCompleto;
         await dbContext.SaveChangesAsync(ct);
         return Mapear(dados);
     }

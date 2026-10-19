@@ -18,6 +18,10 @@ public class ConfiguracaoAtendimento : EntidadeDaConta
     public bool ProgramarLembreteAoConfirmar { get; set; } = true;
     public int AntecedenciaLembreteHoras { get; set; } = 24;
     public CanalComunicacao CanalLembretePadrao { get; set; } = CanalComunicacao.Email;
+    /// <summary>Cria a cobrança quando a sessão é marcada como realizada (paciente por sessão).</summary>
+    public bool CobrarAoRealizar { get; set; } = true;
+    /// <summary>Falta (não comparecimento) também gera cobrança.</summary>
+    public bool CobrarFalta { get; set; }
     public bool Ativo { get; set; } = true;
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? AtualizadoEm { get; set; }

@@ -2,12 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 import { configurarAutenticacaoApi, requisicaoApi, requisicaoPublica } from '../api/cliente-api';
 import { extrairDados, type RespostaApi } from '../api/resposta-api';
-import type {
-  AutenticacaoResponse,
-  CriarContaRequest,
-  EstadoSessao,
-  LoginRequest,
-} from './autenticacao.types';
+import type { AutenticacaoResponse, CriarContaRequest, EstadoSessao, LoginRequest } from './autenticacao.types';
 
 let estado: EstadoSessao = { status: 'verificando', usuario: null, accessToken: null };
 const ouvintes = new Set<() => void>();
@@ -24,6 +19,13 @@ function aplicarAutenticacao(resposta: AutenticacaoResponse) {
 
 export function obterEstadoSessao() {
   return estado;
+}
+
+/** Atualiza apenas o nome exibido, depois de salvar os dados profissionais na API. */
+export function atualizarNomeProfissionalNaSessao(nomeCompleto: string) {
+  if (estado.status === 'autenticado' && estado.usuario.perfil === 'Psicologo') {
+    publicar({ ...estado, usuario: { ...estado.usuario, nomeCompleto } });
+  }
 }
 
 export function observarSessao(ouvinte: () => void) {
@@ -53,6 +55,31 @@ export async function criarConta(request: CriarContaRequest) {
   const autenticacao = extrairDados(envelope, 'Não foi possível criar a conta.');
   aplicarAutenticacao(autenticacao);
   return autenticacao;
+}
+
+export interface CodigoCadastro {
+  identificador: string;
+  expiraEm: string;
+  reenviarAposSegundos: number;
+}
+
+export async function solicitarCodigoCadastro(email: string, identificadorAnterior?: string) {
+  const resposta = await requisicaoPublica<RespostaApi<CodigoCadastro>>('/autenticacao/cadastro/codigo', {
+    method: 'POST',
+    body: { email, identificadorAnterior },
+  });
+  return extrairDados(resposta, 'Não foi possível enviar o código.');
+}
+
+export async function confirmarEmailCadastro(email: string, identificador: string, codigo: string) {
+  const resposta = await requisicaoPublica<RespostaApi<{ tokenEmail: string; expiraEm: string }>>(
+    '/autenticacao/cadastro/confirmar-email',
+    {
+      method: 'POST',
+      body: { email, identificador, codigo },
+    },
+  );
+  return extrairDados(resposta, 'Não foi possível confirmar o e-mail.');
 }
 
 /** Troca a senha da sessão ativa. O servidor encerra as outras sessões e devolve uma nova para esta. */

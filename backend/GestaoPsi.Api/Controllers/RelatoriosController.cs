@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.Relatorios;
 using GestaoPsi.Api.Services.Relatorios;
 using GestaoPsi.Api.Shared.Respostas;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoAdministrativa")]
+[Authorize(Policy = Politicas.Relatorios)]
 [Route("api/v1/relatorios")]
 public sealed class RelatoriosController(IRelatoriosAdministrativosService relatoriosService) : ControllerAutenticadoBase
 {

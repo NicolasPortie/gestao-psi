@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
+import type { PermissaoAcesso } from '../../core/dominio/permissao-acesso';
 import { gruposNavegacao, gruposPermitidos, rotasBarraInferior } from './navegacao';
 
-const rotas = (acessoClinico: boolean) =>
-  gruposPermitidos({ acessoClinico }).flatMap((grupo) => grupo.itens.map((item) => item.rota));
+const rotas = (
+  acessoClinico: boolean,
+  pode: (permissao: PermissaoAcesso) => boolean = () => true,
+) =>
+  gruposPermitidos({ acessoClinico, pode }).flatMap((grupo) =>
+    grupo.itens.map((item) => item.rota),
+  );
 
 describe('navegação', () => {
   it('psicólogo vê a área clínica; perfis administrativos não', () => {
@@ -23,8 +29,22 @@ describe('navegação', () => {
     for (const rota of rotasBarraInferior) expect(todas).toContain(rota);
   });
 
+  it('esconde o que o perfil personalizado não pode abrir', () => {
+    const soAgenda = rotas(false, (permissao) => permissao === 'Agenda');
+
+    expect(soAgenda).toContain('/agenda');
+    expect(soAgenda).toContain('/lista-espera');
+    expect(soAgenda).not.toContain('/pacientes');
+    expect(soAgenda).not.toContain('/pagamentos');
+    expect(soAgenda).not.toContain('/conversas');
+    expect(soAgenda).not.toContain('/relatorios');
+    expect(soAgenda).toContain('/configuracoes');
+  });
+
   it('descarta grupos que ficam sem itens para o perfil', () => {
-    const grupos = gruposPermitidos({ acessoClinico: false }).map((grupo) => grupo.id);
+    const grupos = gruposPermitidos({ acessoClinico: false, pode: () => true }).map(
+      (grupo) => grupo.id,
+    );
     expect(grupos).not.toContain('clinico');
   });
 });

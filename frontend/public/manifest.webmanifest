@@ -1,0 +1,22 @@
+{
+  "name": "Vínculo",
+  "short_name": "Vínculo",
+  "description": "Agenda, pacientes, prontuário e financeiro do consultório, numa conta privada e isolada.",
+  "lang": "pt-BR",
+  "start_url": "/painel",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf8f3",
+  "theme_color": "#faf8f3",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icone-mascaravel-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Hoje", "url": "/painel" },
+    { "name": "Agenda", "url": "/agenda" },
+    { "name": "Nova consulta", "url": "/consultas/nova" }
+  ]
+}

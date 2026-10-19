@@ -21,7 +21,24 @@ export interface SalvarDadosProfissionaisRequest {
 export const dadosProfissionaisKeys = {
   todos: ['dados-profissionais'] as const,
   atual: () => [...dadosProfissionaisKeys.todos, 'atual'] as const,
+  situacao: (usuarioId: string) => [...dadosProfissionaisKeys.todos, 'situacao', usuarioId] as const,
 };
+
+export interface SituacaoPerfilProfissional {
+  pendente: boolean;
+  sugerirPreenchimento: boolean;
+}
+
+export async function obterSituacaoPerfilProfissional({ signal }: { signal?: AbortSignal } = {}) {
+  return extrairDados(
+    await requisicaoApi<RespostaApi<SituacaoPerfilProfissional>>('/dados-profissionais/situacao', { signal }),
+    'Não foi possível verificar o perfil profissional.',
+  );
+}
+
+export async function adiarPerfilProfissional() {
+  await requisicaoApi<void>('/dados-profissionais/adiar', { method: 'POST', body: {} });
+}
 
 export async function obterDadosProfissionais({ signal }: { signal?: AbortSignal } = {}) {
   try {

@@ -33,7 +33,7 @@ const pagamento = (sobrescrever: Record<string, unknown> = {}) => ({
 
 const listagem = (itens: unknown[]) => ({
   sucesso: true,
-  dados: { itens, resumo: { recebido: 400, pendente: 180, reembolsado: 0, quantidade: itens.length }, total: itens.length, pagina: 1, tamanhoPagina: 20 },
+  dados: { itens, resumo: { recebido: 400, pendente: 180, reembolsado: 0, quantidade: itens.length, vencido: 0 }, total: itens.length, pagina: 1, tamanhoPagina: 20 },
 });
 
 function responder(corpoLista: unknown, ok = true) {
@@ -59,42 +59,52 @@ describe('PagamentosPage', () => {
     renderPagamentos();
 
     const lista = within(await screen.findByRole('table', { name: 'Pagamentos' }));
-    expect(lista.getByRole('link', { name: 'Ana Silva' })).toHaveAttribute('href', '/pacientes/p1');
-    expect(lista.getAllByText('Pendente').length).toBeGreaterThan(0);
-    expect(screen.getByRole('list', { name: 'Totais' })).toHaveTextContent('Recebido');
+    expect(lista.getByRole('link', { name: 'Ana Silva' })).toHaveAttribute('href', '/pacientes/p1?aba=financeiro');
+    expect(lista.getAllByText(/Pendente|Vencido/).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Totais do período')).toHaveTextContent('Recebido');
   });
 
-  it('marca como pago enviando o estado ao servidor', async () => {
+  it('recebe o pagamento com a forma escolhida, enviando o estado ao servidor', async () => {
     const chamadas = responder(listagem([pagamento()]));
     renderPagamentos();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Marcar pago: Ana Silva' }));
+    await userEvent.click(await screen.findByRole('button', { name: /Receber: .* de Ana Silva/ }));
+    await userEvent.click(await screen.findByRole('radio', { name: 'Dinheiro' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar recebimento' }));
 
     await waitFor(() => expect(chamadas.some((c) => c.metodo === 'PATCH' && c.url.endsWith('/pagamentos/pg1/status'))).toBe(true));
     const envio = chamadas.find((c) => c.metodo === 'PATCH');
-    expect(envio?.corpo).toMatchObject({ status: 'Pago' });
+    expect(envio?.corpo).toMatchObject({ status: 'Pago', formaPagamento: 'Dinheiro' });
   });
 
-  it('não oferece "Marcar pago" para pagamento já pago', async () => {
+  it('não oferece "Receber" para pagamento já pago', async () => {
     responder(listagem([pagamento({ status: 'Pago', pagoEm: '2026-10-11T12:00:00Z' })]));
     renderPagamentos();
 
     await screen.findByRole('table', { name: 'Pagamentos' });
-    expect(screen.queryByRole('button', { name: /Marcar pago/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Receber/ })).not.toBeInTheDocument();
+  });
+
+  it('mostra como vencido o pendente com vencimento passado', async () => {
+    responder(listagem([pagamento({ vencimentoEm: '2020-01-10T12:00:00Z' })]));
+    renderPagamentos('/pagamentos?mes=todos');
+
+    const lista = within(await screen.findByRole('table', { name: 'Pagamentos' }));
+    expect(lista.getAllByText('Vencido').length).toBeGreaterThan(0);
   });
 
   it('diferencia lista vazia de filtro sem resultados', async () => {
     responder(listagem([]));
     renderPagamentos();
-    expect(await screen.findByText('Nenhum pagamento registrado')).toBeVisible();
+    expect(await screen.findByText('Nenhuma cobrança neste período')).toBeVisible();
   });
 
   it('com filtro ativo e sem resultados, oferece limpar o filtro', async () => {
     responder(listagem([]));
-    renderPagamentos('/pagamentos?status=Pago');
+    renderPagamentos('/pagamentos?estado=Pago');
 
-    expect(await screen.findByText('Nenhum pagamento neste filtro')).toBeVisible();
-    expect(screen.getByRole('button', { name: /Ver todos|Limpar/ })).toBeVisible();
+    expect(await screen.findByText('Nada neste filtro')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Limpar filtros' })).toBeVisible();
   });
 
   it('exibe erro recuperável quando a API falha', async () => {

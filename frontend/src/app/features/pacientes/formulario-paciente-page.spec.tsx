@@ -48,10 +48,10 @@ describe('FormularioPacientePage', () => {
     renderNovo();
 
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar contato' }));
-    expect(screen.getByLabelText('Valor do contato 1')).toBeVisible();
+    expect(screen.getByLabelText('Telefone ou e-mail do contato 1')).toBeVisible();
 
     await userEvent.click(screen.getByRole('button', { name: 'Remover contato 1' }));
-    expect(screen.queryByLabelText('Valor do contato 1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Telefone ou e-mail do contato 1')).not.toBeInTheDocument();
   });
 
   it('salva e abre a ficha do paciente criado', async () => {

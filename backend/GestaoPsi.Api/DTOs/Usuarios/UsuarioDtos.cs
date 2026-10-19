@@ -10,7 +10,9 @@ public sealed record UsuarioResponse(
     string? Telefone,
     PerfilUsuario Perfil,
     StatusUsuario Status,
-    DateTimeOffset? UltimoAcessoEm);
+    DateTimeOffset? UltimoAcessoEm,
+    Guid? PerfilAcessoId,
+    string? NomeDoPerfil);
 
 public sealed class CriarUsuarioRequest
 {
@@ -27,6 +29,15 @@ public sealed class CriarUsuarioRequest
     public string? Telefone { get; init; }
 
     public PerfilUsuario Perfil { get; init; } = PerfilUsuario.Recepcionista;
+
+    /// <summary>Obrigatório quando o perfil é Personalizado.</summary>
+    public Guid? PerfilAcessoId { get; init; }
+}
+
+public sealed class AlterarPerfilUsuarioRequest
+{
+    public PerfilUsuario Perfil { get; init; }
+    public Guid? PerfilAcessoId { get; init; }
 }
 
 public sealed class AlterarStatusUsuarioRequest

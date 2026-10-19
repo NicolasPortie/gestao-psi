@@ -18,6 +18,20 @@ O sistema lida com dados pessoais, dados de saude, prontuario, documentos psicol
 - backups devem ser criptografados;
 - exportacoes devem exigir permissao elevada.
 
+## Confirmação de e-mail no cadastro
+
+- Antes de criar uma conta, enviar um código aleatório de seis números por e-mail transacional (SMTP).
+- `POST /api/v1/autenticacao/cadastro/codigo` devolve apenas identificador opaco, validade e intervalo de reenvio. Nunca devolver o código na API nem registrá-lo em logs.
+- `POST /api/v1/autenticacao/cadastro/confirmar-email` valida o código e emite comprovante opaco vinculado ao endereço normalizado. Nenhuma dessas operações cria conta ou sessão.
+- Código válido por 10 minutos, no máximo cinco tentativas; confirmação correta consome o código atomicamente. Reenviar invalida o identificador anterior informado para o mesmo endereço.
+- Intervalo mínimo de 60 segundos; no máximo cinco envios por endereço/hora e vinte por IP/hora, além do limitador de rotas públicas.
+- Guardar somente HMAC do código com identificador aleatório, em Redis com expiração; fallback em memória apenas em Development sem Redis. Comparação, desconto de tentativa e consumo são atômicos.
+- O comprovante dura 30 minutos, vincula-se ao e-mail e é consumido uma única vez no serviço de criação de conta. Solicitar diretamente o cadastro sem comprovante válido não cria dados duráveis.
+- Senhas e confirmação de senha não entram no estado temporário da verificação. A confirmação de senha é uma prevenção de erro de preenchimento no cliente; a política de senha permanece no servidor.
+- SMTP desativado ou falha de entrega retorna erro, sem anunciar envio. A aplicação não fornece código fixo nem atalho de confirmação em Development.
+
+Configuração do transporte: `Email:Ativo`, `ServidorSmtp`, `Porta`, `UsarSsl`, `Usuario`, `Senha`, `EmailRemetente` e `NomeRemetente`. Credenciais devem vir de secrets ou variáveis de ambiente, nunca de arquivos versionados. Não habilitar `Ativo` antes de configurar o transporte.
+
 ## Senhas
 
 Campo:
@@ -123,6 +137,27 @@ Regras:
 - planejar rotacao futura de chaves;
 - acesso a secrets restrito ao back-end.
 
+## Perfis e Permissoes
+
+A equipe da conta tem um perfil: Psicologo (dono da conta), Administrador, Recepcionista ou
+Personalizado. O perfil Personalizado usa um `PerfilAcesso` criado pela propria conta, com nome e
+um conjunto de permissoes administrativas.
+
+- Catalogo: Agenda, Pacientes, Financeiro, Mensagens (lembretes e modelos), Conversas,
+  IntegracaoWhatsApp, Relatorios, Auditoria e Equipe. Cada permissao tem uma politica de
+  autorizacao no back-end (`Politicas`).
+- Conteudo clinico (prontuario, sessoes, documentos psicologicos) nunca entra no catalogo: segue
+  exclusivo do perfil Psicologo (`AcessoClinico`).
+- Administrador tem todas as permissoes; Recepcionista tem todas, menos Auditoria, Equipe e
+  IntegracaoWhatsApp.
+- As permissoes sao lidas do banco a cada requisicao (`ValidacaoSessaoJwtService`) e viajam como
+  claims `permissao` montadas pelo servidor, nunca emitidas no token. Mudar um perfil vale na
+  proxima acao da pessoa.
+- Ninguem concede nem gerencia mais acesso do que tem: criar ou editar perfil, dar perfil a alguem,
+  redefinir senha e alterar status exigem que as permissoes do alvo sejam um subconjunto das de
+  quem pede. So o Psicologo gerencia o Psicologo.
+- O front-end esconde o que a pessoa nao pode abrir, mas isso nunca substitui a autorizacao do servidor.
+
 ## Auditoria
 
 Logs devem registrar:
@@ -198,3 +233,7 @@ Regras aplicadas na API e no servidor do front-end:
 - endpoint de saude anonimo sem detalhes da infraestrutura fora de Development;
 - listagem de consultas com periodo maximo de 366 dias e filtro por paciente no servidor;
 - troca de senha com a senha atual, limite de tentativas, revogacao das demais sessoes e auditoria (`AlteracaoSenha`).
+
+### Perfil profissional após a criação do acesso
+
+O cadastro confirmado cria conta e usuário sem nome ou CRP fictícios. Nome completo e CRP são complementados após o acesso, em diálogo opcional ou em Dados profissionais. `ContaPsicologo.PerfilProfissionalAdiadoEm` guarda o adiamento no servidor, com autorização e isolamento por conta; ele não indica perfil concluído. A situação é derivada do registro profissional válido do titular. A finalização de documentos exige essa identificação no back-end; criar rascunhos permanece permitido.

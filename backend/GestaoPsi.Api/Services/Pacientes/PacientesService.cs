@@ -39,6 +39,19 @@ public sealed class PacientesService(
             consulta = consulta.Where(paciente => paciente.Status == request.Status.Value);
         }
 
+        if (request.SemConsultaHaDias is > 0)
+        {
+            // "Sumidos": ativos que já foram atendidos, sem nada desde o limite e nada marcado daqui para frente.
+            var limite = DateTimeOffset.UtcNow.AddDays(-request.SemConsultaHaDias.Value);
+            consulta = consulta.Where(paciente =>
+                paciente.Status == StatusPaciente.Ativo &&
+                paciente.Consultas.Any(item => item.Status == StatusConsulta.Realizada) &&
+                !paciente.Consultas.Any(item =>
+                    item.Status != StatusConsulta.Cancelada &&
+                    item.Status != StatusConsulta.Remarcada &&
+                    item.InicioEm >= limite));
+        }
+
         if (!string.IsNullOrWhiteSpace(busca))
         {
             consulta = consulta.Where(paciente =>
@@ -120,6 +133,8 @@ public sealed class PacientesService(
             Telefone = ProtegerOpcional(dados.Telefone),
             Email = ProtegerOpcional(dados.Email),
             ObservacaoAdministrativa = ProtegerOpcional(dados.ObservacaoAdministrativa),
+            ValorSessao = dados.ValorSessao,
+            ModoCobranca = ValidarModoCobranca(request.ModoCobranca),
             Status = StatusPaciente.Ativo,
             CriadoEm = DateTimeOffset.UtcNow
         };
@@ -188,6 +203,8 @@ public sealed class PacientesService(
         paciente.Telefone = ProtegerOpcional(dados.Telefone);
         paciente.Email = ProtegerOpcional(dados.Email);
         paciente.ObservacaoAdministrativa = ProtegerOpcional(dados.ObservacaoAdministrativa);
+        paciente.ValorSessao = dados.ValorSessao;
+        paciente.ModoCobranca = ValidarModoCobranca(request.ModoCobranca);
         paciente.Status = request.Status;
         paciente.AtualizadoEm = DateTimeOffset.UtcNow;
 
@@ -428,7 +445,8 @@ public sealed class PacientesService(
                 paciente,
                 contato.TipoContato,
                 contato.Valor,
-                contato.Principal);
+                contato.Principal,
+                contato.Nome);
         }
 
         return contatos;
@@ -439,7 +457,8 @@ public sealed class PacientesService(
         Paciente paciente,
         TipoContato tipoContato,
         string? valor,
-        bool principal = true)
+        bool principal = true,
+        string? nome = null)
     {
         if (string.IsNullOrWhiteSpace(valor))
         {
@@ -454,6 +473,7 @@ public sealed class PacientesService(
             TipoContato = tipoContato,
             Valor = protecaoDados.Proteger(valor),
             ValorHash = protecaoDados.HashDeterministico(valor),
+            Nome = ProtegerOpcional(nome),
             Principal = principal,
             CriadoEm = DateTimeOffset.UtcNow
         });
@@ -490,6 +510,9 @@ public sealed class PacientesService(
             DesprotegerOpcional(paciente.Email),
             paciente.Status.ToString(),
             DesprotegerOpcional(paciente.ObservacaoAdministrativa),
+            paciente.ValorSessao,
+            paciente.ModoCobranca,
+            paciente.ConsentimentoRegistradoEm,
             MapearContatosAdicionais(paciente),
             FormatarDataConsulta(consultas?.UltimaConsulta),
             FormatarDataConsulta(consultas?.ProximaConsulta),
@@ -518,7 +541,8 @@ public sealed class PacientesService(
                 item.Contato.Id,
                 item.Contato.TipoContato.ToString(),
                 item.Valor ?? string.Empty,
-                item.Contato.Principal))
+                item.Contato.Principal,
+                DesprotegerOpcional(item.Contato.Nome)))
             .ToArray();
     }
 
@@ -581,6 +605,7 @@ public sealed class PacientesService(
         paciente.NomeCompleto,
         paciente.DataNascimento,
         CpfMascarado = MascararCpf(DesprotegerOpcional(paciente.Cpf)),
+        paciente.ValorSessao,
         paciente.Status
     };
 
@@ -593,7 +618,8 @@ public sealed class PacientesService(
             NormalizarDigitos(request.WhatsApp),
             NormalizarEmail(request.Email),
             NormalizarTextoOpcional(request.ObservacaoAdministrativa),
-            NormalizarContatosAdicionais(request.ContatosAdicionais));
+            NormalizarContatosAdicionais(request.ContatosAdicionais),
+            NormalizarValor(request.ValorSessao));
 
     private DadosPacienteNormalizados NormalizarRequest(AtualizarPacienteRequest request) =>
         new(
@@ -604,7 +630,8 @@ public sealed class PacientesService(
             NormalizarDigitos(request.WhatsApp),
             NormalizarEmail(request.Email),
             NormalizarTextoOpcional(request.ObservacaoAdministrativa),
-            NormalizarContatosAdicionais(request.ContatosAdicionais));
+            NormalizarContatosAdicionais(request.ContatosAdicionais),
+            NormalizarValor(request.ValorSessao));
 
     private DadosPacienteNormalizados NormalizarRequest(
         AtualizarPacienteRequest request,
@@ -622,7 +649,8 @@ public sealed class PacientesService(
             NormalizarDigitos(request.WhatsApp),
             NormalizarEmail(request.Email),
             NormalizarTextoOpcional(request.ObservacaoAdministrativa),
-            NormalizarContatosAdicionais(request.ContatosAdicionais));
+            NormalizarContatosAdicionais(request.ContatosAdicionais),
+            NormalizarValor(request.ValorSessao));
     }
 
     private static string NormalizarTextoObrigatorio(string valor) =>
@@ -672,12 +700,67 @@ public sealed class PacientesService(
                 {
                     TipoContato.Email => NormalizarEmail(contato.Valor),
                     TipoContato.Telefone or TipoContato.WhatsApp => NormalizarDigitos(contato.Valor),
+                    TipoContato.Responsavel or TipoContato.Emergencia
+                        when !string.IsNullOrWhiteSpace(contato.Valor) && contato.Valor.Any(char.IsDigit) && !contato.Valor.Contains('@') => NormalizarDigitos(contato.Valor),
                     _ => NormalizarTextoOpcional(contato.Valor)
                 },
-                contato.Principal))
+                contato.Principal,
+                NormalizarTextoOpcional(contato.Nome)))
             .Where(contato => !string.IsNullOrWhiteSpace(contato.Valor))
             .Take(10)
             .ToArray();
+    }
+
+    private static ModoCobranca ValidarModoCobranca(ModoCobranca modo) =>
+        Enum.IsDefined(modo) ? modo : throw new RegraNegocioException("Forma de cobrança inválida.");
+
+    public async Task<PacienteDetalheResponse> RegistrarConsentimentoAsync(
+        Guid usuarioId,
+        Guid contaPsicologoId,
+        Guid pacienteId,
+        string? ip,
+        string? userAgent,
+        CancellationToken cancellationToken)
+    {
+        await ValidarUsuarioDaContaAsync(usuarioId, contaPsicologoId, cancellationToken);
+        var paciente = await ObterPacienteAsync(contaPsicologoId, pacienteId, rastrear: true, incluirContatos: false, cancellationToken);
+        paciente.ConsentimentoRegistradoEm = DateTimeOffset.UtcNow;
+        paciente.AtualizadoEm = DateTimeOffset.UtcNow;
+        RegistrarAuditoria(contaPsicologoId, usuarioId, "ConsentimentoPacienteRegistrado", paciente.Id, "Consentimento de tratamento de dados registrado.", null, new { paciente.ConsentimentoRegistradoEm }, ip, userAgent);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return await ObterPorIdAsync(contaPsicologoId, paciente.Id, cancellationToken);
+    }
+
+    public async Task<ExportacaoPacienteResponse> ExportarAsync(
+        Guid usuarioId,
+        Guid contaPsicologoId,
+        Guid pacienteId,
+        string? ip,
+        string? userAgent,
+        CancellationToken cancellationToken)
+    {
+        await ValidarUsuarioDaContaAsync(usuarioId, contaPsicologoId, cancellationToken);
+        var cadastro = await ObterPorIdAsync(contaPsicologoId, pacienteId, cancellationToken);
+        var consultas = await dbContext.Consultas.AsNoTracking()
+            .Where(item => item.ContaPsicologoId == contaPsicologoId && item.PacienteId == pacienteId)
+            .OrderBy(item => item.InicioEm)
+            .Select(item => new ExportacaoConsultaItem(item.InicioEm, item.FimEm, item.TipoAtendimento.Nome, item.Modalidade.ToString(), item.Status.ToString()))
+            .ToListAsync(cancellationToken);
+        var pagamentos = await dbContext.Pagamentos.AsNoTracking()
+            .Where(item => item.ContaPsicologoId == contaPsicologoId && item.PacienteId == pacienteId)
+            .OrderBy(item => item.CriadoEm)
+            .Select(item => new ExportacaoPagamentoItem(item.Valor, item.Status.ToString(), item.FormaPagamento.ToString(), item.VencimentoEm, item.PagoEm))
+            .ToListAsync(cancellationToken);
+        RegistrarAuditoria(contaPsicologoId, usuarioId, "PacienteDadosExportados", pacienteId, "Dados administrativos do paciente exportados a pedido.", null, new { Consultas = consultas.Count, Pagamentos = pagamentos.Count }, ip, userAgent);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return new ExportacaoPacienteResponse(DateTimeOffset.UtcNow, cadastro, consultas, pagamentos);
+    }
+
+    private static decimal? NormalizarValor(decimal? valor)
+    {
+        if (valor is null) return null;
+        if (valor < 0 || valor > 999999.99m) throw new RegraNegocioException("Informe um valor de sessão entre R$ 0,00 e R$ 999.999,99.");
+        return decimal.Round(valor.Value, 2);
     }
 
     private static string? MascararCpf(string? cpf)
@@ -708,12 +791,14 @@ public sealed class PacientesService(
         string? WhatsApp,
         string? Email,
         string? ObservacaoAdministrativa,
-        IReadOnlyCollection<ContatoPacienteNormalizado> ContatosAdicionais);
+        IReadOnlyCollection<ContatoPacienteNormalizado> ContatosAdicionais,
+        decimal? ValorSessao);
 
     private sealed record ContatoPacienteNormalizado(
         TipoContato TipoContato,
         string? Valor,
-        bool Principal);
+        bool Principal,
+        string? Nome);
 
     private sealed record ConsultasPacienteResumo(
         DateTimeOffset? UltimaConsulta,

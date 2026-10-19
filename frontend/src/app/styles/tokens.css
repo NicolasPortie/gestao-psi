@@ -9,8 +9,8 @@
  * Mundo visual: ferramenta de trabalho do psicologo e da equipe, usada o dia inteiro, entao calma.
  * Porcelana branca como fundo, grafite quente no texto, verde-musgo como unico acento (o verde e a
  * cor da saude mental, aqui em tom sobrio), ambar para atencao, tijolo para erro e pinho para o que
- * foi concluido. O tema escuro e grafite quente, sem azul. O azulejo modular aparece so onde tem
- * funcao: na marca e nas marcas de estado. Todos os pares de texto sao medidos por
+ * foi concluido. O tema escuro e grafite quente, sem azul. Fundo de linho (branco quente) com
+ * paineis brancos para os blocos que importam; cantos macios. O azulejo fica so na marca. Todos os pares de texto sao medidos por
  * `npm run contraste` (scripts/contraste.mjs).
  */
 
@@ -19,18 +19,19 @@
   color-scheme: light;
 
   /* Superficies */
-  --paper: oklch(0.993 0.002 100);
-  --rail: oklch(0.968 0.007 140);
+  --paper: oklch(0.982 0.005 85);
+  --rail: oklch(0.963 0.008 85);
+  --surface: oklch(0.997 0.002 85);
   --field: oklch(1 0 0);
   --overlay: oklch(1 0 0);
-  --hover: oklch(0.958 0.008 140);
-  --pressed: oklch(0.938 0.012 140);
+  --hover: oklch(0.952 0.009 85);
+  --pressed: oklch(0.928 0.011 85);
   --selected: oklch(0.93 0.03 150);
   --scrim: oklch(0.2 0.02 150 / 0.4);
 
   /* Reguas */
-  --line: oklch(0.91 0.008 140);
-  --line-strong: oklch(0.6 0.015 140);
+  --line: oklch(0.905 0.009 85);
+  --line-strong: oklch(0.6 0.014 85);
 
   /* Texto: grafite quente, sem azul */
   --ink: oklch(0.24 0.012 150);
@@ -82,12 +83,13 @@
   color-scheme: dark;
 
   /* Grafite quente com um sopro de verde: nada de azul-marinho */
-  --paper: oklch(0.205 0.008 150);
+  --paper: oklch(0.2 0.008 150);
   --rail: oklch(0.175 0.008 150);
-  --field: oklch(0.235 0.009 150);
+  --surface: oklch(0.232 0.009 150);
+  --field: oklch(0.255 0.01 150);
   --overlay: oklch(0.27 0.01 150);
-  --hover: oklch(0.25 0.01 150);
-  --pressed: oklch(0.285 0.012 150);
+  --hover: oklch(0.268 0.011 150);
+  --pressed: oklch(0.295 0.012 150);
   --selected: oklch(0.32 0.04 152);
   --scrim: oklch(0.1 0.01 150 / 0.6);
 
@@ -137,6 +139,7 @@
 @theme inline {
   --color-paper: var(--paper);
   --color-rail: var(--rail);
+  --color-surface: var(--surface);
   --color-field: var(--field);
   --color-overlay: var(--overlay);
   --color-hover: var(--hover);
@@ -189,28 +192,33 @@
     'Jost Algarismos', 'Atkinson Hyperlegible Next Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
   --font-display: 'Jost Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
 
-  /* Escala curta e fixa (razao ~1.15): a hierarquia vem de peso e de regua. */
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1rem;
-  --text-sm: 0.8125rem;
-  --text-sm--line-height: 1.125rem;
-  --text-base: 0.875rem;
-  --text-base--line-height: 1.375rem;
-  --text-lg: 1rem;
-  --text-lg--line-height: 1.5rem;
-  --text-xl: 1.1875rem;
-  --text-xl--line-height: 1.625rem;
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 1.875rem;
-  --text-3xl: 1.875rem;
-  --text-3xl--line-height: 2.25rem;
+  /* Telas ultralargas (21:9): o conteudo cresce a partir daqui. */
+  --breakpoint-3xl: 125rem;
 
-  /* Cantos curtos: o azulejo e quadrado, so as bordas sao suavizadas. */
-  --radius-xs: 0.1875rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.625rem;
-  --radius-xl: 0.875rem;
+  /* Escala curta e fixa (razao ~1.15): a hierarquia vem de peso e de regua.
+     Corpo em 15px: a ferramenta fica aberta o dia inteiro e a Atkinson rende melhor um pouco maior. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2.125rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.5rem;
+
+  /* Cantos macios: controles em 10px, paineis em 14px, folhas em 20px; estados e filtros em pilula.
+     O azulejo quadrado fica so na marca. */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
 
   /* Movimento: ease-out forte para entradas, ease-in-out para deslocamentos. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);

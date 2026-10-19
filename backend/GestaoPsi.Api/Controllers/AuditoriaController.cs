@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.Data;
 using GestaoPsi.Api.DTOs.Auditoria;
 using GestaoPsi.Api.Shared.Paginacao;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GestaoPsi.Api.Controllers;
 [ApiController]
-[Authorize(Policy = "Auditoria")]
+[Authorize(Policy = Politicas.Auditoria)]
 [Route("api/v1/auditoria")]
 public sealed class AuditoriaController(AppDbContext db) : ControllerAutenticadoBase
 {
@@ -22,6 +23,8 @@ public sealed class AuditoriaController(AppDbContext db) : ControllerAutenticado
             consulta = consulta.Where(x => x.TipoAcao == filtro.TipoAcao);
         if (!string.IsNullOrWhiteSpace(filtro.Entidade))
             consulta = consulta.Where(x => x.Entidade == filtro.Entidade);
+        if (!filtro.IncluirTecnicos && string.IsNullOrWhiteSpace(filtro.TipoAcao))
+            consulta = consulta.Where(x => x.TipoAcao != "EventoBridgeProcessado");
         if (filtro.UsuarioId is not null)
             consulta = consulta.Where(x => x.UsuarioId == filtro.UsuarioId);
         if (filtro.De is not null)

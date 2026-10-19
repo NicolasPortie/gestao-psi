@@ -8,6 +8,7 @@ import type {
   CriarConsultaRequest,
   HorarioDisponivel,
   RemarcarConsultaRequest,
+  SerieConsultas,
   SalvarBloqueioAgendaRequest,
   SalvarHorarioDisponivelRequest,
   SalvarTipoAtendimentoRequest,
@@ -22,6 +23,7 @@ export const agendaKeys = {
   tipos: () => [...agendaKeys.todos, 'tipos'] as const,
   horarios: () => [...agendaKeys.todos, 'horarios'] as const,
   bloqueios: (inicio: string, fim: string) => [...agendaKeys.todos, 'bloqueios', inicio, fim] as const,
+  horariosLivres: (data: string, duracao: number) => [...agendaKeys.todos, 'horarios-livres', data, duracao] as const,
 };
 
 export async function listarConsultas(
@@ -43,6 +45,28 @@ export async function obterConsulta(id: string, { signal }: { signal?: AbortSign
 export async function criarConsulta(request: CriarConsultaRequest) {
   const resposta = await requisicaoApi<RespostaApi<Consulta>>('/consultas', { method: 'POST', body: request });
   return extrairDados(resposta, 'Não foi possível criar a consulta.');
+}
+
+/** Cria a consulta e, com `recorrencia`, as repetições no mesmo horário. Horários ocupados voltam em `ignoradas`. */
+export async function criarSerieConsultas(request: CriarConsultaRequest) {
+  const resposta = await requisicaoApi<RespostaApi<SerieConsultas>>('/consultas/serie', { method: 'POST', body: request });
+  return extrairDados(resposta, 'Não foi possível criar as consultas.');
+}
+
+/** Cancela esta consulta e as próximas em aberto da mesma série. */
+export async function cancelarSerieConsultas(id: string, justificativa?: string | null) {
+  const resposta = await requisicaoApi<RespostaApi<{ canceladas: number }>>(`/consultas/${id}/cancelar-serie`, {
+    method: 'PATCH',
+    body: { justificativa: justificativa ?? null },
+  });
+  return extrairDados(resposta, 'Não foi possível cancelar as consultas da série.');
+}
+
+/** Inícios livres ("HH:mm") no dia, para uma consulta da duração informada. */
+export async function listarHorariosLivres(data: string, duracaoMinutos: number, { signal }: { signal?: AbortSignal } = {}) {
+  const params = new URLSearchParams({ data, duracaoMinutos: String(duracaoMinutos) });
+  const resposta = await requisicaoApi<RespostaApi<string[]>>(`/agenda/horarios-livres?${params}`, { signal });
+  return extrairDados(resposta, 'Não foi possível carregar os horários livres.');
 }
 
 export async function alterarStatusConsulta(id: string, request: AlterarStatusConsultaRequest) {

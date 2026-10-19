@@ -40,4 +40,6 @@ public interface IPacientesService
         string? ip,
         string? userAgent,
         CancellationToken cancellationToken);
+    Task<PacienteDetalheResponse> RegistrarConsentimentoAsync(Guid usuarioId, Guid contaPsicologoId, Guid pacienteId, string? ip, string? userAgent, CancellationToken cancellationToken);
+    Task<ExportacaoPacienteResponse> ExportarAsync(Guid usuarioId, Guid contaPsicologoId, Guid pacienteId, string? ip, string? userAgent, CancellationToken cancellationToken);
 }

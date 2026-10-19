@@ -5,10 +5,11 @@ import { Link } from 'react-router';
 import { cn } from '../ui/cn';
 import { ContextoAlinhamentoPagina } from './contexto-pagina';
 
+/** Em telas ultralargas (21:9) o conteúdo cresce com a janela, sem esticar formulários e texto corrido. */
 const larguras = {
   estreita: 'max-w-2xl',
-  padrao: 'max-w-5xl',
-  ampla: 'max-w-7xl',
+  padrao: 'max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl',
+  ampla: 'max-w-7xl 2xl:max-w-[90rem] 3xl:max-w-[112rem]',
   total: 'max-w-none',
 } as const;
 
@@ -71,14 +72,16 @@ interface SecaoProps {
   className?: string;
   /** Régua no topo separa blocos consecutivos da mesma tela. */
   regua?: boolean;
+  /** Envolve o conteúdo num painel claro de cantos macios. */
+  painel?: boolean;
   id?: string;
 }
 
-/** Bloco nomeado da tela: título, ações e conteúdo, separados por régua e espaço, nunca por cartão. */
-export function Secao({ titulo, descricao, acoes, children, className, regua = false, id }: SecaoProps) {
+/** Bloco nomeado da tela: título, ações e conteúdo; o conteúdo pode morar num painel claro. */
+export function Secao({ titulo, descricao, acoes, children, className, regua = false, painel = false, id }: SecaoProps) {
   const tituloId = id && titulo ? `${id}-titulo` : undefined;
   return (
-    <section id={id} aria-labelledby={tituloId} className={cn('grid content-start gap-4', regua && 'border-t border-line pt-8', className)}>
+    <section id={id} aria-labelledby={tituloId} className={cn('grid content-start gap-3', regua && 'border-t border-line pt-8', className)}>
       {titulo || acoes ? (
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
           <div className="grid gap-0.5">
@@ -92,7 +95,7 @@ export function Secao({ titulo, descricao, acoes, children, className, regua = f
           {acoes ? <div className="flex flex-wrap items-center gap-2">{acoes}</div> : null}
         </div>
       ) : null}
-      {children}
+      {painel ? <div className="rounded-lg border border-line bg-surface p-4 sm:p-5">{children}</div> : children}
     </section>
   );
 }

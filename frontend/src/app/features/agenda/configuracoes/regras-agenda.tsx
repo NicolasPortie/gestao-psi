@@ -28,6 +28,8 @@ const schema = z.object({
   programarLembreteAoConfirmar: z.boolean(),
   antecedenciaLembreteHoras: z.string().min(1, 'Informe a antecedência.'),
   canalLembretePadrao: z.enum(['WhatsApp', 'Email', 'Sms', 'Sistema', 'Telefone']),
+  cobrarAoRealizar: z.boolean(),
+  cobrarFalta: z.boolean(),
 });
 type Formulario = z.infer<typeof schema>;
 
@@ -51,6 +53,8 @@ function paraFormulario(config: ConfiguracaoAtendimento): Formulario {
     programarLembreteAoConfirmar: config.programarLembreteAoConfirmar,
     antecedenciaLembreteHoras: String(config.antecedenciaLembreteHoras),
     canalLembretePadrao: config.canalLembretePadrao,
+    cobrarAoRealizar: config.cobrarAoRealizar ?? true,
+    cobrarFalta: config.cobrarFalta ?? false,
   };
 }
 
@@ -68,6 +72,8 @@ function paraRequisicao(valores: Formulario): ConfiguracaoAtendimento {
     programarLembreteAoConfirmar: valores.programarLembreteAoConfirmar,
     antecedenciaLembreteHoras: Number(valores.antecedenciaLembreteHoras),
     canalLembretePadrao: valores.canalLembretePadrao,
+    cobrarAoRealizar: valores.cobrarAoRealizar,
+    cobrarFalta: valores.cobrarFalta,
   };
 }
 
@@ -98,6 +104,7 @@ export function RegrasAgenda() {
   });
 
   const lembretesAtivos = useWatch({ control, name: 'lembretesAutomaticosAtivos' });
+  const cobrarAoRealizar = useWatch({ control, name: 'cobrarAoRealizar' });
   const canalAtual: CanalComunicacao = useWatch({ control, name: 'canalLembretePadrao' }) ?? config?.canalLembretePadrao ?? 'Email';
   const canais = Array.from(new Set<CanalComunicacao>([...canaisLembreteAutomatico, canalAtual]));
 
@@ -115,7 +122,7 @@ export function RegrasAgenda() {
 
   return (
     <form className="grid max-w-2xl gap-10" noValidate onSubmit={(evento) => void handleSubmit((valores) => salvar.mutate(valores))(evento)}>
-      <Secao titulo="Atendimento" descricao="Valores padrão usados ao criar consultas e para interpretar os horários da agenda.">
+      <Secao titulo="Atendimento" painel descricao="Valores padrão usados ao criar consultas e para interpretar os horários da agenda.">
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo rotulo="Fuso horário do consultório" erro={errors.fusoHorario?.message} className="sm:col-span-2">
             <Selecao opcoes={fusosHorarios} {...register('fusoHorario')} />
@@ -126,7 +133,7 @@ export function RegrasAgenda() {
         </div>
       </Secao>
 
-      <Secao titulo="Prazos" regua descricao="Deixe em branco para não exigir antecedência.">
+      <Secao titulo="Prazos" painel descricao="Deixe em branco para não exigir antecedência.">
         <div className="grid gap-4 sm:grid-cols-3">
           <Campo rotulo="Para agendar" dica="Horas de antecedência.">
             <Entrada type="number" inputMode="numeric" min="0" {...register('antecedenciaMinimaAgendamentoHoras')} />
@@ -154,7 +161,7 @@ export function RegrasAgenda() {
         </div>
       </Secao>
 
-      <Secao titulo="Lembretes" regua descricao="Mensagens de lembrete enviadas ao paciente antes da consulta.">
+      <Secao titulo="Lembretes" painel descricao="Mensagens de lembrete enviadas ao paciente antes da consulta.">
         <div className="grid gap-4">
           <OpcaoMarcavel tipo="interruptor" rotulo="Enviar lembretes automáticos" {...register('lembretesAutomaticosAtivos')} />
           <div className={lembretesAtivos ? 'grid gap-4' : 'pointer-events-none grid gap-4 opacity-50'} aria-disabled={!lembretesAtivos}>
@@ -176,7 +183,29 @@ export function RegrasAgenda() {
         </div>
       </Secao>
 
-      <div className="flex items-center gap-3 border-t border-line pt-6">
+      <Secao
+        titulo="Cobrança"
+        painel
+        descricao="Para pacientes cobrados por sessão. Mensalistas pagam pela mensalidade, gerada no Financeiro."
+      >
+        <div className="grid gap-4">
+          <OpcaoMarcavel
+            tipo="interruptor"
+            rotulo="Cobrar quando a sessão for realizada"
+            descricao="Ao marcar a sessão como realizada, cria a cobrança com o valor combinado com o paciente (ou o padrão do tipo de atendimento)."
+            {...register('cobrarAoRealizar')}
+          />
+          <OpcaoMarcavel
+            tipo="interruptor"
+            rotulo="Cobrar falta sem aviso"
+            descricao="Não comparecimento também gera cobrança, conforme o contrato com o paciente."
+            disabled={!cobrarAoRealizar}
+            {...register('cobrarFalta')}
+          />
+        </div>
+      </Secao>
+
+      <div className="flex items-center gap-3">
         <Botao type="submit" variante="primario" carregando={salvar.isPending} disabled={!isDirty}>
           Salvar regras
         </Botao>

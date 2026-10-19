@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 import { entrar, garantirConta, loginApi, semearDadosBasicos, senhaPadrao } from './apoio';
+import { preencherAcessoCadastro, simularEmailCadastro } from './cadastro-apoio';
 
 const conta = {
   nomeCompleto: 'Psicologo E2E Acessibilidade',
@@ -12,7 +13,9 @@ const conta = {
 
 /** Regras WCAG 2.x A e AA. As violações saem no relatório do teste com o seletor de cada elemento. */
 async function violacoes(pagina: Page) {
-  const resultado = await new AxeBuilder({ page: pagina }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+  const resultado = await new AxeBuilder({ page: pagina })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
   return resultado.violations.map((violacao) => ({
     regra: violacao.id,
     impacto: violacao.impact,
@@ -49,47 +52,59 @@ for (const tema of ['light', 'dark'] as const) {
     // Sem animações, o contraste medido não depende do instante em que as entradas escalonadas terminam.
     test.use({ colorScheme: tema, contextOptions: { reducedMotion: 'reduce' } });
 
-    test.beforeAll(async ({ request }) => {
-      await garantirConta(request, conta);
-      await semearDadosBasicos(request, await loginApi(request, conta.email, conta.senha));
-    });
-
-    test('telas públicas não têm violações', async ({ page }) => {
+    test('telas públicas não têm violações', async ({ page }, testInfo) => {
+      await simularEmailCadastro(page);
       for (const rota of publicas) {
         await page.goto(rota);
         await page.waitForLoadState('networkidle');
         expect(await violacoes(page), rota).toEqual([]);
+        if (rota === '/cadastro') {
+          await page.screenshot({ path: `../output/playwright/cadastro-${tema}-${testInfo.project.name}.png`, fullPage: true });
+          await preencherAcessoCadastro(page, 'rascunho.acessibilidade@gestaopsi.local');
+          expect(await violacoes(page), 'cadastro · código do e-mail').toEqual([]);
+          await page.screenshot({ path: `../output/playwright/cadastro-codigo-${tema}-${testInfo.project.name}.png`, fullPage: true });
+        }
       }
     });
 
-    test('telas autenticadas não têm violações', async ({ page }) => {
-      await entrar(page, conta.email, conta.senha);
-      for (const rota of autenticadas) {
-        await page.goto(rota);
-        await page.waitForLoadState('networkidle');
-        expect(await violacoes(page), rota).toEqual([]);
-      }
-    });
+    test.describe('com dados do consultório', () => {
+      test.beforeAll(async ({ request }) => {
+        await garantirConta(request, conta);
+        await semearDadosBasicos(request, await loginApi(request, conta.email, conta.senha));
+      });
 
-    test('gavetas, diálogos e menus não têm violações', async ({ page }) => {
-      await entrar(page, conta.email, conta.senha);
+      test('telas autenticadas não têm violações', async ({ page }) => {
+        await entrar(page, conta.email, conta.senha);
+        for (const rota of autenticadas) {
+          await page.goto(rota);
+          await page.waitForLoadState('networkidle');
+          expect(await violacoes(page), rota).toEqual([]);
+        }
+      });
 
-      await page.goto('/pagamentos');
-      await page.getByRole('button', { name: 'Novo pagamento' }).first().click();
-      await expect(page.getByRole('dialog', { name: 'Novo pagamento' })).toBeVisible();
-      expect(await violacoes(page), 'gaveta de pagamento').toEqual([]);
-      await page.keyboard.press('Escape');
+      test('gavetas, diálogos e menus não têm violações', async ({ page }) => {
+        await entrar(page, conta.email, conta.senha);
 
-      await page.goto('/documentos');
-      await page.getByRole('button', { name: 'Novo documento' }).first().click();
-      await expect(page.getByRole('dialog', { name: 'Novo documento' })).toBeVisible();
-      expect(await violacoes(page), 'gaveta de documento').toEqual([]);
-      await page.keyboard.press('Escape');
+        await page.goto('/pagamentos');
+        await page.getByRole('button', { name: 'Nova cobrança' }).first().click();
+        await expect(page.getByRole('dialog', { name: 'Nova cobrança' })).toBeVisible();
+        expect(await violacoes(page), 'gaveta de pagamento').toEqual([]);
+        await page.keyboard.press('Escape');
 
-      await page.goto('/configuracoes/equipe');
-      await page.getByRole('button', { name: /Adicionar|Novo|Convidar/ }).first().click();
-      await expect(page.getByRole('dialog')).toBeVisible();
-      expect(await violacoes(page), 'gaveta de usuário').toEqual([]);
+        await page.goto('/documentos');
+        await page.getByRole('button', { name: 'Novo documento' }).first().click();
+        await expect(page.getByRole('dialog', { name: 'Novo documento' })).toBeVisible();
+        expect(await violacoes(page), 'gaveta de documento').toEqual([]);
+        await page.keyboard.press('Escape');
+
+        await page.goto('/configuracoes/equipe');
+        await page
+          .getByRole('button', { name: /Adicionar|Novo|Convidar/ })
+          .first()
+          .click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        expect(await violacoes(page), 'gaveta de usuário').toEqual([]);
+      });
     });
   });
 }

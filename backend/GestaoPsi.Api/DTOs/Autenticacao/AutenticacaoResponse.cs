@@ -9,4 +9,6 @@ public sealed record UsuarioAutenticadoResponse(
     Guid Id,
     string NomeCompleto,
     string Email,
-    string Perfil);
+    string Perfil,
+    IReadOnlyCollection<string> Permissoes,
+    string? NomeDoPerfil);

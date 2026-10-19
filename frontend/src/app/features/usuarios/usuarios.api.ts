@@ -1,7 +1,8 @@
 import { requisicaoApi } from '../../core/api/cliente-api';
 import { extrairDados, type RespostaApi } from '../../core/api/resposta-api';
 
-export type PerfilUsuario = 'Psicologo' | 'Recepcionista' | 'Paciente' | 'Administrador';
+export type PerfilUsuario =
+  'Psicologo' | 'Recepcionista' | 'Paciente' | 'Administrador' | 'Personalizado';
 export type StatusUsuario = 'Ativo' | 'Inativo' | 'Bloqueado' | 'Pendente';
 
 export interface Usuario {
@@ -12,6 +13,9 @@ export interface Usuario {
   perfil: PerfilUsuario;
   status: StatusUsuario;
   ultimoAcessoEm: string | null;
+  perfilAcessoId: string | null;
+  /** Nome do perfil criado pela conta, quando o perfil é personalizado. */
+  nomeDoPerfil: string | null;
 }
 
 export interface CriarUsuarioRequest {
@@ -19,7 +23,13 @@ export interface CriarUsuarioRequest {
   email: string;
   senha: string;
   telefone?: string | null;
-  perfil: 'Recepcionista' | 'Administrador';
+  perfil: 'Recepcionista' | 'Administrador' | 'Personalizado';
+  perfilAcessoId?: string | null;
+}
+
+export interface AlterarPerfilRequest {
+  perfil: 'Recepcionista' | 'Administrador' | 'Personalizado';
+  perfilAcessoId?: string | null;
 }
 
 export const usuariosKeys = {
@@ -33,7 +43,10 @@ export async function listarUsuarios({ signal }: { signal?: AbortSignal } = {}) 
 }
 
 export async function criarUsuario(request: CriarUsuarioRequest) {
-  const resposta = await requisicaoApi<RespostaApi<Usuario>>('/usuarios', { method: 'POST', body: request });
+  const resposta = await requisicaoApi<RespostaApi<Usuario>>('/usuarios', {
+    method: 'POST',
+    body: request,
+  });
   return extrairDados(resposta, 'Não foi possível criar o usuário.');
 }
 
@@ -45,7 +58,18 @@ export async function alterarStatusUsuario(id: string, status: StatusUsuario) {
   return extrairDados(resposta, 'Não foi possível atualizar o usuário.');
 }
 
-export async function atualizarUsuario(id: string, request: { nomeCompleto: string; telefone?: string | null }) {
+export async function alterarPerfilUsuario(id: string, request: AlterarPerfilRequest) {
+  const resposta = await requisicaoApi<RespostaApi<Usuario>>(`/usuarios/${id}/perfil`, {
+    method: 'PATCH',
+    body: request,
+  });
+  return extrairDados(resposta, 'Não foi possível alterar o perfil.');
+}
+
+export async function atualizarUsuario(
+  id: string,
+  request: { nomeCompleto: string; telefone?: string | null },
+) {
   const resposta = await requisicaoApi<RespostaApi<Usuario>>(`/usuarios/${id}`, {
     method: 'PUT',
     body: request,

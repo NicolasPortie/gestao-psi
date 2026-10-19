@@ -1,5 +1,6 @@
 import type { DescricaoEstado } from '../../core/dominio/estado';
-import { pluralizar } from '../../core/formatacao/texto';
+import { formatarHora, mesmoDia } from '../../core/formatacao/datas';
+import { capitalizar, pluralizar } from '../../core/formatacao/texto';
 import type { PainelResumo } from './painel.types';
 
 type Prioridade = PainelResumo['prioridades'][number];
@@ -60,4 +61,17 @@ export function situacoesDoDia(
     }
     return 'futura';
   });
+}
+
+const diaLongo = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+/** "agora", "em 25 minutos", "hoje às 14:00", "amanhã às 09:00", "segunda-feira, 19 de outubro às 09:00". */
+export function quandoSera(inicio: Date, fim: Date, agora: Date) {
+  if (inicio <= agora && fim > agora) return 'Em andamento';
+  const minutos = Math.round((inicio.getTime() - agora.getTime()) / 60_000);
+  if (minutos <= 60) return minutos <= 1 ? 'Começa agora' : `Em ${minutos} minutos`;
+  const amanha = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1);
+  if (mesmoDia(inicio, agora)) return `Hoje às ${formatarHora(inicio)}`;
+  if (mesmoDia(inicio, amanha)) return `Amanhã às ${formatarHora(inicio)}`;
+  return `${capitalizar(diaLongo.format(inicio))} às ${formatarHora(inicio)}`;
 }

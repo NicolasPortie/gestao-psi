@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState, type ChangeEvent } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
 import { Aviso } from '../../components/feedback/aviso';
@@ -29,8 +29,13 @@ const opcoesStatus = (Object.keys(estadosPaciente) as StatusPaciente[]).map((val
 
 function placeholderContato(tipo: TipoContatoPaciente): string {
   if (tipo === 'Email') return 'contato@exemplo.com.br';
-  if (tipo === 'Responsavel') return 'Nome e telefone do responsável';
   return '(00) 00000-0000';
+}
+
+function placeholderNome(tipo: TipoContatoPaciente): string {
+  if (tipo === 'Responsavel') return 'Nome do responsável (ex.: mãe, pai)';
+  if (tipo === 'Emergencia') return 'Quem chamar e parentesco';
+  return 'Nome (opcional)';
 }
 
 export default function FormularioPacientePage() {
@@ -59,6 +64,7 @@ export default function FormularioPacientePage() {
     defaultValues: valoresPadraoFormularioPaciente,
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'contatosAdicionais' });
+  const modoCobranca = useWatch({ control, name: 'modoCobranca' });
 
   useEffect(() => {
     if (detalheQuery.data) reset(pacienteParaFormulario(detalheQuery.data));
@@ -117,7 +123,7 @@ export default function FormularioPacientePage() {
           void handleSubmit((valores) => salvar.mutateAsync(valores).catch(() => undefined))(evento);
         }}
       >
-        <Secao titulo="Identificação">
+        <Secao titulo="Identificação" painel>
           <div className="grid gap-4 sm:grid-cols-2">
             <Campo rotulo="Nome completo" erro={errors.nomeCompleto?.message} className="sm:col-span-2">
               <Entrada autoComplete="off" placeholder="Ex.: Ana Luíza Silveira" {...register('nomeCompleto')} />
@@ -150,7 +156,7 @@ export default function FormularioPacientePage() {
           </div>
         </Secao>
 
-        <Secao titulo="Contato" regua>
+        <Secao titulo="Contato" painel>
           <div className="grid gap-4 sm:grid-cols-2">
             <Campo rotulo="WhatsApp" opcional erro={errors.whatsApp?.message}>
               <Entrada
@@ -178,21 +184,31 @@ export default function FormularioPacientePage() {
           </div>
         </Secao>
 
-        <Secao titulo="Contatos adicionais" regua descricao="Responsáveis, familiares ou outros números para falar com o paciente.">
+        <Secao
+          titulo="Responsáveis e contatos de emergência"
+          painel
+          descricao="Para menores de idade, cadastre o responsável legal. Para todos, vale ter alguém a quem chamar numa emergência."
+        >
           {fields.length > 0 ? (
             <ul className="grid gap-3">
               {fields.map((campo, indice) => (
-                <li key={campo.id} className="grid grid-cols-[1fr_auto] items-start gap-x-2 gap-y-2 sm:grid-cols-[9.5rem_minmax(0,1fr)_auto_auto]">
+                <li
+                  key={campo.id}
+                  className="grid grid-cols-[1fr_auto] items-start gap-x-2 gap-y-2 rounded-md border border-line p-3 sm:grid-cols-[11.5rem_minmax(0,1fr)_minmax(0,1fr)_auto_auto] sm:border-0 sm:p-0"
+                >
                   <Campo rotulo={`Tipo do contato ${indice + 1}`} rotuloOculto>
                     <Selecao opcoes={opcoesTipoContato} {...register(`contatosAdicionais.${indice}.tipoContato`)} />
                   </Campo>
-                  <Campo rotulo={`Valor do contato ${indice + 1}`} rotuloOculto className="col-span-2 sm:col-span-1">
+                  <Campo rotulo={`Nome do contato ${indice + 1}`} rotuloOculto erro={errors.contatosAdicionais?.[indice]?.nome?.message} className="col-span-2 sm:col-span-1">
+                    <Entrada autoComplete="off" placeholder={placeholderNome(campo.tipoContato)} {...register(`contatosAdicionais.${indice}.nome`)} />
+                  </Campo>
+                  <Campo rotulo={`Telefone ou e-mail do contato ${indice + 1}`} rotuloOculto className="col-span-2 sm:col-span-1">
                     <Entrada
                       placeholder={placeholderContato(campo.tipoContato)}
                       {...register(`contatosAdicionais.${indice}.valor`, {
                         onChange: (evento: ChangeEvent<HTMLInputElement>) => {
                           const tipo = getValues(`contatosAdicionais.${indice}.tipoContato`);
-                          if (tipo === 'Telefone' || tipo === 'WhatsApp') {
+                          if (tipo !== 'Email' && !/[a-z@]/i.test(evento.target.value)) {
                             setValue(`contatosAdicionais.${indice}.valor`, formatarTelefone(evento.target.value), { shouldDirty: true });
                           }
                         },
@@ -212,7 +228,7 @@ export default function FormularioPacientePage() {
           <Botao
             variante="secundario"
             className="w-fit"
-            onClick={() => append({ tipoContato: 'Telefone', valor: '', principal: false })}
+            onClick={() => append({ tipoContato: 'Responsavel', valor: '', nome: '', principal: false })}
             disabled={fields.length >= 10}
           >
             <Plus size={16} aria-hidden="true" />
@@ -220,7 +236,37 @@ export default function FormularioPacientePage() {
           </Botao>
         </Secao>
 
-        <Secao titulo="Observação administrativa" regua>
+        <Secao titulo="Combinado" painel descricao="Como o paciente paga e quanto. Usado para gerar as cobranças automaticamente.">
+          <div className="grid gap-4">
+            <Campo rotulo="Forma de cobrança" grupo>
+              <Controller
+                control={control}
+                name="modoCobranca"
+                render={({ field }) => (
+                  <GrupoSegmentado
+                    rotulo="Forma de cobrança"
+                    valor={field.value}
+                    aoMudar={field.onChange}
+                    opcoes={[
+                      { valor: 'PorSessao', rotulo: 'Por sessão' },
+                      { valor: 'Mensal', rotulo: 'Mensalidade' },
+                    ]}
+                  />
+                )}
+              />
+            </Campo>
+            <Campo
+              rotulo={modoCobranca === 'Mensal' ? 'Valor da mensalidade' : 'Valor da sessão'}
+              opcional
+              dica={modoCobranca === 'Mensal' ? 'Gerada no Financeiro, uma vez por mês; as sessões não são cobradas uma a uma.' : 'Cobrado quando a sessão é realizada, conforme as regras da agenda.'}
+              erro={errors.valorSessao?.message}
+            >
+              <Entrada type="number" inputMode="decimal" step="0.01" min="0" placeholder="0,00" className="sm:max-w-56" {...register('valorSessao')} />
+            </Campo>
+          </div>
+        </Secao>
+
+        <Secao titulo="Observação administrativa" painel>
           <Campo rotulo="Observação" rotuloOculto erro={errors.observacaoAdministrativa?.message}>
             <AreaTexto rows={4} maxLength={2000} placeholder="Notas internas sobre o cadastro (preferências de contato, combinados administrativos)." {...register('observacaoAdministrativa')} />
           </Campo>
@@ -228,7 +274,7 @@ export default function FormularioPacientePage() {
 
         {erroApi ? <Aviso tom="perigo">{erroApi}</Aviso> : null}
 
-        <div className="flex flex-col-reverse gap-2 border-t border-line pt-6 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <BotaoLink to={destinoCancelar} variante="secundario">
             Cancelar
           </BotaoLink>

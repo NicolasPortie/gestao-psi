@@ -13,7 +13,7 @@ public sealed class AutorizacaoContaService(AppDbContext dbContext) : IAutorizac
         Guid contaPsicologoId,
         CancellationToken cancellationToken)
     {
-        var usuario = await dbContext.Usuarios.SingleOrDefaultAsync(
+        var usuario = await dbContext.Usuarios.Include(item => item.PerfilAcesso).SingleOrDefaultAsync(
             item => item.Id == usuarioId &&
                     item.ContaPsicologoId == contaPsicologoId &&
                     item.Status == StatusUsuario.Ativo &&

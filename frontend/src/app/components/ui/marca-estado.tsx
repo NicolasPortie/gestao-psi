@@ -15,31 +15,31 @@ const corMarca = cva('shrink-0', {
   },
 });
 
-const corTexto: Record<TomEstado, string> = {
-  neutro: 'text-ink-muted',
-  acento: 'text-accent-ink',
-  sucesso: 'text-success-ink',
-  aviso: 'text-warning-ink',
-  perigo: 'text-danger-ink',
+const estiloPilula: Record<TomEstado, string> = {
+  neutro: 'bg-pressed text-ink-muted',
+  acento: 'bg-accent-wash text-accent-ink',
+  sucesso: 'bg-success-wash text-success-ink',
+  aviso: 'bg-warning-wash text-warning-ink',
+  perigo: 'bg-danger-wash text-danger-ink',
 };
 
 const TRACO = 1.5;
-const TESSELA = { x: 1.25, y: 1.25, width: 13.5, height: 13.5, rx: 2.25 } as const;
-const contraste = 'var(--marca-contraste, var(--paper))';
+const RAIO = 6.75;
+const contraste = 'var(--marca-contraste, var(--surface))';
 
-/** O azulejo vazio: o contorno em que todo estado se desenha. */
+/** O círculo vazio: o contorno em que todo estado se desenha. */
 function Contorno() {
-  return <rect {...TESSELA} fill="none" stroke="currentColor" strokeWidth={TRACO} />;
+  return <circle cx="8" cy="8" r={RAIO} fill="none" stroke="currentColor" strokeWidth={TRACO} />;
 }
 
-/** O azulejo cheio. */
+/** O círculo cheio. */
 function Cheio() {
-  return <rect {...TESSELA} fill="currentColor" />;
+  return <circle cx="8" cy="8" r={RAIO + TRACO / 2} fill="currentColor" />;
 }
 
 /**
- * Cada estado e o mesmo azulejo em um ponto do preenchimento: vazio, quarto de circulo, cheio.
- * Cancelado, remarcado e nao compareceu mantem o contorno (ou o cheio) e acrescentam um traco.
+ * Cada estado é o mesmo círculo em um ponto do preenchimento: vazio, metade, cheio, cheio com check.
+ * Cancelado, remarcado e não compareceu mantêm o contorno (ou o cheio) e acrescentam um traço.
  */
 function Forma({ forma }: { forma: FormaMarca }) {
   switch (forma) {
@@ -47,14 +47,14 @@ function Forma({ forma }: { forma: FormaMarca }) {
       return (
         <>
           <Contorno />
-          <path d="M1.25 14.75A13.5 13.5 0 0 1 14.75 1.25" fill="none" stroke="currentColor" strokeWidth={1.1} opacity={0.55} />
+          <circle cx="8" cy="8" r="1.75" fill="currentColor" opacity={0.55} />
         </>
       );
     case 'meio':
       return (
         <>
           <Contorno />
-          <path d="M14.75 14.75H6.5A8.25 8.25 0 0 1 14.75 6.5Z" fill="currentColor" />
+          <path d="M8 1.25A6.75 6.75 0 0 1 8 14.75Z" fill="currentColor" />
         </>
       );
     case 'cheio':
@@ -63,32 +63,32 @@ function Forma({ forma }: { forma: FormaMarca }) {
       return (
         <>
           <Cheio />
-          <path d="m4.6 8.2 2.3 2.3 4.5-5" fill="none" stroke={contraste} strokeWidth={TRACO} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="m5 8.2 2.1 2.1 4-4.4" fill="none" stroke={contraste} strokeWidth={TRACO} strokeLinecap="round" strokeLinejoin="round" />
         </>
       );
     case 'riscado':
       return (
         <>
           <Contorno />
-          <path d="m4 12 8-8" fill="none" stroke="currentColor" strokeWidth={TRACO} strokeLinecap="round" />
+          <path d="m4.2 11.8 7.6-7.6" fill="none" stroke="currentColor" strokeWidth={TRACO} strokeLinecap="round" />
         </>
       );
     case 'seta':
       return (
         <>
           <Contorno />
-          <path d="M4.6 8h6.3m-2.4-2.4L10.9 8l-2.4 2.4" fill="none" stroke="currentColor" strokeWidth={TRACO} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M4.9 8h5.8m-2.2-2.2L10.7 8l-2.2 2.2" fill="none" stroke="currentColor" strokeWidth={TRACO} strokeLinecap="round" strokeLinejoin="round" />
         </>
       );
     case 'x':
       return (
         <>
           <Cheio />
-          <path d="m5.5 5.5 5 5m0-5-5 5" fill="none" stroke={contraste} strokeWidth={TRACO} strokeLinecap="round" />
+          <path d="m5.7 5.7 4.6 4.6m0-4.6-4.6 4.6" fill="none" stroke={contraste} strokeWidth={TRACO} strokeLinecap="round" />
         </>
       );
     case 'ponto':
-      return <rect x="4.75" y="4.75" width="6.5" height="6.5" rx="1.5" fill="currentColor" />;
+      return <circle cx="8" cy="8" r="3.25" fill="currentColor" />;
   }
 }
 
@@ -101,7 +101,7 @@ interface MarcaEstadoProps {
   animar?: boolean;
 }
 
-/** Forma desenhada do estado: um azulejo em um ponto do preenchimento. Sempre decorativa: o texto acompanha. */
+/** Forma desenhada do estado: um círculo em um ponto do preenchimento. Sempre decorativa: o texto acompanha. */
 export function MarcaEstado({ forma, tom = 'neutro', tamanho = 16, className, animar = false }: MarcaEstadoProps) {
   return (
     <svg
@@ -125,12 +125,19 @@ interface EstadoRotuladoProps {
   animar?: boolean;
 }
 
-/** Marca + texto: a única forma de exibir um estado na interface. */
+/** Marca + texto numa pílula tingida pelo tom: a única forma de exibir um estado na interface. */
 export function EstadoRotulado({ estado, className, compacto = false, animar = false }: EstadoRotuladoProps) {
   return (
-    <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap', compacto ? 'text-xs' : 'text-sm', corTexto[estado.tom], className)}>
-      <MarcaEstado forma={estado.marca} tom={estado.tom} tamanho={compacto ? 14 : 16} animar={animar} />
-      <span className="font-medium">{estado.rotulo}</span>
+    <span
+      className={cn(
+        'inline-flex w-fit items-center whitespace-nowrap rounded-full font-medium',
+        compacto ? 'h-6 gap-1 pl-1.5 pr-2 text-xs' : 'h-7 gap-1.5 pl-2 pr-2.5 text-sm',
+        estiloPilula[estado.tom],
+        className,
+      )}
+    >
+      <MarcaEstado forma={estado.marca} tom={estado.tom} tamanho={compacto ? 12 : 14} animar={animar} />
+      <span>{estado.rotulo}</span>
     </span>
   );
 }

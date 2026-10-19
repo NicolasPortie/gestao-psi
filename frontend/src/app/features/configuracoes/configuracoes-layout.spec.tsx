@@ -20,8 +20,14 @@ function renderHub() {
   return within(screen.getByRole('navigation', { name: 'Seções de configurações' }));
 }
 
+const semGestao = ['Auditoria', 'Equipe', 'IntegracaoWhatsApp'];
 const permissoes = (acessoGestao: boolean) =>
-  ({ usuario: null, acessoClinico: acessoGestao, acessoGestao }) as ReturnType<typeof usePermissoes>;
+  ({
+    usuario: null,
+    acessoClinico: acessoGestao,
+    acessoGestao,
+    pode: (permissao: string) => acessoGestao || !semGestao.includes(permissao),
+  }) as unknown as ReturnType<typeof usePermissoes>;
 
 describe('ConfiguracoesLayout', () => {
   beforeEach(() => {
@@ -32,7 +38,15 @@ describe('ConfiguracoesLayout', () => {
     vi.mocked(usePermissoes).mockReturnValue(permissoes(true));
     const nav = renderHub();
 
-    for (const rotulo of ['Conta e segurança', 'Agenda', 'Dados profissionais', 'Equipe', 'Auditoria', 'Modelos de mensagem', 'Integração WhatsApp']) {
+    for (const rotulo of [
+      'Conta e segurança',
+      'Agenda',
+      'Dados profissionais',
+      'Equipe',
+      'Auditoria',
+      'Modelos de mensagem',
+      'Integração WhatsApp',
+    ]) {
       expect(nav.getByRole('link', { name: rotulo })).toBeVisible();
     }
   });
@@ -45,6 +59,27 @@ describe('ConfiguracoesLayout', () => {
     expect(nav.getByRole('link', { name: 'Agenda' })).toBeVisible();
     expect(nav.getByRole('link', { name: 'Modelos de mensagem' })).toBeVisible();
     for (const rotulo of ['Dados profissionais', 'Equipe', 'Auditoria', 'Integração WhatsApp']) {
+      expect(nav.queryByRole('link', { name: rotulo })).not.toBeInTheDocument();
+    }
+  });
+
+  it('perfil personalizado vê só as seções que o perfil concede', () => {
+    vi.mocked(usePermissoes).mockReturnValue({
+      usuario: null,
+      acessoClinico: false,
+      acessoGestao: false,
+      pode: (permissao) => permissao === 'Equipe',
+    });
+    const nav = renderHub();
+
+    expect(nav.getByRole('link', { name: 'Equipe' })).toBeVisible();
+    for (const rotulo of [
+      'Agenda',
+      'Auditoria',
+      'Modelos de mensagem',
+      'Integração WhatsApp',
+      'Dados profissionais',
+    ]) {
       expect(nav.queryByRole('link', { name: rotulo })).not.toBeInTheDocument();
     }
   });

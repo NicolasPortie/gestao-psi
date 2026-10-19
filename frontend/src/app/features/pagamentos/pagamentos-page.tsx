@@ -1,46 +1,68 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Plus, Wallet } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { CalendarRange, ChevronLeft, ChevronRight, Download, Plus, Wallet } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { EsqueletoLinhas } from '../../components/feedback/esqueleto';
 import { EstadoErro, EstadoVazio } from '../../components/feedback/estados';
 import { notificar } from '../../components/feedback/notificar';
 import { CabecalhoPagina, Pagina } from '../../components/layout/pagina';
 import { Botao } from '../../components/ui/botao';
-import { GrupoSegmentado } from '../../components/ui/campo';
+import { CampoBusca, GrupoSegmentado } from '../../components/ui/campo';
 import { Confirmacao } from '../../components/ui/dialogo';
-import { EstadoRotulado, MarcaEstado } from '../../components/ui/marca-estado';
 import { MenuAcoes } from '../../components/ui/menu';
+import { MarcaEstado } from '../../components/ui/marca-estado';
 import { Paginacao } from '../../components/ui/paginacao';
-import { CabecalhoTabela, CelulaTabela, ColunaTabela, LinhaTabela, Tabela } from '../../components/ui/tabela';
-import { descreverEstado, rotuloDe } from '../../core/dominio/estado';
 import { mensagemDeErro } from '../../core/erros/mensagem-de-erro';
+import { useDebounce } from '../../core/hooks/use-debounce';
 import { useParametrosUrl } from '../../core/hooks/use-parametros-url';
-import { formatarData } from '../../core/formatacao/datas';
+import { formatarMesAno, paraCampoData } from '../../core/formatacao/datas';
 import { formatarMoeda } from '../../core/formatacao/moeda';
-import { painelKeys } from '../painel/painel.api';
+import { capitalizar } from '../../core/formatacao/texto';
 import { GavetaPagamento } from './components/gaveta-pagamento';
-import { alterarStatusPagamento, listarPagamentos, pagamentosKeys, type Pagamento, type StatusPagamento } from './pagamentos.api';
-import { estadosPagamento, pagamentoEmAberto, rotulosFormaPagamento } from './pagamentos.rotulos';
+import { TabelaPagamentos } from './components/tabela-pagamentos';
+import { exportarRecebimentos, gerarMensalidades, listarPagamentos, pagamentosKeys, type ListarPagamentosFiltro } from './pagamentos.api';
+import { baixarRecebimentosCsv } from './pagamentos.exportacao';
+import { estadosPagamento, estadoVencido } from './pagamentos.rotulos';
 
-const statusValidos: StatusPagamento[] = ['Pendente', 'AguardandoConfirmacao', 'Pago', 'Reembolsado', 'Cancelado'];
+const filtrosEstado = ['Pendente', 'Vencidos', 'Pago', 'Reembolsado', 'Cancelado'] as const;
 const TAMANHO_PAGINA = 20;
 
-const mensagens: Partial<Record<StatusPagamento, string>> = {
-  Pago: 'Pagamento marcado como pago.',
-  Reembolsado: 'Pagamento reembolsado.',
-  Cancelado: 'Pagamento cancelado.',
-};
+/** "2026-10" para o mês de referência; vazio = mês atual; "todos" = sem recorte de período. */
+function lerMes(valor: string | null): Date | null {
+  if (valor === 'todos') return null;
+  const [ano, mes] = (valor ?? '').split('-').map(Number);
+  if (ano && mes && mes >= 1 && mes <= 12) return new Date(ano, mes - 1, 1);
+  const hoje = new Date();
+  return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+}
+
+const chaveMes = (data: Date) => `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
 
 export default function PagamentosPage() {
+  const { params, atualizar, lerOpcao, pagina } = useParametrosUrl();
   const queryClient = useQueryClient();
-  const { atualizar, lerOpcao, pagina } = useParametrosUrl();
   const [criando, setCriando] = useState(false);
-  const [pendente, setPendente] = useState<{ pagamento: Pagamento; status: 'Reembolsado' | 'Cancelado' } | null>(null);
+  const [confirmandoMensalidades, setConfirmandoMensalidades] = useState(false);
+  const [busca, setBusca] = useState(params.get('busca') ?? '');
+  const buscaAtrasada = useDebounce(busca);
 
-  const status = lerOpcao('status', statusValidos);
-  const filtro = { status, pagina, tamanhoPagina: TAMANHO_PAGINA };
+  useEffect(() => {
+    if ((params.get('busca') ?? '') !== buscaAtrasada) atualizar({ busca: buscaAtrasada || null, pagina: null });
+  }, [buscaAtrasada, params, atualizar]);
+
+  const estado = lerOpcao('estado', filtrosEstado);
+  const mes = lerMes(params.get('mes'));
+  const fimMes = mes ? new Date(mes.getFullYear(), mes.getMonth() + 1, 0) : null;
+
+  const filtro: ListarPagamentosFiltro = {
+    status: estado && estado !== 'Vencidos' ? estado : '',
+    vencidos: estado === 'Vencidos',
+    de: mes ? paraCampoData(mes) : undefined,
+    ate: fimMes ? paraCampoData(fimMes) : undefined,
+    busca: buscaAtrasada || undefined,
+    pagina,
+    tamanhoPagina: TAMANHO_PAGINA,
+  };
 
   const listaQuery = useQuery({
     queryKey: pagamentosKeys.lista(filtro),
@@ -48,64 +70,137 @@ export default function PagamentosPage() {
     placeholderData: keepPreviousData,
   });
 
-  const alterarStatus = useMutation({
-    mutationFn: ({ id, novoStatus }: { id: string; novoStatus: StatusPagamento }) =>
-      alterarStatusPagamento(id, novoStatus, novoStatus === 'Pago' ? new Date().toISOString() : null),
-    onSuccess: async (_pagamento, { novoStatus }) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: pagamentosKeys.todos }),
-        queryClient.invalidateQueries({ queryKey: painelKeys.todos }),
-      ]);
-      notificar.sucesso(mensagens[novoStatus] ?? 'Status atualizado.');
-      setPendente(null);
+  const { data, isPending, error, isFetching, isPlaceholderData, refetch } = listaQuery;
+  const resumo = data?.resumo;
+  const filtrado = estado !== '' || Boolean(buscaAtrasada);
+
+  function irParaMes(deslocamento: number) {
+    const base = mes ?? lerMes('')!;
+    atualizar({ mes: chaveMes(new Date(base.getFullYear(), base.getMonth() + deslocamento, 1)), pagina: null });
+  }
+
+  const mesReferencia = mes ?? lerMes('')!;
+  const rotuloMes = formatarMesAno(mesReferencia);
+
+  const mensalidades = useMutation({
+    mutationFn: () => gerarMensalidades(mesReferencia.getFullYear(), mesReferencia.getMonth() + 1),
+    onSuccess: async (resultado) => {
+      await queryClient.invalidateQueries({ queryKey: pagamentosKeys.todos });
+      setConfirmandoMensalidades(false);
+      if (resultado.criadas === 0 && resultado.semValor.length === 0) {
+        notificar.info(resultado.jaExistiam > 0 ? 'As mensalidades deste mês já tinham sido geradas.' : 'Nenhum paciente com cobrança mensal.');
+      } else {
+        notificar.sucesso(`${resultado.criadas} ${resultado.criadas === 1 ? 'mensalidade gerada' : 'mensalidades geradas'}.`);
+      }
+      if (resultado.semValor.length > 0) notificar.info(`Sem valor combinado: ${resultado.semValor.join(', ')}. Complete na ficha.`);
     },
     onError: (erro) => {
-      notificar.erro(mensagemDeErro(erro, 'Não foi possível atualizar o pagamento.'));
-      setPendente(null);
+      setConfirmandoMensalidades(false);
+      notificar.erro(mensagemDeErro(erro, 'Não foi possível gerar as mensalidades.'));
     },
   });
 
-  const { data, isPending, error, isFetching, isPlaceholderData, refetch } = listaQuery;
-  const resumo = data?.resumo;
-  const filtrado = status !== '';
+  const exportar = useMutation({
+    mutationFn: () => exportarRecebimentos(paraCampoData(mes ?? new Date(new Date().getFullYear() - 1, 0, 1)), paraCampoData(fimMes ?? new Date())),
+    onSuccess: (itens) => {
+      if (itens.length === 0) {
+        notificar.info('Nenhum recebimento no período.');
+        return;
+      }
+      baixarRecebimentosCsv(itens, mes ? `recebimentos-${chaveMes(mes)}.csv` : 'recebimentos.csv');
+      notificar.sucesso('Planilha baixada. A exportação ficou registrada na auditoria.');
+    },
+    onError: (erro) => notificar.erro(mensagemDeErro(erro, 'Não foi possível exportar os recebimentos.')),
+  });
+
+  const totais = resumo
+    ? [
+        { rotulo: 'Recebido', valor: resumo.recebido, estado: estadosPagamento.Pago },
+        { rotulo: 'A receber', valor: resumo.pendente, estado: estadosPagamento.Pendente },
+        { rotulo: 'Vencido', valor: resumo.vencido, estado: estadoVencido },
+      ]
+    : [];
 
   return (
     <Pagina largura="ampla" className="gap-6">
       <CabecalhoPagina
         titulo="Financeiro"
+        descricao="Cobranças das sessões e avulsas. Receba com um toque e emita o recibo quando o paciente pedir."
         acoes={
-          <Botao variante="primario" onClick={() => setCriando(true)}>
-            <Plus size={16} aria-hidden="true" />
-            Novo pagamento
-          </Botao>
-        }
-        meta={
-          resumo ? (
-            <ul className="flex flex-wrap gap-x-6 gap-y-1.5" aria-label="Totais">
-              {[
-                { rotulo: 'Recebido', valor: resumo.recebido, estado: estadosPagamento.Pago },
-                { rotulo: 'Pendente', valor: resumo.pendente, estado: estadosPagamento.Pendente },
-                { rotulo: 'Reembolsado', valor: resumo.reembolsado, estado: estadosPagamento.Reembolsado },
-              ].map(({ rotulo, valor, estado }) => (
-                <li key={rotulo} className="inline-flex items-center gap-2 text-base">
-                  <MarcaEstado forma={estado.marca} tom={estado.tom} />
-                  <span className="text-ink-muted">{rotulo}</span>
-                  <span className="num font-semibold text-ink">{formatarMoeda(valor)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : undefined
+          <>
+            <MenuAcoes
+              rotulo="Mais ações do financeiro"
+              itens={[
+                { rotulo: `Gerar mensalidades de ${rotuloMes}`, icone: <CalendarRange size={16} />, aoSelecionar: () => setConfirmandoMensalidades(true) },
+                {
+                  rotulo: mes ? `Exportar recebimentos de ${rotuloMes}` : 'Exportar recebimentos dos últimos meses',
+                  icone: <Download size={16} />,
+                  aoSelecionar: () => exportar.mutate(),
+                },
+              ]}
+            />
+            <Botao variante="primario" onClick={() => setCriando(true)}>
+              <Plus size={16} aria-hidden="true" />
+              Nova cobrança
+            </Botao>
+          </>
         }
       />
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Período">
+          {mes ? (
+            <>
+              <Botao variante="secundario" tamanho="icone" aria-label="Mês anterior" onClick={() => irParaMes(-1)}>
+                <ChevronLeft size={16} aria-hidden="true" />
+              </Botao>
+              <span className="num min-w-36 px-1 text-center text-base font-semibold text-ink sm:min-w-40 sm:px-2" aria-live="polite">
+                {capitalizar(formatarMesAno(mes))}
+              </span>
+              <Botao variante="secundario" tamanho="icone" aria-label="Próximo mês" onClick={() => irParaMes(1)}>
+                <ChevronRight size={16} aria-hidden="true" />
+              </Botao>
+              <Botao variante="discreto" tamanho="pequeno" className="ml-1" onClick={() => atualizar({ mes: 'todos', pagina: null })}>
+                Todo o período
+              </Botao>
+            </>
+          ) : (
+            <>
+              <span className="px-1 text-base font-semibold text-ink">Todo o período</span>
+              <Botao variante="discreto" tamanho="pequeno" onClick={() => atualizar({ mes: null, pagina: null })}>
+                Ver por mês
+              </Botao>
+            </>
+          )}
+        </div>
+        <div className="w-full sm:w-64">
+          <CampoBusca valor={busca} aoMudar={setBusca} placeholder="Buscar paciente" aria-label="Buscar paciente" />
+        </div>
+      </div>
+
+      {totais.length > 0 ? (
+        <dl className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3" aria-label="Totais do período">
+          {totais.map(({ rotulo, valor, estado: marca }) => (
+            <div key={rotulo} className="flex items-center justify-between gap-3 bg-surface px-4 py-2.5 sm:grid sm:content-start sm:justify-normal sm:gap-1 sm:px-5 sm:py-3.5">
+              <dt className="flex items-center gap-1.5 text-sm text-ink-muted">
+                <MarcaEstado forma={marca.marca} tom={marca.tom} tamanho={14} />
+                {rotulo}
+              </dt>
+              <dd className="num text-base font-semibold text-ink sm:text-xl">{formatarMoeda(valor)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+
       <GrupoSegmentado
         rotulo="Filtrar por estado"
-        valor={status}
-        aoMudar={(valor) => atualizar({ status: valor || null, pagina: null })}
+        valor={estado}
+        aoMudar={(valor) => atualizar({ estado: valor || null, pagina: null })}
         opcoes={[
           { valor: '', rotulo: 'Todos' },
-          { valor: 'Pendente', rotulo: 'Pendentes' },
-          { valor: 'Pago', rotulo: 'Pagos' },
+          { valor: 'Pendente', rotulo: 'A receber' },
+          { valor: 'Vencidos', rotulo: 'Vencidos' },
+          { valor: 'Pago', rotulo: 'Recebidos' },
           { valor: 'Reembolsado', rotulo: 'Reembolsados' },
           { valor: 'Cancelado', rotulo: 'Cancelados' },
         ]}
@@ -118,96 +213,29 @@ export default function PagamentosPage() {
       ) : data && data.itens.length === 0 ? (
         <EstadoVazio
           icone={Wallet}
-          titulo={filtrado ? 'Nenhum pagamento neste filtro' : 'Nenhum pagamento registrado'}
-          descricao={filtrado ? 'Escolha outro estado para ver os demais pagamentos.' : 'Registre cobranças avulsas ou crie o pagamento ao agendar uma consulta.'}
+          titulo={filtrado ? 'Nada neste filtro' : 'Nenhuma cobrança neste período'}
+          descricao={filtrado ? 'Mude o estado, a busca ou o mês para ver as demais cobranças.' : 'Registre cobranças avulsas ou crie a cobrança ao agendar uma consulta.'}
           acao={
             filtrado ? (
-              <Botao variante="secundario" onClick={() => atualizar({ status: null, pagina: null })}>
-                Ver todos
+              <Botao
+                variante="secundario"
+                onClick={() => {
+                  setBusca('');
+                  atualizar({ estado: null, busca: null, pagina: null });
+                }}
+              >
+                Limpar filtros
               </Botao>
             ) : (
               <Botao variante="secundario" onClick={() => setCriando(true)}>
-                Novo pagamento
+                Nova cobrança
               </Botao>
             )
           }
         />
       ) : data ? (
         <div aria-busy={isFetching} className={isPlaceholderData ? 'opacity-60 transition-opacity duration-150' : 'transition-opacity duration-150'}>
-          <Tabela rotulo="Pagamentos">
-            <CabecalhoTabela>
-              <tr>
-                <ColunaTabela>Paciente</ColunaTabela>
-                <ColunaTabela className="text-right">Valor</ColunaTabela>
-                <ColunaTabela ocultarAte="md">Forma</ColunaTabela>
-                <ColunaTabela ocultarAte="lg">Vencimento</ColunaTabela>
-                <ColunaTabela ocultarAte="lg">Pago em</ColunaTabela>
-                <ColunaTabela ocultarAte="sm">Estado</ColunaTabela>
-                <ColunaTabela className="w-px">
-                  <span className="sr-only">Ações</span>
-                </ColunaTabela>
-              </tr>
-            </CabecalhoTabela>
-            <tbody>
-              {data.itens.map((pagamento) => {
-                const estado = descreverEstado(estadosPagamento, pagamento.status);
-                const emAberto = pagamentoEmAberto(pagamento.status);
-                return (
-                  <LinhaTabela key={pagamento.id}>
-                    <CelulaTabela>
-                      <Link to={`/pacientes/${pagamento.pacienteId}`} className="font-medium text-ink no-underline hover:underline">
-                        {pagamento.paciente}
-                      </Link>
-                      <span className="mt-0.5 block sm:hidden">
-                        <EstadoRotulado estado={estado} compacto />
-                      </span>
-                      {pagamento.observacao ? <span className="block max-w-24 truncate text-sm text-ink-muted min-[400px]:max-w-32 sm:max-w-xs">{pagamento.observacao}</span> : null}
-                    </CelulaTabela>
-                    <CelulaTabela className="num whitespace-nowrap text-right font-semibold">{formatarMoeda(pagamento.valor)}</CelulaTabela>
-                    <CelulaTabela ocultarAte="md" className="text-ink-muted">
-                      {rotuloDe(rotulosFormaPagamento, pagamento.formaPagamento)}
-                    </CelulaTabela>
-                    <CelulaTabela ocultarAte="lg" className="num text-ink-muted">
-                      {formatarData(pagamento.vencimentoEm, '—')}
-                    </CelulaTabela>
-                    <CelulaTabela ocultarAte="lg" className="num text-ink-muted">
-                      {formatarData(pagamento.pagoEm, '—')}
-                    </CelulaTabela>
-                    <CelulaTabela ocultarAte="sm">
-                      <EstadoRotulado estado={estado} compacto />
-                    </CelulaTabela>
-                    <CelulaTabela className="whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {emAberto ? (
-                          <Botao
-                            variante="discreto"
-                            tamanho="pequeno"
-                            className="font-semibold text-accent-ink hover:bg-accent-wash hover:text-accent-ink max-sm:size-9 max-sm:px-0 max-sm:pointer-coarse:size-11"
-                            disabled={alterarStatus.isPending}
-                            onClick={() => alterarStatus.mutate({ id: pagamento.id, novoStatus: 'Pago' })}
-                            aria-label={`Marcar pago: ${pagamento.paciente}`}
-                          >
-                            <Check size={16} className="sm:hidden" aria-hidden="true" />
-                            <span className="max-sm:hidden">Marcar pago</span>
-                          </Botao>
-                        ) : null}
-                        {emAberto || pagamento.status === 'Pago' ? (
-                          <MenuAcoes
-                            rotulo={`Mais ações do pagamento de ${pagamento.paciente}`}
-                            itens={[
-                              ...(pagamento.status === 'Pago'
-                                ? [{ rotulo: 'Reembolsar…', aoSelecionar: () => setPendente({ pagamento, status: 'Reembolsado' as const }) }]
-                                : [{ rotulo: 'Cancelar pagamento…', perigo: true, aoSelecionar: () => setPendente({ pagamento, status: 'Cancelado' as const }) }]),
-                            ]}
-                          />
-                        ) : null}
-                      </div>
-                    </CelulaTabela>
-                  </LinhaTabela>
-                );
-              })}
-            </tbody>
-          </Tabela>
+          <TabelaPagamentos pagamentos={data.itens} />
           <Paginacao
             className="mt-2"
             pagina={data.pagina}
@@ -222,19 +250,13 @@ export default function PagamentosPage() {
       <GavetaPagamento aberto={criando} aoMudar={setCriando} />
 
       <Confirmacao
-        aberto={pendente !== null}
-        aoMudar={(aberto) => !aberto && setPendente(null)}
-        titulo={pendente?.status === 'Reembolsado' ? 'Reembolsar este pagamento?' : 'Cancelar este pagamento?'}
-        descricao={
-          pendente
-            ? `${formatarMoeda(pendente.pagamento.valor)} de ${pendente.pagamento.paciente} será marcado como ${pendente.status === 'Reembolsado' ? 'reembolsado' : 'cancelado'}.`
-            : ''
-        }
-        rotuloConfirmar={pendente?.status === 'Reembolsado' ? 'Reembolsar' : 'Cancelar pagamento'}
-        rotuloCancelar="Voltar"
-        perigoso={pendente?.status === 'Cancelado'}
-        carregando={alterarStatus.isPending}
-        aoConfirmar={() => pendente && alterarStatus.mutate({ id: pendente.pagamento.id, novoStatus: pendente.status })}
+        aberto={confirmandoMensalidades}
+        aoMudar={setConfirmandoMensalidades}
+        titulo={`Gerar mensalidades de ${rotuloMes}?`}
+        descricao="Cria uma cobrança para cada paciente ativo com cobrança mensal, com o valor combinado e vencimento no dia 10. Quem já tem a mensalidade do mês fica como está."
+        rotuloConfirmar="Gerar mensalidades"
+        carregando={mensalidades.isPending}
+        aoConfirmar={() => mensalidades.mutate()}
       />
     </Pagina>
   );

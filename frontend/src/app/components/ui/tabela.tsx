@@ -5,18 +5,20 @@ import { cn } from './cn';
 import { RegiaoRolavel } from './regiao-rolavel';
 
 /**
- * Primitivos de tabela regulada: colunas imóveis, linhas separadas por régua,
- * sem moldura externa. A rolagem horizontal é um último recurso; colunas
+ * Primitivos de tabela: um painel claro de cantos macios, cabeçalho em tom de linho e linhas
+ * separadas por régua. A rolagem horizontal é um último recurso; colunas
  * secundárias somem por breakpoint com `ocultarAte`. O rótulo oculto de uma
  * coluna (`sr-only`) fica contido na célula, senão vaza para fora do scroll.
  */
 export function Tabela({ rotulo, children, className }: { rotulo: string; children: ReactNode; className?: string }) {
   return (
-    <RegiaoRolavel rotulo={rotulo} className={cn('-mx-4 sm:mx-0', className)}>
-      <table aria-label={rotulo} className="animar-conteudo w-full min-w-full border-collapse text-left text-base">
-        {children}
-      </table>
-    </RegiaoRolavel>
+    <div className={cn('overflow-hidden rounded-lg border border-line bg-surface', className)}>
+      <RegiaoRolavel rotulo={rotulo}>
+        <table aria-label={rotulo} className="animar-conteudo w-full min-w-full border-collapse text-left text-base">
+          {children}
+        </table>
+      </RegiaoRolavel>
+    </div>
   );
 }
 
@@ -41,7 +43,7 @@ export function ColunaTabela({
     <th
       scope="col"
       className={cn(
-        'relative border-b border-line px-2 py-2 text-xs sm:px-3 font-medium text-ink-muted first:pl-4 last:pr-4 sm:first:pl-3 sm:last:pr-3',
+        'relative border-b border-line bg-rail/60 px-2 py-2.5 text-xs font-medium text-ink-muted first:pl-4 last:pr-4 sm:px-3 sm:first:pl-5 sm:last:pr-5',
         ocultarAte && ocultacao[ocultarAte],
         className,
       )}
@@ -77,7 +79,7 @@ export function CelulaTabela({
 }: TdHTMLAttributes<HTMLTableCellElement> & ColunaProps) {
   return (
     <td
-      className={cn('px-2 py-3 align-middle first:pl-4 last:pr-4 sm:px-3 sm:first:pl-3 sm:last:pr-3', ocultarAte && ocultacao[ocultarAte], className)}
+      className={cn('px-2 py-3.5 align-middle first:pl-4 last:pr-4 sm:px-3 sm:first:pl-5 sm:last:pr-5', ocultarAte && ocultacao[ocultarAte], className)}
       {...props}
     />
   );

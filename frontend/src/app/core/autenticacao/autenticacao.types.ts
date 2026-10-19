@@ -4,9 +4,8 @@ export interface LoginRequest {
 }
 
 export interface CriarContaRequest {
-  nomeCompleto: string;
+  tokenEmail: string;
   email: string;
-  crp: string;
   senha: string;
   aceitouTermos: boolean;
 }
@@ -16,6 +15,10 @@ export interface UsuarioAutenticado {
   nomeCompleto: string;
   email: string;
   perfil: string;
+  /** Lista enviada pelo servidor; ausente em sessões antigas. */
+  permissoes?: string[];
+  /** Nome do perfil de acesso criado pela conta, quando o perfil é personalizado. */
+  nomeDoPerfil?: string | null;
 }
 
 export interface AutenticacaoResponse {

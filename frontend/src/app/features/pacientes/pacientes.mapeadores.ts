@@ -22,12 +22,13 @@ export function pacienteParaFormulario(paciente: PacienteDetalhe): FormularioPac
     email: paciente.email ?? '',
     status: paciente.status,
     observacaoAdministrativa: paciente.observacaoAdministrativa ?? '',
+    valorSessao: paciente.valorSessao != null ? String(paciente.valorSessao) : '',
+    modoCobranca: paciente.modoCobranca ?? 'PorSessao',
     contatosAdicionais: (paciente.contatosAdicionais ?? []).map((contato) => ({
       tipoContato: contato.tipoContato,
       valor:
-        contato.tipoContato === 'Telefone' || contato.tipoContato === 'WhatsApp'
-          ? formatarTelefone(contato.valor)
-          : contato.valor,
+        contato.tipoContato === 'Email' || /[^\d]/.test(contato.valor) ? contato.valor : formatarTelefone(contato.valor),
+      nome: contato.nome ?? '',
       principal: contato.principal,
     })),
   };
@@ -42,12 +43,15 @@ export function formularioParaCriarRequest(valores: FormularioPacienteValores): 
     whatsApp: valorOpcional(valores.whatsApp),
     email: valorOpcional(valores.email),
     observacaoAdministrativa: valorOpcional(valores.observacaoAdministrativa),
+    valorSessao: valores.valorSessao.trim() ? Number(valores.valorSessao.trim().replace(',', '.')) : null,
+    modoCobranca: valores.modoCobranca,
     contatosAdicionais: valores.contatosAdicionais
       .filter((contato) => contato.valor.trim())
       .map((contato) => ({
         tipoContato: contato.tipoContato,
         valor: contato.valor.trim(),
         principal: contato.principal,
+        nome: valorOpcional(contato.nome),
       })),
   };
 }

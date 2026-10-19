@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarClock, CircleCheck, ExternalLink, FileHeart, UserRound, UserX, XCircle } from 'lucide-react';
+import { CalendarClock, CircleCheck, ExternalLink, FileHeart, FileText, Repeat, UserRound, UserX, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 
 import { CarregandoPagina } from '../../components/feedback/esqueleto';
 import { EstadoErro } from '../../components/feedback/estados';
@@ -9,6 +9,7 @@ import { notificar } from '../../components/feedback/notificar';
 import { CabecalhoPagina, Pagina, Secao } from '../../components/layout/pagina';
 import { Botao, BotaoLink } from '../../components/ui/botao';
 import { AreaTexto, Campo } from '../../components/ui/campo';
+import { Aviso } from '../../components/feedback/aviso';
 import { Confirmacao } from '../../components/ui/dialogo';
 import { Dado, Ficha, ItemLista, ListaRegulada } from '../../components/ui/lista';
 import { EstadoRotulado } from '../../components/ui/marca-estado';
@@ -16,15 +17,17 @@ import { MenuAcoes, type ItemMenu } from '../../components/ui/menu';
 import { usePermissoes } from '../../core/autenticacao/permissoes';
 import { descreverEstado, rotuloDe } from '../../core/dominio/estado';
 import { mensagemDeErro } from '../../core/erros/mensagem-de-erro';
-import { formatarDataHora, formatarDiaCompleto, formatarIntervaloHora } from '../../core/formatacao/datas';
+import { formatarData, formatarDataHora, formatarDiaCompleto, formatarHora, formatarIntervaloHora, paraCampoData, paraCampoHora } from '../../core/formatacao/datas';
 import { formatarMoeda } from '../../core/formatacao/moeda';
-import { capitalizar } from '../../core/formatacao/texto';
+import { capitalizar, pluralizar } from '../../core/formatacao/texto';
+import { criarDocumento } from '../documentos/documentos.api';
 import { lembretesKeys } from '../lembretes/lembretes.api';
+import { listaEsperaKeys, listarListaEspera } from '../lista-espera/lista-espera.api';
 import { estadosLembrete } from '../lembretes/lembretes.rotulos';
 import { pagamentosKeys } from '../pagamentos/pagamentos.api';
 import { estadosPagamento } from '../pagamentos/pagamentos.rotulos';
 import { painelKeys } from '../painel/painel.api';
-import { agendaKeys, alterarStatusConsulta, obterConsulta, obterConfiguracaoAgenda } from './agenda.api';
+import { agendaKeys, alterarStatusConsulta, cancelarSerieConsultas, obterConsulta, obterConfiguracaoAgenda } from './agenda.api';
 import { estadosConsulta, rotulosModalidade, rotulosOrigem } from './agenda.rotulos';
 import { DialogoRemarcar } from './components/dialogo-remarcar';
 import { HistoricoConsulta } from './components/historico-consulta';
@@ -40,7 +43,7 @@ const mensagensStatus: Partial<Record<StatusConsulta, string>> = {
   NaoCompareceu: 'Não comparecimento registrado.',
 };
 
-type AcaoPendente = 'cancelar' | 'nao-compareceu' | null;
+type AcaoPendente = 'cancelar' | 'cancelar-serie' | 'nao-compareceu' | null;
 
 export default function DetalheConsultaPage() {
   const { id = '' } = useParams();
@@ -57,6 +60,34 @@ export default function DetalheConsultaPage() {
     enabled: Boolean(id),
   });
   const configQuery = useQuery({ queryKey: agendaKeys.configuracao(), queryFn: ({ signal }) => obterConfiguracaoAgenda({ signal }) });
+  const navigate = useNavigate();
+  const filtroEspera = { status: 'Aguardando' as const, pagina: 1, tamanhoPagina: 5 };
+  const consultaCarregada = consultaQuery.data;
+  const vagaLiberada =
+    consultaCarregada?.status === 'Cancelada' && new Date(consultaCarregada.inicioEm) > new Date();
+  const esperaQuery = useQuery({
+    queryKey: listaEsperaKeys.lista(filtroEspera),
+    queryFn: ({ signal }) => listarListaEspera(filtroEspera, { signal }),
+    enabled: vagaLiberada,
+  });
+
+  const declarar = useMutation({
+    mutationFn: () => {
+      const consulta = consultaQuery.data!;
+      return criarDocumento({
+        pacienteId: consulta.pacienteId,
+        tipo: 'Declaracao',
+        titulo: 'Declaração de comparecimento',
+        finalidade: 'Comprovar comparecimento a atendimento',
+        conteudo: `Declaro, para os devidos fins, que ${consulta.paciente} compareceu a atendimento psicológico no dia ${formatarData(consulta.inicioEm)}, das ${formatarHora(consulta.inicioEm)} às ${formatarHora(consulta.fimEm)}.`,
+      });
+    },
+    onSuccess: async (documento) => {
+      notificar.sucesso('Declaração criada como rascunho. Revise e finalize.');
+      await navigate(`/documentos/${documento.id}`);
+    },
+    onError: (erro) => notificar.erro(mensagemDeErro(erro, 'Não foi possível criar a declaração.')),
+  });
 
   const alterarStatus = useMutation({
     mutationFn: ({ status, motivo }: { status: StatusConsulta; motivo?: string }) =>
@@ -76,6 +107,20 @@ export default function DetalheConsultaPage() {
       if (acaoPendente) setErroAcao(mensagem);
       else notificar.erro(mensagem);
     },
+  });
+
+  const cancelarSerie = useMutation({
+    mutationFn: () => cancelarSerieConsultas(id, justificativa.trim() || null),
+    onSuccess: async ({ canceladas }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: agendaKeys.todos }),
+        queryClient.invalidateQueries({ queryKey: painelKeys.todos }),
+        queryClient.invalidateQueries({ queryKey: lembretesKeys.todos }),
+      ]);
+      notificar.sucesso(`${pluralizar(canceladas, 'consulta cancelada', 'consultas canceladas')}.`);
+      fecharAcao();
+    },
+    onError: (erro) => setErroAcao(mensagemDeErro(erro, 'Não foi possível cancelar as consultas da série.')),
   });
 
   function fecharAcao() {
@@ -106,20 +151,29 @@ export default function DetalheConsultaPage() {
   const exigeJustificativa = configQuery.data?.exigeJustificativaCancelamento ?? false;
   const urlSessaoOnline = consulta.linkOnline && /^https?:\/\//i.test(consulta.linkOnline) ? consulta.linkOnline : null;
   const linkProntuario = `/pacientes/${consulta.pacienteId}/prontuario?consultaId=${consulta.id}`;
+  // Sessão que já passou e ficou sem desfecho: o que importa agora é dizer se aconteceu.
+  const passou = new Date(consulta.fimEm) <= new Date();
+  const proximasNaSerie = consulta.proximasNaSerie ?? 0;
 
   const acoesSecundarias: ItemMenu[] = [
     ...(!finalizada
       ? [
           { rotulo: 'Remarcar…', icone: <CalendarClock size={16} />, aoSelecionar: () => setRemarcando(true) },
-          ...(consulta.status !== 'Confirmada'
+          ...(consulta.status !== 'Confirmada' && !passou
             ? [{ rotulo: 'Marcar como realizada', icone: <CircleCheck size={16} />, aoSelecionar: () => alterarStatus.mutate({ status: 'Realizada' }) }]
             : []),
-          { rotulo: 'Registrar não comparecimento…', icone: <UserX size={16} />, aoSelecionar: () => setAcaoPendente('nao-compareceu') },
+          ...(passou ? [] : [{ rotulo: 'Registrar não comparecimento…', icone: <UserX size={16} />, aoSelecionar: () => setAcaoPendente('nao-compareceu') }]),
           { rotulo: 'Cancelar consulta…', icone: <XCircle size={16} />, perigo: true, separador: true, aoSelecionar: () => setAcaoPendente('cancelar') },
+          ...(consulta.serieId && proximasNaSerie > 0
+            ? [{ rotulo: 'Cancelar esta e as próximas…', icone: <Repeat size={16} />, perigo: true, aoSelecionar: () => setAcaoPendente('cancelar-serie') }]
+            : []),
         ]
       : []),
     { rotulo: 'Abrir cadastro do paciente', icone: <UserRound size={16} />, para: `/pacientes/${consulta.pacienteId}`, separador: !finalizada },
     ...(acessoClinico ? [{ rotulo: 'Registrar sessão', icone: <FileHeart size={16} />, para: linkProntuario }] : []),
+    ...(acessoClinico && consulta.status === 'Realizada'
+      ? [{ rotulo: 'Declaração de comparecimento', icone: <FileText size={16} />, aoSelecionar: () => declarar.mutate() }]
+      : []),
   ];
 
   return (
@@ -133,18 +187,31 @@ export default function DetalheConsultaPage() {
               {capitalizar(formatarDiaCompleto(consulta.inicioEm))} ·{' '}
               <span className="num">{formatarIntervaloHora(consulta.inicioEm, consulta.fimEm)}</span>
             </span>
-            <EstadoRotulado estado={estado} key={consulta.status} animar />
+            <span className="flex flex-wrap items-center gap-2">
+              <EstadoRotulado estado={estado} key={consulta.status} animar />
+              {consulta.serieId ? (
+                <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-pressed px-2.5 text-sm text-ink-muted">
+                  <Repeat size={14} aria-hidden="true" />
+                  {proximasNaSerie > 0 ? `Série · mais ${pluralizar(proximasNaSerie, 'consulta')}` : 'Série · última consulta'}
+                </span>
+              ) : null}
+            </span>
           </span>
         }
         acoes={
           <>
             <MenuAcoes itens={acoesSecundarias} rotulo="Mais ações da consulta" gatilho={<Botao variante="secundario">Mais ações</Botao>} />
-            {!finalizada && consulta.status !== 'Confirmada' ? (
+            {!finalizada && passou ? (
+              <Botao variante="secundario" onClick={() => setAcaoPendente('nao-compareceu')}>
+                Faltou
+              </Botao>
+            ) : null}
+            {!finalizada && !passou && consulta.status !== 'Confirmada' ? (
               <Botao variante="primario" carregando={alterarStatus.isPending} onClick={() => alterarStatus.mutate({ status: 'Confirmada' })}>
                 Confirmar consulta
               </Botao>
             ) : null}
-            {!finalizada && consulta.status === 'Confirmada' ? (
+            {!finalizada && (passou || consulta.status === 'Confirmada') ? (
               <Botao variante="primario" carregando={alterarStatus.isPending} onClick={() => alterarStatus.mutate({ status: 'Realizada' })}>
                 Marcar como realizada
               </Botao>
@@ -158,9 +225,26 @@ export default function DetalheConsultaPage() {
         }
       />
 
+      {vagaLiberada && (esperaQuery.data?.total ?? 0) > 0 ? (
+        <Aviso
+          tom="info"
+          acao={
+            <BotaoLink
+              to={`/lista-espera?vaga=${paraCampoData(new Date(consulta.inicioEm))}T${paraCampoHora(new Date(consulta.inicioEm))}`}
+              variante="secundario"
+              tamanho="pequeno"
+            >
+              Ver lista de espera
+            </BotaoLink>
+          }
+        >
+          O horário ficou livre e {esperaQuery.data?.total === 1 ? '1 pessoa aguarda' : `${esperaQuery.data?.total} pessoas aguardam`} na lista de espera.
+        </Aviso>
+      ) : null}
+
       <div className="grid gap-x-14 gap-y-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="grid content-start gap-10">
-          <Secao titulo="Detalhes">
+          <Secao titulo="Detalhes" painel>
             <Ficha>
               <Dado rotulo="Tipo de atendimento">{consulta.tipoAtendimento}</Dado>
               <Dado rotulo="Modalidade">{rotuloDe(rotulosModalidade, consulta.modalidade)}</Dado>
@@ -187,7 +271,7 @@ export default function DetalheConsultaPage() {
             </Ficha>
           </Secao>
 
-          <Secao titulo="Histórico" regua>
+          <Secao titulo="Histórico" painel>
             <HistoricoConsulta itens={consulta.historico ?? []} />
           </Secao>
         </div>
@@ -260,6 +344,31 @@ export default function DetalheConsultaPage() {
         aoConfirmar={() => alterarStatus.mutate({ status: 'NaoCompareceu' })}
       >
         {erroAcao ? <p role="alert" className="text-sm text-danger-ink">{erroAcao}</p> : null}
+      </Confirmacao>
+
+      <Confirmacao
+        aberto={acaoPendente === 'cancelar-serie'}
+        aoMudar={(aberto) => !aberto && fecharAcao()}
+        titulo="Cancelar esta e as próximas?"
+        descricao={`Esta consulta e as próximas ${pluralizar(proximasNaSerie, 'consulta')} em aberto da série de ${consulta.paciente} serão canceladas. As anteriores ficam como estão.`}
+        rotuloConfirmar="Cancelar consultas"
+        rotuloCancelar="Manter"
+        perigoso
+        carregando={cancelarSerie.isPending}
+        aoConfirmar={() => {
+          if (exigeJustificativa && !justificativa.trim()) {
+            setErroAcao('Informe a justificativa do cancelamento.');
+            return;
+          }
+          cancelarSerie.mutate();
+        }}
+      >
+        <div className="grid gap-3">
+          <Campo rotulo="Justificativa" opcional={!exigeJustificativa} dica="Por exemplo: alta, pausa no acompanhamento, mudança de horário.">
+            <AreaTexto rows={3} value={justificativa} onChange={(evento) => setJustificativa(evento.target.value)} />
+          </Campo>
+          {erroAcao ? <p role="alert" className="text-sm text-danger-ink">{erroAcao}</p> : null}
+        </div>
       </Confirmacao>
 
       <DialogoRemarcar consulta={consulta} aberto={remarcando} aoMudar={setRemarcando} />

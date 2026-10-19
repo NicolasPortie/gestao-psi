@@ -13,6 +13,21 @@ namespace GestaoPsi.Api.Tests;
 public sealed class DocumentosServiceTests
 {
     [Fact]
+    public async Task FinalizarAsync_SemIdentificacao_RecusaSemCriarVersaoMasPermiteRascunho()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        contexto.RemoveRange(contexto.DadosProfissionaisPsicologo);
+        await contexto.SaveChangesAsync();
+        var service = CriarService(contexto, new AuditoriaCaptura());
+        var rascunho = await service.CriarAsync(cenario.UsuarioId, cenario.ContaId, new() { PacienteId = cenario.PacienteId, Tipo = TipoDocumentoPsicologico.Declaracao, Titulo = "Declaração", Conteudo = "Comparecimento ao atendimento." }, null, null, CancellationToken.None);
+        var erro = await Assert.ThrowsAsync<RegraNegocioException>(() => service.FinalizarAsync(cenario.UsuarioId, cenario.ContaId, rascunho.Id, null, null, CancellationToken.None));
+        Assert.Equal(409, erro.StatusCode);
+        Assert.Empty(contexto.VersoesDocumentoProntuario);
+        Assert.Equal(StatusDocumentoProntuario.Rascunho, (await contexto.DocumentosProntuario.SingleAsync()).Status);
+    }
+
+    [Fact]
     public async Task CriarAsync_DeveProtegerConteudoERegistrarAuditoria()
     {
         await using var contexto = CriarContexto();
@@ -166,6 +181,7 @@ public sealed class DocumentosServiceTests
         var usuarioId = Guid.NewGuid();
         var pacienteId = Guid.NewGuid();
         contexto.AddRange(
+            new DadosProfissionaisPsicologo { Id = Guid.NewGuid(), ContaPsicologoId = contaId, UsuarioId = usuarioId, NomeProfissional = "Psicologa", Crp = "protegido:06123456", CrpHash = "hash:06123456" },
             new ContaPsicologo
             {
                 Id = contaId,

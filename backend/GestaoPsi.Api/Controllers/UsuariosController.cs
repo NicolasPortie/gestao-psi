@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.Usuarios;
 using GestaoPsi.Api.Services.Usuarios;
 using GestaoPsi.Api.Shared.Respostas;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoConta")]
+[Authorize(Policy = Politicas.Equipe)]
 [Route("api/v1/usuarios")]
 public sealed class UsuariosController(IUsuariosService usuariosService) : ControllerAutenticadoBase
 {
@@ -19,6 +20,9 @@ public sealed class UsuariosController(IUsuariosService usuariosService) : Contr
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Atualizar(Guid id, AtualizarUsuarioRequest request, CancellationToken ct) => Ok(RespostaApi<UsuarioResponse>.ComSucesso(await usuariosService.AtualizarAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, request, ObterIp(), ObterUserAgent(), ct)));
+
+    [HttpPatch("{id:guid}/perfil")]
+    public async Task<IActionResult> AlterarPerfil(Guid id, AlterarPerfilUsuarioRequest request, CancellationToken ct) => Ok(RespostaApi<UsuarioResponse>.ComSucesso(await usuariosService.AlterarPerfilAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, request, ObterIp(), ObterUserAgent(), ct)));
 
     [HttpPost("{id:guid}/redefinir-senha")]
     public async Task<IActionResult> RedefinirSenha(Guid id, RedefinirSenhaUsuarioRequest request, CancellationToken ct)

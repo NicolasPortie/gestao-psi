@@ -19,6 +19,59 @@ namespace GestaoPsi.Api.Tests;
 public sealed class LembretesServiceTests
 {
     [Fact]
+    public async Task ProcessarVencidos_EncerraLembreteDeConsultaQueJaComecou()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        cenario.Consulta.InicioEm = DateTimeOffset.UtcNow.AddHours(-2);
+        cenario.Consulta.FimEm = DateTimeOffset.UtcNow.AddHours(-1);
+        var lembrete = new Lembrete
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = cenario.ContaId,
+            ConsultaId = cenario.Consulta.Id,
+            PacienteId = cenario.Paciente.Id,
+            Canal = CanalComunicacao.Email,
+            Tipo = TipoLembrete.LembreteConsulta,
+            Status = StatusLembrete.Agendado,
+            AgendadoPara = DateTimeOffset.UtcNow.AddDays(-1),
+            Mensagem = "Atrasado"
+        };
+        contexto.Add(lembrete);
+        await contexto.SaveChangesAsync();
+
+        var processados = await CriarLembretesService(contexto).ProcessarVencidosAsync(CancellationToken.None);
+
+        Assert.Equal(1, processados);
+        var salvo = await contexto.Lembretes.SingleAsync(x => x.Id == lembrete.Id);
+        Assert.Equal(StatusLembrete.Ignorado, salvo.Status);
+    }
+
+    [Fact]
+    public async Task ProcessarVencidos_NaoRepegaLembreteJaTentadoNoMesmoCiclo()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        contexto.Add(new Lembrete
+        {
+            Id = Guid.NewGuid(),
+            ContaPsicologoId = cenario.ContaId,
+            ConsultaId = cenario.Consulta.Id,
+            PacienteId = cenario.Paciente.Id,
+            Canal = CanalComunicacao.Sistema,
+            Tipo = TipoLembrete.LembreteConsulta,
+            Status = StatusLembrete.Agendado,
+            AgendadoPara = DateTimeOffset.UtcNow.AddMinutes(-5),
+            Mensagem = "Interno"
+        });
+        await contexto.SaveChangesAsync();
+        var service = CriarLembretesService(contexto);
+
+        Assert.Equal(1, await service.ProcessarVencidosAsync(CancellationToken.None));
+        Assert.Equal(0, await service.ProcessarVencidosAsync(CancellationToken.None));
+    }
+
+    [Fact]
     public async Task Listar_DeveIsolarLembretesPorConta()
     {
         await using var contexto = CriarContexto();

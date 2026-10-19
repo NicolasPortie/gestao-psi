@@ -11,6 +11,16 @@ namespace GestaoPsi.Api.Controllers;
 [Route("api/v1/dados-profissionais")]
 public sealed class DadosProfissionaisController(IDadosProfissionaisService dadosService) : ControllerAutenticadoBase
 {
+    [HttpGet("situacao")]
+    public async Task<IActionResult> Situacao(CancellationToken ct) => Ok(RespostaApi<SituacaoPerfilProfissionalResponse>.ComSucesso(await dadosService.ObterSituacaoAsync(ObterUsuarioId(), ObterContaPsicologoId(), ct)));
+
+    [HttpPost("adiar")]
+    public async Task<IActionResult> Adiar(CancellationToken ct)
+    {
+        await dadosService.AdiarAsync(ObterUsuarioId(), ObterContaPsicologoId(), ct);
+        return NoContent();
+    }
+
     [HttpGet]
     public async Task<IActionResult> Obter(CancellationToken ct)
     {

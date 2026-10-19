@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.ModelosMensagem;
 using GestaoPsi.Api.Services.ModelosMensagem;
 using GestaoPsi.Api.Shared.Respostas;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoAdministrativa")]
+[Authorize(Policy = Politicas.Mensagens)]
 [Route("api/v1/modelos-mensagem")]
 public sealed class ModelosMensagemController(IModelosMensagemService modelosMensagemService) : ControllerAutenticadoBase
 {

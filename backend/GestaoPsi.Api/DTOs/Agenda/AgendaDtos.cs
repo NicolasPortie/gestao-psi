@@ -15,7 +15,9 @@ public sealed record ConfiguracaoAtendimentoResponse(
     bool ProgramarLembreteAoCriarConsulta,
     bool ProgramarLembreteAoConfirmar,
     int AntecedenciaLembreteHoras,
-    CanalComunicacao CanalLembretePadrao);
+    CanalComunicacao CanalLembretePadrao,
+    bool CobrarAoRealizar = true,
+    bool CobrarFalta = false);
 
 public sealed class AtualizarConfiguracaoAtendimentoRequest
 {
@@ -31,6 +33,8 @@ public sealed class AtualizarConfiguracaoAtendimentoRequest
     public bool ProgramarLembreteAoConfirmar { get; init; } = true;
     [Range(0, 720)] public int AntecedenciaLembreteHoras { get; init; } = 24;
     public CanalComunicacao CanalLembretePadrao { get; init; } = CanalComunicacao.Email;
+    public bool CobrarAoRealizar { get; init; } = true;
+    public bool CobrarFalta { get; init; }
 }
 
 public sealed record TipoAtendimentoResponse(

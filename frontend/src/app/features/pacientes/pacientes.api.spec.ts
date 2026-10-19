@@ -78,6 +78,8 @@ describe('pacientes.api', () => {
         whatsApp: null,
         email: null,
         observacaoAdministrativa: null,
+        valorSessao: null,
+        modoCobranca: 'PorSessao',
         contatosAdicionais: [],
       }),
     ).rejects.toEqual(

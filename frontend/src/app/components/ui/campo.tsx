@@ -233,12 +233,14 @@ interface GrupoSegmentadoProps<Valor extends string | number> {
   aoMudar: (valor: Valor) => void;
   opcoes: ReadonlyArray<{ valor: Valor; rotulo: string; contagem?: number }>;
   tamanho?: 'pequeno' | 'medio';
+  /** Em espaços estreitos (diálogos), as opções quebram linha em vez de rolar. */
+  quebrar?: boolean;
   className?: string;
 }
 
 /**
- * Escolha única em células conectadas, como uma linha de respostas de escala.
- * A opção marcada ganha uma bolha preenchida; navegação por setas é a nativa do radio.
+ * Escolha única num trilho em pílula: a opção marcada sobe como uma pastilha clara sobre o trilho.
+ * Navegação por setas é a nativa do radio.
  */
 export function GrupoSegmentado<Valor extends string | number>({
   rotulo,
@@ -246,6 +248,7 @@ export function GrupoSegmentado<Valor extends string | number>({
   aoMudar,
   opcoes,
   tamanho = 'medio',
+  quebrar = false,
   className,
 }: GrupoSegmentadoProps<Valor>) {
   const nome = useId();
@@ -253,10 +256,10 @@ export function GrupoSegmentado<Valor extends string | number>({
     <div
       role="radiogroup"
       aria-label={rotulo}
-      className={cn('sem-barra -mx-px flex max-w-full overflow-x-auto', className)}
+      className={cn('sem-barra flex max-w-full overflow-x-auto', className)}
     >
-      <div className="inline-flex rounded-md border border-line-strong bg-field">
-        {opcoes.map((opcao, indice) => (
+      <div className={cn('gap-0.5 bg-pressed p-1', quebrar ? 'flex flex-wrap rounded-2xl' : 'inline-flex rounded-full')}>
+        {opcoes.map((opcao) => (
           <label key={String(opcao.valor)} className="relative cursor-pointer">
             <input
               type="radio"
@@ -264,30 +267,24 @@ export function GrupoSegmentado<Valor extends string | number>({
               value={String(opcao.valor)}
               checked={opcao.valor === valor}
               onChange={() => aoMudar(opcao.valor)}
+              aria-label={opcao.contagem !== undefined ? `${opcao.rotulo} (${opcao.contagem})` : opcao.rotulo}
               className="peer sr-only"
             />
             <span
               className={cn(
-                'flex items-center gap-2 whitespace-nowrap px-3 font-medium text-ink-muted',
-                'transition-[background-color,color] duration-150 ease-out',
-                'hover:bg-hover peer-checked:bg-accent-wash peer-checked:text-accent-ink',
+                'flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 font-medium text-ink-muted',
+                'transition-[background-color,color,box-shadow] duration-150 ease-out',
+                'hover:text-ink peer-checked:bg-surface peer-checked:text-ink peer-checked:shadow-ring',
                 'peer-focus-visible:outline-2 peer-focus-visible:-outline-offset-2 peer-focus-visible:outline-focus',
-                tamanho === 'pequeno' ? 'h-8 text-sm pointer-coarse:h-10' : 'h-9 text-base pointer-coarse:h-11',
-                indice === 0 && 'rounded-l-[calc(var(--radius-md)-1px)]',
-                indice === opcoes.length - 1 && 'rounded-r-[calc(var(--radius-md)-1px)]',
-                indice > 0 && 'border-l border-line',
-                'group',
+                tamanho === 'pequeno' ? 'h-7 text-sm pointer-coarse:h-9' : 'h-8 text-sm pointer-coarse:h-10',
               )}
             >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'size-2.5 rounded-full border border-current transition-[background-color] duration-150',
-                  opcao.valor === valor && 'bg-current',
-                )}
-              />
               {opcao.rotulo}
-              {opcao.contagem !== undefined ? <span className="num text-xs font-normal">{opcao.contagem}</span> : null}
+              {opcao.contagem !== undefined ? (
+                <span className="num min-w-5 rounded-full bg-hover px-1.5 text-center text-xs font-normal leading-5 text-ink-muted">
+                  {opcao.contagem}
+                </span>
+              ) : null}
             </span>
           </label>
         ))}

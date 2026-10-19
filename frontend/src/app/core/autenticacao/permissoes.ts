@@ -1,3 +1,4 @@
+import { permissoesDoPerfil, type PermissaoAcesso } from '../dominio/permissao-acesso';
 import { useSessao } from './autenticacao.service';
 
 function normalizar(perfil: string | undefined) {
@@ -5,7 +6,7 @@ function normalizar(perfil: string | undefined) {
 }
 
 /**
- * Permissões derivadas do perfil, usadas somente para decidir o que mostrar.
+ * Permissões usadas somente para decidir o que mostrar.
  * A autorização real acontece no backend: ocultar um elemento nunca protege dados.
  */
 export function usePermissoes() {
@@ -13,9 +14,11 @@ export function usePermissoes() {
   const usuario = sessao.status === 'autenticado' ? sessao.usuario : null;
   const perfil = normalizar(usuario?.perfil);
   const acessoClinico = perfil === 'psicologo';
+  const concedidas = new Set<string>(usuario?.permissoes ?? permissoesDoPerfil(usuario?.perfil));
   return {
     usuario,
     acessoClinico,
     acessoGestao: acessoClinico || perfil === 'administrador',
+    pode: (permissao: PermissaoAcesso) => concedidas.has(permissao),
   };
 }

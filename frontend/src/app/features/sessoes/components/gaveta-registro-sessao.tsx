@@ -1,19 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Aviso } from '../../../components/feedback/aviso';
 import { notificar } from '../../../components/feedback/notificar';
 import { Botao } from '../../../components/ui/botao';
-import { AreaTexto, Campo, Selecao } from '../../../components/ui/campo';
+import { AreaTexto, Campo, GrupoSegmentado, Selecao } from '../../../components/ui/campo';
 import { Gaveta } from '../../../components/ui/dialogo';
 import { descreverEstado } from '../../../core/dominio/estado';
 import { mensagemDeErro } from '../../../core/erros/mensagem-de-erro';
 import { adicionarDias, formatarDataHora, inicioDoDia } from '../../../core/formatacao/datas';
 import { agendaKeys, listarConsultas, obterConsulta } from '../../agenda/agenda.api';
 import { estadosConsulta } from '../../agenda/agenda.rotulos';
+import { roteirosRegistro, type Roteiro } from '../prontuario.dados';
 import { criarRegistroSessao, sessoesKeys } from '../sessoes.api';
 
 const schema = z.object({
@@ -42,11 +43,23 @@ export function GavetaRegistroSessao({ pacienteId, consultaInicialId, aberto, ao
     handleSubmit,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<Formulario>({
     resolver: zodResolver(schema),
     defaultValues: { consultaId: consultaInicialId, observacoesClinicas: '', evolucao: '', encaminhamentos: '' },
   });
+
+  const [roteiro, setRoteiro] = useState<Roteiro>('livre');
+
+  /** Aplica o roteiro só nos campos vazios: o que já foi escrito nunca é apagado. */
+  function aplicarRoteiro(proximo: Roteiro) {
+    setRoteiro(proximo);
+    const modelo = roteirosRegistro[proximo];
+    if (!getValues('observacoesClinicas').trim() || Object.values(roteirosRegistro).some((r) => r.observacoes === getValues('observacoesClinicas')))
+      setValue('observacoesClinicas', modelo.observacoes);
+    if (!getValues('evolucao').trim() || Object.values(roteirosRegistro).some((r) => r.evolucao === getValues('evolucao'))) setValue('evolucao', modelo.evolucao);
+  }
 
   const periodo = useMemo(() => {
     const hoje = inicioDoDia();
@@ -92,6 +105,8 @@ export function GavetaRegistroSessao({ pacienteId, consultaInicialId, aberto, ao
         queryClient.invalidateQueries({ queryKey: agendaKeys.todos }),
       ]);
       notificar.sucesso('Registro de sessão criado.');
+      setRoteiro('livre');
+      await queryClient.invalidateQueries({ queryKey: ['pagamentos'] });
       aoMudar(false);
     },
   });
@@ -108,7 +123,10 @@ export function GavetaRegistroSessao({ pacienteId, consultaInicialId, aberto, ao
   return (
     <Gaveta
       aberto={aberto}
-      aoMudar={aoMudar}
+      aoMudar={(proximo) => {
+        if (!proximo) setRoteiro('livre');
+        aoMudar(proximo);
+      }}
       largura="34rem"
       titulo="Registrar sessão"
       descricao="Anotações clínicas da sessão realizada. Ficam restritas ao psicólogo."
@@ -141,6 +159,15 @@ export function GavetaRegistroSessao({ pacienteId, consultaInicialId, aberto, ao
               rotulo: `${formatarDataHora(consulta.inicioEm)} · ${consulta.tipoAtendimento} · ${descreverEstado(estadosConsulta, consulta.status).rotulo}`,
             }))}
             {...register('consultaId')}
+          />
+        </Campo>
+        <Campo rotulo="Roteiro" grupo dica="Preenche os campos vazios com tópicos; o texto que você já escreveu fica como está.">
+          <GrupoSegmentado
+            rotulo="Roteiro"
+            tamanho="pequeno"
+            valor={roteiro}
+            aoMudar={aplicarRoteiro}
+            opcoes={(Object.keys(roteirosRegistro) as Roteiro[]).map((valor) => ({ valor, rotulo: roteirosRegistro[valor].rotulo }))}
           />
         </Campo>
         <Campo rotulo="Observações clínicas" opcional>

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
@@ -28,13 +28,17 @@ interface DialogoRemarcarProps {
   consulta: Consulta;
   aberto: boolean;
   aoMudar: (aberto: boolean) => void;
+  /** Data e hora já escolhidas (ao arrastar na agenda). */
+  sugestao?: { data: string; hora: string } | null;
+  /** Depois de remarcar, abrir a nova consulta (padrão) ou ficar onde está. */
+  abrirNovaConsulta?: boolean;
 }
 
 /**
  * Remarcar cria uma nova consulta e mantém esta no histórico como "Remarcada".
  * Disponibilidade, bloqueios, conflitos e prazo mínimo são decididos pelo backend.
  */
-export function DialogoRemarcar({ consulta, aberto, aoMudar }: DialogoRemarcarProps) {
+export function DialogoRemarcar({ consulta, aberto, aoMudar, sugestao = null, abrirNovaConsulta = true }: DialogoRemarcarProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [erroApi, setErroApi] = useState('');
@@ -47,6 +51,10 @@ export function DialogoRemarcar({ consulta, aberto, aoMudar }: DialogoRemarcarPr
     reset,
     formState: { errors },
   } = useForm<Formulario>({ resolver: zodResolver(schema), defaultValues: { data: '', hora: '', justificativa: '' } });
+
+  useEffect(() => {
+    if (aberto && sugestao) reset({ data: sugestao.data, hora: sugestao.hora, justificativa: '' });
+  }, [aberto, sugestao, reset]);
 
   const data = useWatch({ control, name: 'data' });
   const hora = useWatch({ control, name: 'hora' });
@@ -71,7 +79,7 @@ export function DialogoRemarcar({ consulta, aberto, aoMudar }: DialogoRemarcarPr
       notificar.sucesso('Consulta remarcada.');
       aoMudar(false);
       reset();
-      await navigate(`/consultas/${nova.id}`);
+      if (abrirNovaConsulta) await navigate(`/consultas/${nova.id}`);
     },
     onError: (erro) => setErroApi(mensagemDeErro(erro, 'Não foi possível remarcar a consulta.')),
   });

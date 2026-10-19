@@ -17,8 +17,14 @@ import { EstadoRotulado } from '../../components/ui/marca-estado';
 import { descreverEstado } from '../../core/dominio/estado';
 import { mensagemDeErro } from '../../core/erros/mensagem-de-erro';
 import { formatarDataHora } from '../../core/formatacao/datas';
-import { listarEventosBridge, obterIntegracaoWhatsApp, salvarIntegracaoWhatsApp, testarConexaoWhatsApp, whatsappKeys } from './whatsapp.api';
-import { estadosIntegracao } from './whatsapp.rotulos';
+import {
+  listarEventosBridge,
+  obterIntegracaoWhatsApp,
+  salvarIntegracaoWhatsApp,
+  testarConexaoWhatsApp,
+  whatsappKeys,
+} from './whatsapp.api';
+import { estadosIntegracao, rotuloEvento } from './whatsapp.rotulos';
 
 const schema = z.object({
   nome: z.string().trim().min(2, 'Informe um nome para a integração.'),
@@ -30,14 +36,27 @@ const schema = z.object({
 });
 type Formulario = z.infer<typeof schema>;
 
-const iniciais: Formulario = { nome: 'WhatsApp Bridge', provedor: 'Bridge', urlBaseBridge: '', token: '', numeroWhatsApp: '', ativo: true };
+const iniciais: Formulario = {
+  nome: 'WhatsApp Bridge',
+  provedor: 'Bridge',
+  urlBaseBridge: '',
+  token: '',
+  numeroWhatsApp: '',
+  ativo: true,
+};
 
 export default function WhatsAppIntegracaoPage() {
   const queryClient = useQueryClient();
   const [erroApi, setErroApi] = useState('');
 
-  const integracaoQuery = useQuery({ queryKey: whatsappKeys.integracao(), queryFn: ({ signal }) => obterIntegracaoWhatsApp({ signal }) });
-  const eventosQuery = useQuery({ queryKey: whatsappKeys.eventos(), queryFn: ({ signal }) => listarEventosBridge({ signal }) });
+  const integracaoQuery = useQuery({
+    queryKey: whatsappKeys.integracao(),
+    queryFn: ({ signal }) => obterIntegracaoWhatsApp({ signal }),
+  });
+  const eventosQuery = useQuery({
+    queryKey: whatsappKeys.eventos(),
+    queryFn: ({ signal }) => listarEventosBridge({ signal }),
+  });
 
   const {
     register,
@@ -90,16 +109,23 @@ export default function WhatsAppIntegracaoPage() {
 
   if (integracaoQuery.isPending) return <CarregandoPagina rotulo="Carregando a integração…" />;
   if (integracaoQuery.error && integracaoQuery.data === undefined) {
-    return <EstadoErro titulo="Integração indisponível" mensagem={mensagemDeErro(integracaoQuery.error, 'Tente novamente em instantes.')} aoTentarNovamente={() => void integracaoQuery.refetch()} />;
+    return (
+      <EstadoErro
+        titulo="Integração indisponível"
+        mensagem={mensagemDeErro(integracaoQuery.error, 'Tente novamente em instantes.')}
+        aoTentarNovamente={() => void integracaoQuery.refetch()}
+      />
+    );
   }
 
   const eventos = (eventosQuery.data ?? []).slice(0, 15);
+  const eventosComErro = eventos.filter((evento) => evento.erroProcessamento);
 
   return (
     <Pagina largura="padrao">
       <CabecalhoPagina
         titulo="Integração WhatsApp"
-        descricao="Conecte o Bridge para receber e responder mensagens administrativas. A API nunca devolve o token completo."
+        descricao="Conecte o número do consultório para o assistente responder dúvidas de agenda e a equipe conversar com os pacientes."
         acoes={
           <BotaoLink to="/conversas" variante="secundario">
             <MessagesSquare size={16} aria-hidden="true" />
@@ -109,33 +135,86 @@ export default function WhatsAppIntegracaoPage() {
       />
 
       <div className="grid gap-x-14 gap-y-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <form className="grid content-start gap-10" noValidate onSubmit={(evento) => void handleSubmit((valores) => salvar.mutate(valores))(evento)}>
-          <Secao titulo="Conexão" descricao={integracao ? undefined : 'Nenhuma integração configurada ainda. Preencha os dados do Bridge para começar.'}>
+        <form
+          className="grid content-start gap-10"
+          noValidate
+          onSubmit={(evento) => void handleSubmit((valores) => salvar.mutate(valores))(evento)}
+        >
+          <Secao
+            titulo="Conexão"
+            descricao={
+              integracao
+                ? undefined
+                : 'Nenhum número conectado ainda. Preencha os dados abaixo para começar.'
+            }
+          >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Campo rotulo="Nome" erro={errors.nome?.message}>
-                <Entrada {...register('nome')} />
+              <Campo
+                rotulo="Número do WhatsApp"
+                dica="Com código do país e DDD, só números."
+                erro={errors.numeroWhatsApp?.message}
+              >
+                <Entrada
+                  inputMode="tel"
+                  placeholder="5511999999999"
+                  {...register('numeroWhatsApp')}
+                />
               </Campo>
-              <Campo rotulo="Provedor" erro={errors.provedor?.message}>
-                <Entrada {...register('provedor')} />
-              </Campo>
-              <Campo rotulo="Endereço do Bridge" erro={errors.urlBaseBridge?.message} className="sm:col-span-2">
-                <Entrada type="url" inputMode="url" placeholder="https://" {...register('urlBaseBridge')} />
-              </Campo>
-              <Campo rotulo="Número do WhatsApp" erro={errors.numeroWhatsApp?.message}>
-                <Entrada inputMode="tel" placeholder="5511999999999" {...register('numeroWhatsApp')} />
-              </Campo>
-              <Campo rotulo="Token de acesso" dica={integracao ? 'Em branco, mantém o token atual.' : undefined}>
+              <Campo
+                rotulo="Chave de acesso"
+                dica={integracao ? 'Deixe em branco para manter a chave atual.' : undefined}
+              >
                 <Entrada type="password" autoComplete="new-password" {...register('token')} />
               </Campo>
+              <Campo
+                rotulo="Endereço do serviço de conexão"
+                dica="Endereço do Bridge, informado por quem configurou o WhatsApp."
+                erro={errors.urlBaseBridge?.message}
+                className="sm:col-span-2"
+              >
+                <Entrada
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://"
+                  {...register('urlBaseBridge')}
+                />
+              </Campo>
             </div>
-            <OpcaoMarcavel tipo="interruptor" rotulo="Integração ativa" descricao="Desativada, o Bridge não recebe nem envia mensagens." {...register('ativo')} />
+            <details open={errors.nome || errors.provedor ? true : undefined}>
+              <summary className="cursor-pointer text-sm font-medium text-accent-ink">
+                Opções avançadas
+              </summary>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <Campo rotulo="Nome da conexão" erro={errors.nome?.message}>
+                  <Entrada {...register('nome')} />
+                </Campo>
+                <Campo rotulo="Provedor" erro={errors.provedor?.message}>
+                  <Entrada {...register('provedor')} />
+                </Campo>
+              </div>
+            </details>
+            <OpcaoMarcavel
+              tipo="interruptor"
+              rotulo="Atendimento pelo WhatsApp ativo"
+              descricao="Desativado, o consultório não recebe nem envia mensagens por este número."
+              {...register('ativo')}
+            />
             {erroApi ? <Aviso tom="perigo">{erroApi}</Aviso> : null}
             <div className="flex flex-wrap gap-2">
-              <Botao type="submit" variante="primario" carregando={salvar.isPending} disabled={Boolean(integracao) && !isDirty}>
+              <Botao
+                type="submit"
+                variante="primario"
+                carregando={salvar.isPending}
+                disabled={Boolean(integracao) && !isDirty}
+              >
                 Salvar integração
               </Botao>
               {integracao ? (
-                <Botao variante="secundario" carregando={testar.isPending} onClick={() => testar.mutate()}>
+                <Botao
+                  variante="secundario"
+                  carregando={testar.isPending}
+                  onClick={() => testar.mutate()}
+                >
                   <PlugZap size={16} aria-hidden="true" />
                   Testar conexão
                 </Botao>
@@ -146,16 +225,18 @@ export default function WhatsAppIntegracaoPage() {
 
         <aside className="grid content-start gap-10">
           {integracao ? (
-            <Secao titulo="Estado atual">
+            <Secao titulo="Situação" painel>
               <Ficha colunas={1}>
                 <Dado rotulo="Situação">
                   <EstadoRotulado estado={descreverEstado(estadosIntegracao, integracao.status)} />
                 </Dado>
-                <Dado rotulo="Token">
+                <Dado rotulo="Chave de acesso">
                   <span className="num">{integracao.tokenMascarado}</span>
                 </Dado>
-                <Dado rotulo="Último teste de conexão">
-                  <span className="num">{formatarDataHora(integracao.ultimaConexaoTestadaEm, 'Nunca testado')}</span>
+                <Dado rotulo="Última verificação">
+                  <span className="num">
+                    {formatarDataHora(integracao.ultimaConexaoTestadaEm, 'Ainda não verificada')}
+                  </span>
                 </Dado>
                 {integracao.ultimoErro ? (
                   <Dado rotulo="Último erro">
@@ -166,27 +247,71 @@ export default function WhatsAppIntegracaoPage() {
             </Secao>
           ) : null}
 
-          <Secao titulo="Eventos recentes">
-            {eventos.length === 0 ? (
-              <p className="text-base text-ink-muted">Nenhum evento recebido do Bridge.</p>
-            ) : (
-              <ListaRegulada>
-                {eventos.map((evento) => (
-                  <ItemLista key={evento.id} className="py-3">
-                    <p className="flex items-center justify-between gap-2 text-base">
-                      <span className="truncate font-medium text-ink">{evento.tipoEvento}</span>
-                      <EstadoRotulado
-                        compacto
-                        estado={evento.erroProcessamento ? { rotulo: 'Erro', tom: 'perigo', marca: 'x' } : evento.processado ? { rotulo: 'Processado', tom: 'sucesso', marca: 'check' } : { rotulo: 'Pendente', tom: 'aviso', marca: 'meio' }}
-                      />
-                    </p>
-                    <p className="num text-xs text-ink-muted">{formatarDataHora(evento.criadoEm)}</p>
-                    {evento.erroProcessamento ? <p className="text-xs text-danger-ink">{evento.erroProcessamento}</p> : null}
-                  </ItemLista>
-                ))}
-              </ListaRegulada>
-            )}
-          </Secao>
+          {integracao ? (
+            <Secao titulo="Atividade do WhatsApp">
+              {eventosQuery.isPending ? (
+                <p className="text-base text-ink-muted">Carregando…</p>
+              ) : eventos.length === 0 ? (
+                <p className="text-base text-ink-muted">
+                  Nenhuma mensagem chegou ainda. Quando chegarem, o resumo aparece aqui.
+                </p>
+              ) : (
+                <div className="grid gap-3">
+                  <p className="text-base text-ink">
+                    {eventosComErro.length === 0
+                      ? 'As últimas mensagens foram processadas sem problemas.'
+                      : eventosComErro.length === 1
+                        ? '1 das últimas mensagens não foi processada.'
+                        : `${eventosComErro.length} das últimas mensagens não foram processadas.`}
+                  </p>
+                  {eventosComErro.length > 0 ? (
+                    <ListaRegulada>
+                      {eventosComErro.map((evento) => (
+                        <ItemLista key={evento.id} className="py-3">
+                          <p className="text-base font-medium text-ink">
+                            {rotuloEvento(evento.tipoEvento)}
+                          </p>
+                          <p className="num text-xs text-ink-muted">
+                            {formatarDataHora(evento.criadoEm)}
+                          </p>
+                          <p className="text-sm text-danger-ink">{evento.erroProcessamento}</p>
+                        </ItemLista>
+                      ))}
+                    </ListaRegulada>
+                  ) : null}
+                  <details>
+                    <summary className="cursor-pointer text-sm font-medium text-accent-ink">
+                      Ver as últimas {eventos.length}
+                    </summary>
+                    <ListaRegulada className="mt-2">
+                      {eventos.map((evento) => (
+                        <ItemLista key={evento.id} className="py-3">
+                          <p className="flex items-center justify-between gap-2 text-base">
+                            <span className="truncate text-ink">
+                              {rotuloEvento(evento.tipoEvento)}
+                            </span>
+                            <EstadoRotulado
+                              compacto
+                              estado={
+                                evento.erroProcessamento
+                                  ? { rotulo: 'Com erro', tom: 'perigo', marca: 'x' }
+                                  : evento.processado
+                                    ? { rotulo: 'Processada', tom: 'sucesso', marca: 'check' }
+                                    : { rotulo: 'Em espera', tom: 'aviso', marca: 'meio' }
+                              }
+                            />
+                          </p>
+                          <p className="num text-xs text-ink-muted">
+                            {formatarDataHora(evento.criadoEm)}
+                          </p>
+                        </ItemLista>
+                      ))}
+                    </ListaRegulada>
+                  </details>
+                </div>
+              )}
+            </Secao>
+          ) : null}
         </aside>
       </div>
     </Pagina>

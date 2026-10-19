@@ -35,7 +35,7 @@ interface GavetaPagamentoProps {
   aoMudar: (aberto: boolean) => void;
 }
 
-/** Cobrança avulsa. Cobranças de consulta nascem na própria consulta ("Criar pagamento pendente"). */
+/** Cobrança avulsa. Cobranças de consulta nascem na própria consulta (ao agendar ou ao realizar a sessão). */
 export function GavetaPagamento({ aberto, aoMudar }: GavetaPagamentoProps) {
   const queryClient = useQueryClient();
   const [erroApi, setErroApi] = useState('');
@@ -61,7 +61,7 @@ export function GavetaPagamento({ aberto, aoMudar }: GavetaPagamentoProps) {
         queryClient.invalidateQueries({ queryKey: pagamentosKeys.todos }),
         queryClient.invalidateQueries({ queryKey: painelKeys.todos }),
       ]);
-      notificar.sucesso('Pagamento registrado.');
+      notificar.sucesso('Cobrança registrada.');
       reset(iniciais);
       aoMudar(false);
     },
@@ -80,7 +80,7 @@ export function GavetaPagamento({ aberto, aoMudar }: GavetaPagamentoProps) {
     <Gaveta
       aberto={aberto}
       aoMudar={alterarAbertura}
-      titulo="Novo pagamento"
+      titulo="Nova cobrança"
       descricao="Registre uma cobrança avulsa para um paciente."
       rodape={
         <>

@@ -11,6 +11,7 @@ public class Usuario : EntidadeDaConta
     public int VersaoAutenticacao { get; set; }
     public string? Telefone { get; set; }
     public PerfilUsuario Perfil { get; set; }
+    public Guid? PerfilAcessoId { get; set; }
     public StatusUsuario Status { get; set; } = StatusUsuario.Ativo;
     public DateTimeOffset? TermosAceitosEm { get; set; }
     public string? VersaoTermosAceitos { get; set; }
@@ -18,6 +19,7 @@ public class Usuario : EntidadeDaConta
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? AtualizadoEm { get; set; }
 
+    public PerfilAcesso? PerfilAcesso { get; set; }
     public DadosProfissionaisPsicologo? DadosProfissionaisPsicologo { get; set; }
     public Paciente? Paciente { get; set; }
     public ICollection<HistoricoConsulta> HistoricosConsulta { get; set; } = [];

@@ -17,20 +17,38 @@ namespace GestaoPsi.Api.Tests;
 public sealed class AutenticacaoServiceTests
 {
     [Fact]
+    public async Task CriarConta_SemEmailConfirmado_NaoCriaContaNemUsuario()
+    {
+        await using var contexto = CriarContexto();
+        var service = CriarService(contexto, new EstadoAutenticacaoFake(), new ProtecaoDadosFake(), new PasswordHasher<Usuario>());
+        var erro = await Assert.ThrowsAsync<RegraNegocioException>(() => service.CriarContaAsync(new()
+        {
+            Email = "ana@exemplo.com", Senha = "senha-segura", AceitouTermos = true,
+        }, "127.0.0.1", CancellationToken.None));
+        Assert.Equal(422, erro.StatusCode);
+        Assert.Empty(contexto.ContasPsicologo);
+        Assert.Empty(contexto.Usuarios);
+    }
+
+    [Fact]
     public async Task CriarConta_DevePersistirEstruturaEProtegerCredenciais()
     {
         await using var contexto = CriarContexto();
         var estado = new EstadoAutenticacaoFake();
         var protecao = new ProtecaoDadosFake();
         var passwordHasher = new PasswordHasher<Usuario>();
-        var service = CriarService(contexto, estado, protecao, passwordHasher);
+        var email = new EmailTransacionalFake();
+        var confirmacao = new ConfirmacaoEmailCadastroService(new EstadoConfirmacaoEmailMemoria(), estado, protecao, email);
+        var envio = await confirmacao.SolicitarAsync(new() { Email = "ana@exemplo.com" }, "127.0.0.1", CancellationToken.None);
+        var codigo = System.Text.RegularExpressions.Regex.Match(email.CorpoRecebido!, @"\b\d{6}\b").Value;
+        var comprovante = await confirmacao.ConfirmarAsync(new() { Email = "ana@exemplo.com", Identificador = envio.Identificador, Codigo = codigo }, CancellationToken.None);
+        var service = CriarService(contexto, estado, protecao, passwordHasher, email, confirmacao);
 
         var resposta = await service.CriarContaAsync(
             new CriarContaRequest
             {
-                NomeCompleto = "Dra. Ana Souza",
+                TokenEmail = comprovante.TokenEmail,
                 Email = "ANA@EXEMPLO.COM",
-                Crp = "06/123456",
                 Senha = "senha-segura",
                 AceitouTermos = true
             },
@@ -38,7 +56,7 @@ public sealed class AutenticacaoServiceTests
             CancellationToken.None);
 
         var usuario = await contexto.Usuarios.SingleAsync();
-        var dados = await contexto.DadosProfissionaisPsicologo.SingleAsync();
+        Assert.Empty(contexto.DadosProfissionaisPsicologo);
 
         Assert.Equal("ana@exemplo.com", usuario.Email);
         Assert.NotEqual("senha-segura", usuario.SenhaHash);
@@ -48,8 +66,8 @@ public sealed class AutenticacaoServiceTests
                 usuario,
                 usuario.SenhaHash,
                 "senha-segura"));
-        Assert.Equal("protegido:06/123456", dados.Crp);
-        Assert.Equal("hash:06/123456", dados.CrpHash);
+        Assert.Empty(usuario.NomeCompleto);
+        Assert.Empty((await contexto.ContasPsicologo.SingleAsync()).NomeConta);
         Assert.Single(contexto.ConfiguracoesAtendimento);
         Assert.Single(contexto.ConfiguracoesSegurancaConta);
         Assert.Single(contexto.LogsAuditoria);
@@ -330,7 +348,8 @@ public sealed class AutenticacaoServiceTests
         EstadoAutenticacaoFake estado,
         IProtecaoDadosService protecao,
         IPasswordHasher<Usuario> passwordHasher,
-        IEmailTransacionalService? email = null) =>
+        IEmailTransacionalService? email = null,
+        IConfirmacaoEmailCadastroService? confirmacao = null) =>
         new(
             contexto,
             passwordHasher,
@@ -350,7 +369,8 @@ public sealed class AutenticacaoServiceTests
                 MaximoCadastrosPorHora = 5,
                 DuracaoTokenRecuperacaoMinutos = 30,
                 VersaoTermosUso = "1.0"
-            }));
+            }),
+            confirmacao ?? new ConfirmacaoEmailCadastroService(new EstadoConfirmacaoEmailMemoria(), estado, protecao, email ?? new EmailTransacionalFake()));
 
     private static async Task<Usuario> AdicionarUsuarioAsync(
         AppDbContext contexto,
@@ -399,6 +419,7 @@ public sealed class AutenticacaoServiceTests
 
     private sealed class EmailTransacionalFake : IEmailTransacionalService
     {
+        public string? CorpoRecebido { get; private set; }
         public string? TokenRecebido { get; private set; }
 
         public Task<bool> EnviarRecuperacaoSenhaAsync(
@@ -416,8 +437,11 @@ public sealed class AutenticacaoServiceTests
             string nomeDestinatario,
             string assunto,
             string corpo,
-            CancellationToken cancellationToken) =>
-            Task.FromResult(true);
+            CancellationToken cancellationToken)
+        {
+            CorpoRecebido = corpo;
+            return Task.FromResult(true);
+        }
     }
 
     private sealed class EstadoAutenticacaoFake : IEstadoAutenticacao

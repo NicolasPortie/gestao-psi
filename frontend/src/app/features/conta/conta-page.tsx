@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { Aviso } from '../../components/feedback/aviso';
 import { notificar } from '../../components/feedback/notificar';
 import { CabecalhoPagina, Pagina, Secao } from '../../components/layout/pagina';
+import { PrivacidadeTela } from './privacidade-tela';
 import { Botao } from '../../components/ui/botao';
 import { Campo, Entrada } from '../../components/ui/campo';
 import { Dado, Ficha } from '../../components/ui/lista';
@@ -54,10 +55,10 @@ export default function ContaPage() {
     <Pagina largura="estreita" className="gap-10">
       <CabecalhoPagina titulo="Conta e segurança" descricao="Seus dados de acesso e a senha da sua conta." />
 
-      <Secao titulo="Acesso">
+      <Secao titulo="Acesso" painel>
         <Ficha colunas={2}>
           <Dado rotulo="Nome">{usuario?.nomeCompleto ?? '—'}</Dado>
-          <Dado rotulo="Perfil">{rotuloPerfil(usuario?.perfil) || '—'}</Dado>
+          <Dado rotulo="Perfil">{rotuloPerfil(usuario?.perfil, usuario?.nomeDoPerfil) || '—'}</Dado>
           <Dado rotulo="E-mail" largo>
             {usuario?.email ?? '—'}
           </Dado>
@@ -66,7 +67,7 @@ export default function ContaPage() {
 
       <Secao
         titulo="Alterar senha"
-        regua
+        painel
         descricao="Ao trocar, você continua conectado aqui e as sessões abertas em outros dispositivos são encerradas."
       >
         <form className="grid gap-4" noValidate onSubmit={(evento) => void handleSubmit((valores) => trocar.mutate(valores))(evento)}>
@@ -82,13 +83,15 @@ export default function ContaPage() {
             </Campo>
           </div>
           {erroApi ? <Aviso tom="perigo">{erroApi}</Aviso> : null}
-          <div className="flex items-center gap-3 border-t border-line pt-6">
+          <div className="flex items-center gap-3">
             <Botao type="submit" variante="primario" carregando={trocar.isPending}>
               Alterar senha
             </Botao>
           </div>
         </form>
       </Secao>
+
+      <PrivacidadeTela />
     </Pagina>
   );
 }

@@ -12,6 +12,7 @@ import { Campo, Entrada, Selecao } from '../../components/ui/campo';
 import { mensagemDeErro } from '../../core/erros/mensagem-de-erro';
 import { adicionarDias, formatarDataHora, paraCampoData } from '../../core/formatacao/datas';
 import { SeletorPaciente } from '../pacientes/components/seletor-paciente';
+import { MesEmNumeros } from './components/mes-em-numeros';
 import { gerarRelatorio, listarCatalogoRelatorios, relatoriosKeys, type RelatorioGerado } from './relatorios.api';
 
 interface Formulario {
@@ -84,8 +85,12 @@ export default function RelatoriosPage() {
     <Pagina largura="ampla" className="gap-6">
       <CabecalhoPagina
         titulo="Relatórios"
-        descricao="Indicadores oficiais calculados pelo servidor. Esta tela só exibe e imprime o resultado, sem recalcular nada."
+        descricao="Como o consultório andou no período: sessões, faltas e valores, prontos para imprimir."
       />
+
+      <MesEmNumeros />
+
+      <h2 className="border-t border-line pt-6 text-lg font-semibold text-ink">Relatórios para imprimir</h2>
 
       <form className="grid gap-4" noValidate onSubmit={(evento) => void handleSubmit((valores) => gerar.mutate(valores))(evento)}>
         <div className="grid gap-4 md:grid-cols-[minmax(0,1.6fr)_repeat(2,minmax(9.5rem,0.7fr))] md:items-start">

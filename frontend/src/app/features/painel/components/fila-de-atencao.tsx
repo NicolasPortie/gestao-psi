@@ -1,7 +1,7 @@
 import { ArrowRight, CircleCheck } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { ListaRegulada, ItemLista } from '../../../components/ui/lista';
+import { ItemLista, ListaRegulada, PainelVazio } from '../../../components/ui/lista';
 import { MarcaEstado } from '../../../components/ui/marca-estado';
 import { estadoDaPrioridade } from '../painel.apresentacao';
 import type { PainelResumo } from '../painel.types';
@@ -10,10 +10,10 @@ import type { PainelResumo } from '../painel.types';
 export function FilaDeAtencao({ prioridades }: { prioridades: PainelResumo['prioridades'] }) {
   if (prioridades.length === 0) {
     return (
-      <p className="flex items-center gap-2 border-y border-line py-4 text-base text-ink-muted">
+      <PainelVazio>
         <CircleCheck size={18} className="text-success" aria-hidden="true" />
         Nada pendente por enquanto.
-      </p>
+      </PainelVazio>
     );
   }
 

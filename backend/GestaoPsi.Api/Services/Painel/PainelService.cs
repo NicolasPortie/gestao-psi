@@ -1,5 +1,6 @@
 using GestaoPsi.Api.Data;
 using GestaoPsi.Api.DTOs.Painel;
+using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Shared.Excecoes;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
     {
         var usuario = await dbContext.Usuarios
             .AsNoTracking()
+            .Include(item => item.PerfilAcesso)
             .SingleOrDefaultAsync(
                 item => item.Id == usuarioId &&
                         item.ContaPsicologoId == contaPsicologoId,
@@ -26,6 +28,14 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
                 "Sessão inválida ou expirada.",
                 StatusCodes.Status401Unauthorized);
         }
+
+        // O painel só mostra o que a pessoa pode abrir: cada bloco depende da permissão da página correspondente.
+        var permissoes = PermissoesEfetivas.Para(usuario);
+        var podeAgenda = permissoes.Contains(PermissaoAcesso.Agenda);
+        var podePacientes = permissoes.Contains(PermissaoAcesso.Pacientes);
+        var podeFinanceiro = permissoes.Contains(PermissaoAcesso.Financeiro);
+        var podeMensagens = permissoes.Contains(PermissaoAcesso.Mensagens);
+        var podeConversas = permissoes.Contains(PermissaoAcesso.Conversas);
 
         var agora = DateTimeOffset.Now;
         var hoje = DateOnly.FromDateTime(agora.DateTime);
@@ -42,6 +52,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         var consultasHoje = await dbContext.Consultas
             .AsNoTracking()
             .Where(consulta =>
+                podeAgenda &&
                 consulta.ContaPsicologoId == contaPsicologoId &&
                 consulta.InicioEm >= inicioHoje &&
                 consulta.InicioEm < fimHoje &&
@@ -63,6 +74,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .AsNoTracking()
             .CountAsync(
                 paciente =>
+                    podePacientes &&
                     paciente.ContaPsicologoId == contaPsicologoId &&
                     paciente.Status == StatusPaciente.Ativo,
                 cancellationToken);
@@ -70,6 +82,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         var pagamentosPendentes = await dbContext.Pagamentos
             .AsNoTracking()
             .Where(pagamento =>
+                podeFinanceiro &&
                 pagamento.ContaPsicologoId == contaPsicologoId &&
                 (pagamento.Status == StatusPagamento.Pendente ||
                  pagamento.Status == StatusPagamento.AguardandoConfirmacao))
@@ -79,6 +92,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .AsNoTracking()
             .CountAsync(
                 consulta =>
+                    podeAgenda &&
                     consulta.ContaPsicologoId == contaPsicologoId &&
                     consulta.Status == StatusConsulta.AguardandoConfirmacao,
                 cancellationToken);
@@ -87,6 +101,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .AsNoTracking()
             .CountAsync(
                 consulta =>
+                    podeAgenda &&
                     consulta.ContaPsicologoId == contaPsicologoId &&
                     consulta.InicioEm >= inicioMes &&
                     consulta.InicioEm < fimMes &&
@@ -98,6 +113,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .AsNoTracking()
             .CountAsync(
                 consulta =>
+                    podeAgenda &&
                     consulta.ContaPsicologoId == contaPsicologoId &&
                     consulta.InicioEm >= inicioMes &&
                     consulta.InicioEm < fimMes &&
@@ -108,6 +124,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .AsNoTracking()
             .CountAsync(
                 lembrete =>
+                    podeMensagens &&
                     lembrete.ContaPsicologoId == contaPsicologoId &&
                     lembrete.Status == StatusLembrete.Falhou &&
                     lembrete.AgendadoPara >= inicioHoje &&
@@ -118,6 +135,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .AsNoTracking()
             .CountAsync(
                 conversa =>
+                    podeConversas &&
                     conversa.ContaPsicologoId == contaPsicologoId &&
                     conversa.Status == StatusConversaWhatsApp.Aberta,
                 cancellationToken);
@@ -126,6 +144,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
             .AsNoTracking()
             .CountAsync(
                 conversa =>
+                    podeConversas &&
                     conversa.ContaPsicologoId == contaPsicologoId &&
                     conversa.AtendimentoHumanoNecessario,
                 cancellationToken);
@@ -139,11 +158,58 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
                     !notificacao.Lida,
                 cancellationToken);
 
+        // Em aberto = ainda pode ser confirmada, realizada ou marcada como falta.
+        var emAberto = new[] { StatusConsulta.AguardandoConfirmacao, StatusConsulta.Agendada, StatusConsulta.Confirmada };
+        var proximas = await dbContext.Consultas
+            .AsNoTracking()
+            .Where(consulta =>
+                podeAgenda &&
+                consulta.ContaPsicologoId == contaPsicologoId &&
+                consulta.FimEm > agora &&
+                emAberto.Contains(consulta.Status))
+            .OrderBy(consulta => consulta.InicioEm)
+            .Take(3)
+            .Select(consulta => new PainelConsultaResponse(
+                consulta.Id,
+                consulta.PacienteId,
+                consulta.Paciente.NomeCompleto,
+                consulta.InicioEm,
+                consulta.FimEm,
+                consulta.TipoAtendimento.Nome,
+                consulta.Modalidade.ToString(),
+                consulta.Status.ToString(),
+                consulta.LinkOnline))
+            .ToListAsync(cancellationToken);
+
+        var semDesfecho = await dbContext.Consultas
+            .AsNoTracking()
+            .Where(consulta =>
+                podeAgenda &&
+                consulta.ContaPsicologoId == contaPsicologoId &&
+                consulta.FimEm <= agora &&
+                consulta.InicioEm >= inicioHoje.AddDays(-60) &&
+                emAberto.Contains(consulta.Status))
+            .OrderByDescending(consulta => consulta.InicioEm)
+            .Take(20)
+            .Select(consulta => new PainelConsultaResponse(
+                consulta.Id,
+                consulta.PacienteId,
+                consulta.Paciente.NomeCompleto,
+                consulta.InicioEm,
+                consulta.FimEm,
+                consulta.TipoAtendimento.Nome,
+                consulta.Modalidade.ToString(),
+                consulta.Status.ToString(),
+                consulta.LinkOnline))
+            .ToListAsync(cancellationToken);
+
         var alertas = await ObterAlertasAsync(
             contaPsicologoId,
             usuarioId,
             inicioHoje,
             fimHoje,
+            podeMensagens,
+            podeConversas,
             cancellationToken);
 
         return new PainelResumoResponse(
@@ -175,6 +241,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
                 contaPsicologoId,
                 inicioHoje.AddDays(1),
                 fimSemana,
+                podeAgenda,
                 cancellationToken),
             alertas,
             CriarPrioridades(
@@ -184,18 +251,65 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
                 conversasAtendimentoHumano,
                 notificacoesNaoLidas,
                 consultasHoje.Count),
-            CriarAcoesRapidas());
+            CriarAcoesRapidas(usuario.Perfil, podeAgenda, podePacientes, podeConversas),
+            proximas,
+            semDesfecho,
+            await ObterAniversariantesAsync(contaPsicologoId, hoje, podePacientes, cancellationToken),
+            usuario.Perfil is PerfilUsuario.Psicologo or PerfilUsuario.Administrador
+                ? await ObterPrimeirosPassosAsync(contaPsicologoId, cancellationToken)
+                : null);
     }
+
+    private async Task<IReadOnlyCollection<PainelAniversarianteResponse>> ObterAniversariantesAsync(
+        Guid contaPsicologoId,
+        DateOnly hoje,
+        bool podePacientes,
+        CancellationToken cancellationToken)
+    {
+        if (!podePacientes) return [];
+        var nascimentos = await dbContext.Pacientes
+            .AsNoTracking()
+            .Where(paciente =>
+                paciente.ContaPsicologoId == contaPsicologoId &&
+                paciente.Status == StatusPaciente.Ativo &&
+                paciente.DataNascimento != null)
+            .Select(paciente => new { paciente.Id, paciente.NomeCompleto, Nascimento = paciente.DataNascimento!.Value })
+            .ToListAsync(cancellationToken);
+
+        return nascimentos
+            .Select(item =>
+            {
+                // 29/02 vira 28/02 nos anos que não são bissextos.
+                var dia = Math.Min(item.Nascimento.Day, DateTime.DaysInMonth(hoje.Year, item.Nascimento.Month));
+                var aniversario = new DateOnly(hoje.Year, item.Nascimento.Month, dia);
+                if (aniversario < hoje) aniversario = aniversario.AddYears(1);
+                return new PainelAniversarianteResponse(item.Id, item.NomeCompleto, aniversario, aniversario.Year - item.Nascimento.Year);
+            })
+            .Where(item => item.Data.DayNumber - hoje.DayNumber <= 7)
+            .OrderBy(item => item.Data)
+            .Take(8)
+            .ToArray();
+    }
+
+    private async Task<PainelPrimeirosPassosResponse> ObterPrimeirosPassosAsync(Guid contaPsicologoId, CancellationToken cancellationToken) =>
+        new(
+            await dbContext.DadosProfissionaisPsicologo.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId && item.NomeProfissional != "" && item.Crp != "", cancellationToken),
+            await dbContext.HorariosDisponiveis.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId && item.Ativo, cancellationToken),
+            await dbContext.TiposAtendimento.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId && item.Ativo, cancellationToken),
+            await dbContext.Pacientes.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId, cancellationToken),
+            await dbContext.IntegracoesWhatsApp.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId && item.Status == StatusIntegracao.Ativa, cancellationToken));
 
     private async Task<IReadOnlyCollection<PainelDiaSemanaResponse>> ObterVisaoSemanaAsync(
         Guid contaPsicologoId,
         DateTimeOffset inicio,
         DateTimeOffset fim,
+        bool podeAgenda,
         CancellationToken cancellationToken)
     {
         var consultas = await dbContext.Consultas
             .AsNoTracking()
             .Where(consulta =>
+                podeAgenda &&
                 consulta.ContaPsicologoId == contaPsicologoId &&
                 consulta.InicioEm >= inicio &&
                 consulta.InicioEm < fim &&
@@ -226,6 +340,8 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         Guid usuarioId,
         DateTimeOffset inicioHoje,
         DateTimeOffset fimHoje,
+        bool podeMensagens,
+        bool podeConversas,
         CancellationToken cancellationToken)
     {
         var alertas = new List<PainelAlertaResponse>();
@@ -233,6 +349,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         var lembretesFalhos = await dbContext.Lembretes
             .AsNoTracking()
             .Where(lembrete =>
+                podeMensagens &&
                 lembrete.ContaPsicologoId == contaPsicologoId &&
                 lembrete.Status == StatusLembrete.Falhou &&
                 lembrete.AgendadoPara >= inicioHoje &&
@@ -251,15 +368,16 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         var conversas = await dbContext.ConversasWhatsApp
             .AsNoTracking()
             .Where(conversa =>
+                podeConversas &&
                 conversa.ContaPsicologoId == contaPsicologoId &&
                 conversa.AtendimentoHumanoNecessario)
             .OrderByDescending(conversa => conversa.UltimaMensagemEm ?? conversa.CriadoEm)
             .Take(2)
             .Select(conversa => new PainelAlertaResponse(
                 "whatsapp",
-                "Mensagem para revisar",
+                "Conversa esperando uma pessoa",
                 conversa.MotivoAtendimentoHumano ??
-                "Uma conversa do WhatsApp aguarda sua revisao.",
+                "Uma conversa do WhatsApp espera uma pessoa da equipe.",
                 conversa.UltimaMensagemEm ?? conversa.CriadoEm,
                 null))
             .ToListAsync(cancellationToken);
@@ -301,11 +419,11 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         if (conversasAtendimentoHumano > 0)
         {
             prioridades.Add(new PainelPrioridadeResponse(
-                "Mensagens para revisar",
+                "Conversas esperando uma pessoa",
                 FormatarQuantidade(
                     conversasAtendimentoHumano,
-                    "conversa do WhatsApp aguarda sua revisao.",
-                    "conversas do WhatsApp aguardam sua revisao."),
+                    "conversa do WhatsApp espera uma pessoa da equipe.",
+                    "conversas do WhatsApp esperam uma pessoa da equipe."),
                 "pi-whatsapp",
                 "alerta",
                 "/integracoes/whatsapp/conversas",
@@ -381,13 +499,23 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         return prioridades.Take(4).ToArray();
     }
 
-    private static IReadOnlyCollection<PainelAcaoRapidaResponse> CriarAcoesRapidas() =>
-    [
-        new("Nova consulta", "Agende um novo atendimento.", "pi-calendar-plus", "/consultas/nova", false),
-        new("Cadastrar paciente", "Adicione uma pessoa ao consultório.", "pi-user-plus", "/pacientes/novo", false),
-        new("Novo documento", "Crie um documento psicológico.", "pi-file-plus", "/documentos/novo", false),
-        new("Mensagens", "Revise contatos recebidos pelo WhatsApp.", "pi-whatsapp", "/integracoes/whatsapp/conversas", false)
-    ];
+    private static IReadOnlyCollection<PainelAcaoRapidaResponse> CriarAcoesRapidas(
+        PerfilUsuario perfil,
+        bool podeAgenda,
+        bool podePacientes,
+        bool podeConversas)
+    {
+        var acoes = new List<PainelAcaoRapidaResponse>();
+        if (podeAgenda)
+            acoes.Add(new("Nova consulta", "Marque um novo atendimento.", "pi-calendar-plus", "/consultas/nova", false));
+        if (podePacientes)
+            acoes.Add(new("Cadastrar paciente", "Adicione uma pessoa ao consultório.", "pi-user-plus", "/pacientes/novo", false));
+        if (perfil == PerfilUsuario.Psicologo)
+            acoes.Add(new("Novo documento", "Crie um documento psicológico.", "pi-file-plus", "/documentos/novo", false));
+        if (podeConversas)
+            acoes.Add(new("Conversas", "Responda as mensagens recebidas pelo WhatsApp.", "pi-whatsapp", "/integracoes/whatsapp/conversas", false));
+        return acoes;
+    }
 
     private static string FormatarQuantidade(int quantidade, string singular, string plural) =>
         $"{quantidade} {(quantidade == 1 ? singular : plural)}";
@@ -407,17 +535,17 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
         var hoje = DateOnly.FromDateTime(DateTimeOffset.Now.DateTime);
         if (data == hoje.AddDays(1))
         {
-            return "Amanha";
+            return "Amanhã";
         }
 
         return data.DayOfWeek switch
         {
             DayOfWeek.Monday => "Segunda",
-            DayOfWeek.Tuesday => "Terca",
+            DayOfWeek.Tuesday => "Terça",
             DayOfWeek.Wednesday => "Quarta",
             DayOfWeek.Thursday => "Quinta",
             DayOfWeek.Friday => "Sexta",
-            DayOfWeek.Saturday => "Sabado",
+            DayOfWeek.Saturday => "Sábado",
             _ => "Domingo"
         };
     }

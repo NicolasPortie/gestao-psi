@@ -36,6 +36,14 @@ public interface IConversasWhatsAppService
         string? userAgent,
         CancellationToken cancellationToken);
 
+    Task<ConversaWhatsAppDetalheResponse> DevolverAoAssistenteAsync(
+        Guid usuarioId,
+        Guid contaId,
+        Guid id,
+        string? ip,
+        string? userAgent,
+        CancellationToken cancellationToken);
+
     Task<ConversaWhatsAppDetalheResponse> AlterarStatusAsync(
         Guid usuarioId,
         Guid contaId,

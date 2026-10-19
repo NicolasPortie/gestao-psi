@@ -4,6 +4,7 @@
  * Serve ao desenvolvimento local e a capturas de tela; nunca aponte para produção.
  *
  *   npm run seed:demo
+ *   npm run seed:demo -- --renovar   (conta já povoada: agenda a grade de novo a partir de hoje)
  *   API_URL=http://localhost:5178/api/v1 npm run seed:demo
  *
  * As credenciais abaixo existem somente nesta conta local de demonstração.
@@ -74,11 +75,82 @@ const pacientes = [
   ['Rafael Siqueira', '11910900145', null, '1982-01-11'],
 ];
 
+/** Agenda a grade de demonstração a partir de hoje; horários ocupados são ignorados. */
+async function agendarGrade(idsPaciente, tipos) {
+  const agendar = (indicePaciente, tipo, inicio, extras = {}) =>
+    chamar(
+      'POST',
+      '/consultas',
+      {
+        pacienteId: idsPaciente[indicePaciente],
+        tipoAtendimentoId: tipos[tipo],
+        inicioEm: inicio.toISOString(),
+        fimEm: new Date(inicio.getTime() + { 'Psicoterapia individual': 50, Retorno: 30, 'Avaliação inicial': 60, 'Terapia de casal': 80 }[tipo] * 60_000).toISOString(),
+        modalidade: tipo === 'Retorno' ? 'Online' : tipo === 'Avaliação inicial' ? 'Hibrido' : 'Presencial',
+        linkOnline: tipo === 'Retorno' ? 'https://meet.exemplo.com.br/helena-duarte' : null,
+        enderecoAtendimento: tipo === 'Retorno' ? null : 'Rua das Acácias, 120 · sala 4',
+        observacaoAdministrativa: null,
+        programarLembrete: true,
+        criarPagamentoPendente: true,
+        valorPagamento: null,
+        ...extras,
+      },
+      { tolerar: true },
+    );
+
+  const hoje = 0;
+  const consultas = [];
+  const grade = [
+    [hoje, 9, 0, 0, 'Psicoterapia individual'],
+    [hoje, 10, 0, 1, 'Retorno'],
+    [hoje, 11, 0, 2, 'Avaliação inicial'],
+    [hoje, 14, 30, 3, 'Psicoterapia individual'],
+    [hoje, 16, 0, 4, 'Terapia de casal'],
+    [hoje, 17, 30, 5, 'Retorno'],
+    [(1), 9, 0, 6, 'Psicoterapia individual'],
+    [(1), 10, 30, 7, 'Psicoterapia individual'],
+    [(1), 15, 0, 8, 'Retorno'],
+    [(2), 8, 30, 9, 'Psicoterapia individual'],
+    [(2), 14, 0, 10, 'Avaliação inicial'],
+    [(3), 9, 0, 11, 'Psicoterapia individual'],
+    [(3), 16, 30, 12, 'Psicoterapia individual'],
+    [(4), 11, 0, 13, 'Terapia de casal'],
+    [(7), 9, 0, 0, 'Psicoterapia individual'],
+    [(8), 10, 0, 1, 'Retorno'],
+  ];
+  for (const [deslocamento, hora, minuto, indicePaciente, tipo] of grade) {
+    const resultado = await agendar(indicePaciente, tipo, dia(deslocamento, hora, minuto));
+    if (resultado.erro) console.log(`  (consulta ignorada: ${resultado.erro})`);
+    else consultas.push(resultado);
+  }
+  return consultas;
+}
+
+const renovar = process.argv.includes('--renovar') || process.env.RENOVAR === '1';
+
+/**
+ * A demonstração envelhece: as consultas foram marcadas em relação ao dia em que o seed rodou.
+ * Renovar agenda de novo a grade a partir de hoje; horários já ocupados ficam como estão.
+ */
+async function renovarAgenda() {
+  const listagem = await chamar('GET', '/pacientes?pagina=1&tamanhoPagina=20&status=Ativo');
+  const porNome = new Map(listagem.itens.map((paciente) => [paciente.nomeCompleto, paciente.id]));
+  const idsPaciente = pacientes.map(([nome]) => porNome.get(nome)).filter(Boolean);
+  const tipos = Object.fromEntries((await chamar('GET', '/agenda/tipos-atendimento')).map((tipo) => [tipo.nome, tipo.id]));
+  if (idsPaciente.length < pacientes.length || Object.keys(tipos).length === 0) {
+    console.log('A conta não tem os pacientes ou tipos da demonstração; nada a renovar.');
+    return;
+  }
+  const consultas = await agendarGrade(idsPaciente, tipos);
+  console.log(`Renovada: ${consultas.length} consultas a partir de hoje.`);
+}
+
 async function main() {
   await autenticar();
   const existentes = await chamar('GET', '/pacientes?pagina=1&tamanhoPagina=1');
   if ((existentes?.total ?? 0) > 0) {
-    console.log('A conta de demonstração já tem dados; nada a fazer.');
+    if (renovar) await renovarAgenda();
+    else console.log('A conta de demonstração já tem dados. Use --renovar para agendar a semana a partir de hoje.');
     return;
   }
 
@@ -138,52 +210,7 @@ async function main() {
   }
 
   console.log('Agendando consultas…');
-  const agendar = (indicePaciente, tipo, inicio, extras = {}) =>
-    chamar(
-      'POST',
-      '/consultas',
-      {
-        pacienteId: idsPaciente[indicePaciente],
-        tipoAtendimentoId: tipos[tipo],
-        inicioEm: inicio.toISOString(),
-        fimEm: new Date(inicio.getTime() + { 'Psicoterapia individual': 50, Retorno: 30, 'Avaliação inicial': 60, 'Terapia de casal': 80 }[tipo] * 60_000).toISOString(),
-        modalidade: tipo === 'Retorno' ? 'Online' : tipo === 'Avaliação inicial' ? 'Hibrido' : 'Presencial',
-        linkOnline: tipo === 'Retorno' ? 'https://meet.exemplo.com.br/helena-duarte' : null,
-        enderecoAtendimento: tipo === 'Retorno' ? null : 'Rua das Acácias, 120 · sala 4',
-        observacaoAdministrativa: null,
-        programarLembrete: true,
-        criarPagamentoPendente: true,
-        valorPagamento: null,
-        ...extras,
-      },
-      { tolerar: true },
-    );
-
-  const hoje = 0;
-  const consultas = [];
-  const grade = [
-    [hoje, 9, 0, 0, 'Psicoterapia individual'],
-    [hoje, 10, 0, 1, 'Retorno'],
-    [hoje, 11, 0, 2, 'Avaliação inicial'],
-    [hoje, 14, 30, 3, 'Psicoterapia individual'],
-    [hoje, 16, 0, 4, 'Terapia de casal'],
-    [hoje, 17, 30, 5, 'Retorno'],
-    [(1), 9, 0, 6, 'Psicoterapia individual'],
-    [(1), 10, 30, 7, 'Psicoterapia individual'],
-    [(1), 15, 0, 8, 'Retorno'],
-    [(2), 8, 30, 9, 'Psicoterapia individual'],
-    [(2), 14, 0, 10, 'Avaliação inicial'],
-    [(3), 9, 0, 11, 'Psicoterapia individual'],
-    [(3), 16, 30, 12, 'Psicoterapia individual'],
-    [(4), 11, 0, 13, 'Terapia de casal'],
-    [(7), 9, 0, 0, 'Psicoterapia individual'],
-    [(8), 10, 0, 1, 'Retorno'],
-  ];
-  for (const [deslocamento, hora, minuto, indicePaciente, tipo] of grade) {
-    const resultado = await agendar(indicePaciente, tipo, dia(deslocamento, hora, minuto));
-    if (resultado.erro) console.log(`  (consulta ignorada: ${resultado.erro})`);
-    else consultas.push(resultado);
-  }
+  const consultas = await agendarGrade(idsPaciente, tipos);
 
   // Variedade de estados: confirmar algumas, cancelar uma, marcar uma como realizada.
   for (const [indice, status, justificativa] of [

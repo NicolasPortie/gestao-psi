@@ -33,8 +33,26 @@ public sealed partial class BridgeWhatsAppService
             .SingleOrDefaultAsync(x => x.ContaPsicologoId == contaId && x.Ativo, ct);
         if (configuracao is null)
         {
-            await RegistrarRespostaBotAsync(contaId, conversa,
-                "A agenda do consultório ainda não foi configurada. Vou avisar a equipe para falar com você.", ct);
+            await EncaminharParaHumanoAsync(contaId, conversa, "A agenda do consultório ainda não foi configurada.", RespostaAgendaNaoConfigurada, ct);
+            return;
+        }
+
+        var sessaoAtual = await dbContext.SessoesBot.FirstOrDefaultAsync(
+            x => x.ContaPsicologoId == contaId &&
+                 x.ConversaWhatsAppId == conversa.Id &&
+                 x.Status == StatusSessaoBot.Aberta, ct);
+
+        // O assistente não entendeu duas mensagens seguidas: em vez de repetir a ajuda, passa para uma pessoa.
+        if (EhIntencaoDesconhecida(intencao) && sessaoAtual is not null && EhIntencaoDesconhecida(sessaoAtual.EtapaAtual))
+        {
+            await EncaminharParaHumanoAsync(contaId, conversa, MotivoNaoEntendeu, RespostaNaoEntendeu, ct);
+            return;
+        }
+
+        // Pedidos que dependem do cadastro não andam sem ele: a equipe localiza o paciente e continua.
+        if (conversa.PacienteId is null && intencao is "agendar_consulta" or "cancelar_consulta" or "remarcar_consulta" or "confirmar_presenca")
+        {
+            await EncaminharParaHumanoAsync(contaId, conversa, "Paciente não identificado pelo número do WhatsApp.", RespostaPacienteNaoIdentificado, ct);
             return;
         }
 
@@ -50,10 +68,7 @@ public sealed partial class BridgeWhatsAppService
 
         await RegistrarRespostaBotAsync(contaId, conversa, resposta, ct);
 
-        var sessao = await dbContext.SessoesBot.FirstOrDefaultAsync(
-            x => x.ContaPsicologoId == contaId &&
-                 x.ConversaWhatsAppId == conversa.Id &&
-                 x.Status == StatusSessaoBot.Aberta, ct);
+        var sessao = sessaoAtual;
         if (sessao is not null)
         {
             sessao.EtapaAtual = intencao;
@@ -64,7 +79,13 @@ public sealed partial class BridgeWhatsAppService
         }
     }
 
-    private async Task RegistrarRespostaBotAsync(Guid contaId, ConversaWhatsApp conversa, string resposta, CancellationToken ct)
+    private Task RegistrarRespostaBotAsync(Guid contaId, ConversaWhatsApp conversa, string resposta, CancellationToken ct)
+    {
+        RegistrarRespostaBot(contaId, conversa, resposta);
+        return Task.CompletedTask;
+    }
+
+    private void RegistrarRespostaBot(Guid contaId, ConversaWhatsApp conversa, string resposta)
     {
         dbContext.MensagensWhatsApp.Add(new MensagemWhatsApp
         {
@@ -80,13 +101,12 @@ public sealed partial class BridgeWhatsAppService
         });
         conversa.UltimaMensagemEm = DateTimeOffset.UtcNow;
         conversa.AtualizadoEm = DateTimeOffset.UtcNow;
-        await Task.CompletedTask;
     }
 
     private static string RespostaAjudaBot() =>
-        "Posso ajudar com: horários disponíveis, agendar (ex.: agendar 12/08 14:00), " +
-        "cancelar, remarcar (ex.: remarcar 12/08 14:00 para 13/08 15:00) ou confirmar presenca. " +
-        "Para outros assuntos, a equipe do consultório fala com você por aqui.";
+        "Posso ajudar com horários disponíveis, agendar (ex.: agendar 12/08 14:00), " +
+        "cancelar, remarcar (ex.: remarcar 12/08 14:00 para 13/08 15:00) ou confirmar presença. " +
+        "Para falar com uma pessoa da equipe, responda ATENDENTE.";
 
     private static string TextoRegrasBot(ConfiguracaoAtendimento c)
     {
@@ -264,7 +284,7 @@ public sealed partial class BridgeWhatsAppService
         });
         auditoria.Registrar(contaId, null, "ConsultaCriadaBot", nameof(Consulta), consulta.Id,
             "Consulta criada pelo chatbot.", null, new { consulta.PacienteId, consulta.InicioEm, consulta.FimEm }, null, null);
-        await NotificarEquipeAsync(contaId, conversa, ct);
+        await NotificarEquipeAsync(contaId, "Consulta marcada pelo assistente", "Um paciente marcou uma consulta pelo WhatsApp. Confira a agenda.", ct);
 
         var statusMsg = consulta.Status == StatusConsulta.Confirmada ? "confirmada" : "registrada e aguardando confirmação da equipe";
         return $"Consulta {statusMsg}: {desejado.Value:dd/MM/yyyy HH:mm} ({tipo.Nome})." + TextoRegrasBot(config);
@@ -305,7 +325,7 @@ public sealed partial class BridgeWhatsAppService
             lembrete.Status = StatusLembrete.Ignorado;
             lembrete.AtualizadoEm = DateTimeOffset.UtcNow;
         }
-        await NotificarEquipeAsync(contaId, conversa, ct);
+        await NotificarEquipeAsync(contaId, "Consulta cancelada pelo assistente", "Um paciente cancelou uma consulta pelo WhatsApp. Confira a agenda.", ct);
         return $"Consulta de {alvo.InicioEm:dd/MM/yyyy HH:mm} cancelada." + TextoRegrasBot(config);
     }
 
@@ -373,7 +393,7 @@ public sealed partial class BridgeWhatsAppService
         });
         auditoria.Registrar(contaId, null, "ConsultaRemarcadaBot", nameof(Consulta), entidade.Id,
             "Consulta remarcada pelo chatbot.", new { InicioEm = alvo.InicioEm }, new { NovaConsultaId = nova.Id, NovoInicio = novoInicio }, null, null);
-        await NotificarEquipeAsync(contaId, conversa, ct);
+        await NotificarEquipeAsync(contaId, "Consulta remarcada pelo assistente", "Um paciente remarcou uma consulta pelo WhatsApp. Confira a agenda.", ct);
         return $"Remarcado: {alvo.InicioEm:dd/MM/yyyy HH:mm} -> {novoInicio:dd/MM/yyyy HH:mm}." + TextoRegrasBot(config);
     }
 
@@ -399,7 +419,7 @@ public sealed partial class BridgeWhatsAppService
         });
         auditoria.Registrar(contaId, null, "ConsultaConfirmadaBot", nameof(Consulta), entidade.Id,
             "Presença confirmada pelo chatbot.", new { Status = pendente.Status }, new { Status = StatusConsulta.Confirmada }, null, null);
-        await NotificarEquipeAsync(contaId, conversa, ct);
+        await NotificarEquipeAsync(contaId, "Presença confirmada pelo assistente", "Um paciente confirmou presença pelo WhatsApp. Confira a agenda.", ct);
         return $"Presença confirmada para {pendente.InicioEm:dd/MM/yyyy HH:mm}. Até lá!";
     }
 

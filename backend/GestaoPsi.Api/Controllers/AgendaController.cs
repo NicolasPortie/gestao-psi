@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Shared;
 using GestaoPsi.Api.DTOs.Agenda;
 using GestaoPsi.Api.Services.Agenda;
 using GestaoPsi.Api.Shared.Respostas;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GestaoPsi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "GestaoAdministrativa")]
+[Authorize(Policy = Politicas.Agenda)]
 [Route("api/v1/agenda")]
 public sealed class AgendaController(IAgendaService agendaService) : ControllerAutenticadoBase
 {
@@ -25,6 +26,9 @@ public sealed class AgendaController(IAgendaService agendaService) : ControllerA
 
     [HttpPut("tipos-atendimento/{id:guid}")]
     public async Task<IActionResult> AtualizarTipo(Guid id, SalvarTipoAtendimentoRequest request, CancellationToken ct) => Ok(RespostaApi<TipoAtendimentoResponse>.ComSucesso(await agendaService.SalvarTipoAsync(ObterUsuarioId(), ObterContaPsicologoId(), id, request, ObterIp(), ObterUserAgent(), ct)));
+
+    [HttpGet("horarios-livres")]
+    public async Task<IActionResult> ListarHorariosLivres([FromQuery] DateOnly data, [FromQuery] int duracaoMinutos, CancellationToken ct) => Ok(RespostaApi<IReadOnlyCollection<string>>.ComSucesso(await agendaService.ListarHorariosLivresAsync(ObterUsuarioId(), ObterContaPsicologoId(), data, duracaoMinutos, ct)));
 
     [HttpGet("horarios-disponiveis")]
     public async Task<IActionResult> ListarHorarios(CancellationToken ct) => Ok(RespostaApi<IReadOnlyCollection<HorarioDisponivelResponse>>.ComSucesso(await agendaService.ListarHorariosAsync(ObterUsuarioId(), ObterContaPsicologoId(), ct)));

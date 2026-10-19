@@ -13,6 +13,8 @@ describe('formularioPacienteSchema', () => {
       email: '',
       status: 'Ativo',
       observacaoAdministrativa: '',
+      valorSessao: '',
+      modoCobranca: 'PorSessao',
       contatosAdicionais: [],
     });
 
@@ -32,6 +34,8 @@ describe('formularioPacienteSchema', () => {
       email: '',
       status: 'Ativo',
       observacaoAdministrativa: '',
+      valorSessao: '',
+      modoCobranca: 'PorSessao',
       contatosAdicionais: [],
     });
     expect(valido.success).toBe(true);
@@ -45,6 +49,8 @@ describe('formularioPacienteSchema', () => {
       email: 'sem-arroba',
       status: 'Ativo',
       observacaoAdministrativa: '',
+      valorSessao: '',
+      modoCobranca: 'PorSessao',
       contatosAdicionais: [],
     });
     expect(invalido.success).toBe(false);

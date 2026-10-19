@@ -93,7 +93,7 @@ export default function DocumentoDetalhePage() {
   if (!acessoClinico) {
     return (
       <AcessoRestrito
-        mensagem="Documentos psicológicos exigem o perfil Psicólogo e autorização do servidor."
+        mensagem="Documentos psicológicos são abertos só pelo psicólogo responsável."
         acao={
           <BotaoLink to="/painel" variante="secundario">
             Voltar para Hoje
@@ -154,7 +154,7 @@ export default function DocumentoDetalhePage() {
       />
 
       <div className="grid gap-x-14 gap-y-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <Secao titulo="Conteúdo">
+        <Secao titulo="Conteúdo" painel>
           {documento.finalidade || documento.solicitante ? (
             <p className="text-sm text-ink-muted">
               {documento.finalidade ? <>Finalidade: {documento.finalidade}. </> : null}

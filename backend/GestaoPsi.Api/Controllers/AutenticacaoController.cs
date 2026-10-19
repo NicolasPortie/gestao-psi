@@ -12,9 +12,26 @@ namespace GestaoPsi.Api.Controllers;
 [Route("api/v1/autenticacao")]
 public sealed class AutenticacaoController(
     IAutenticacaoService autenticacaoService,
-    IWebHostEnvironment ambiente)
+    IWebHostEnvironment ambiente,
+    IConfirmacaoEmailCadastroService confirmacaoEmail)
     : ControllerAutenticadoBase
 {
+    [EnableRateLimiting("sem-sessao")]
+    [HttpPost("cadastro/codigo")]
+    public async Task<IActionResult> SolicitarCodigo([FromBody] SolicitarCodigoCadastroRequest request, CancellationToken cancellationToken)
+    {
+        var resposta = await confirmacaoEmail.SolicitarAsync(request, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return Ok(RespostaApi<CodigoCadastroResponse>.ComSucesso(resposta));
+    }
+
+    [EnableRateLimiting("sem-sessao")]
+    [HttpPost("cadastro/confirmar-email")]
+    public async Task<IActionResult> ConfirmarEmail([FromBody] ConfirmarEmailCadastroRequest request, CancellationToken cancellationToken)
+    {
+        var resposta = await confirmacaoEmail.ConfirmarAsync(request, cancellationToken);
+        return Ok(RespostaApi<EmailCadastroConfirmadoResponse>.ComSucesso(resposta));
+    }
+
     // O limite por IP vale só onde há tentativa de adivinhar ou inundar: cadastro, login e recuperação.
     // Renovar e encerrar sessão dependem de um cookie válido e rodam a cada carregamento de página; limitá-los
     // por IP puniria vários usuários atrás do mesmo endereço (um consultório, por exemplo).

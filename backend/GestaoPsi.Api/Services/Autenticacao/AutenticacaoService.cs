@@ -22,7 +22,8 @@ public sealed class AutenticacaoService(
     IProtecaoDadosService protecaoDados,
     IEmailTransacionalService emailTransacional,
     IOptions<JwtConfiguracao> jwtConfiguracao,
-    IOptions<SegurancaConfiguracao> segurancaConfiguracao)
+    IOptions<SegurancaConfiguracao> segurancaConfiguracao,
+    IConfirmacaoEmailCadastroService confirmacaoEmail)
     : IAutenticacaoService
 {
     private readonly JwtConfiguracao _jwtConfiguracao = jwtConfiguracao.Value;
@@ -51,8 +52,6 @@ public sealed class AutenticacaoService(
         }
 
         var email = NormalizarEmail(request.Email);
-        var nome = request.NomeCompleto.Trim();
-        var crp = NormalizarCrp(request.Crp);
 
         if (await dbContext.Usuarios.AnyAsync(
                 usuario => usuario.Email == email,
@@ -61,12 +60,13 @@ public sealed class AutenticacaoService(
             throw new RegraNegocioException("Já existe uma conta associada a este e-mail.");
         }
 
+        await confirmacaoEmail.ConsumirComprovanteAsync(email, request.TokenEmail, cancellationToken);
+
         var contaId = Guid.NewGuid();
         var usuarioId = Guid.NewGuid();
         var conta = new ContaPsicologo
         {
             Id = contaId,
-            NomeConta = nome,
             Status = StatusContaPsicologo.Ativa
         };
 
@@ -74,7 +74,6 @@ public sealed class AutenticacaoService(
         {
             Id = usuarioId,
             ContaPsicologoId = contaId,
-            NomeCompleto = nome,
             Email = email,
             Perfil = PerfilUsuario.Psicologo,
             Status = StatusUsuario.Ativo,
@@ -82,18 +81,6 @@ public sealed class AutenticacaoService(
             VersaoTermosAceitos = _seguranca.VersaoTermosUso
         };
         usuario.SenhaHash = passwordHasher.HashPassword(usuario, request.Senha);
-
-        var dadosProfissionais = new DadosProfissionaisPsicologo
-        {
-            Id = Guid.NewGuid(),
-            ContaPsicologoId = contaId,
-            UsuarioId = usuarioId,
-            Crp = protecaoDados.Proteger(crp),
-            CrpHash = protecaoDados.HashDeterministico(crp),
-            NomeProfissional = nome,
-            EmailProfissional = email,
-            Status = StatusUsuario.Ativo
-        };
 
         var configuracaoAtendimento = new ConfiguracaoAtendimento
         {
@@ -124,7 +111,6 @@ public sealed class AutenticacaoService(
             : null;
         dbContext.ContasPsicologo.Add(conta);
         dbContext.Usuarios.Add(usuario);
-        dbContext.DadosProfissionaisPsicologo.Add(dadosProfissionais);
         dbContext.ConfiguracoesAtendimento.Add(configuracaoAtendimento);
         dbContext.ConfiguracoesSegurancaConta.Add(configuracaoSeguranca);
         dbContext.LogsAuditoria.Add(auditoria);
@@ -444,6 +430,12 @@ public sealed class AutenticacaoService(
         Usuario usuario,
         CancellationToken cancellationToken)
     {
+        if (usuario.PerfilAcessoId is { } perfilAcessoId && usuario.PerfilAcesso is null)
+        {
+            usuario.PerfilAcesso = await dbContext.PerfisAcesso.AsNoTracking()
+                .SingleOrDefaultAsync(perfil => perfil.Id == perfilAcessoId && perfil.ContaPsicologoId == usuario.ContaPsicologoId, cancellationToken);
+        }
+
         var accessToken = tokenService.GerarAccessToken(usuario);
         var refreshToken = protecaoDados.GerarTokenSeguro();
         var refreshTokenHash = protecaoDados.HashToken(refreshToken);
@@ -464,7 +456,9 @@ public sealed class AutenticacaoService(
                     usuario.Id,
                     usuario.NomeCompleto,
                     usuario.Email,
-                    usuario.Perfil.ToString())),
+                    usuario.Perfil.ToString(),
+                    PermissoesEfetivas.Para(usuario).Select(permissao => permissao.ToString()).Order().ToArray(),
+                    usuario.PerfilAcesso?.Nome)),
             refreshToken,
             DateTimeOffset.UtcNow.Add(expiracaoRefresh));
     }
@@ -509,9 +503,6 @@ public sealed class AutenticacaoService(
 
     private static string NormalizarEmail(string email) =>
         email.Trim().ToLowerInvariant();
-
-    private static string NormalizarCrp(string crp) =>
-        crp.Trim().Replace(" ", string.Empty);
 
     private static string[] CriarIdentificadoresLogin(string email, string? ip) =>
     [

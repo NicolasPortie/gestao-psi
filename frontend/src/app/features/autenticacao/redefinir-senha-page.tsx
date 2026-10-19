@@ -62,7 +62,7 @@ export default function RedefinirSenhaPage() {
     <div className="grid gap-8">
       <header className="grid gap-1.5">
         <h1 className="text-2xl font-semibold tracking-[-0.015em]">Definir nova senha</h1>
-        <p className="text-base text-ink-muted">O link é validado pelo servidor e funciona uma única vez.</p>
+        <p className="text-base text-ink-muted">Por segurança, o link funciona uma única vez.</p>
       </header>
 
       {token ? null : <Aviso tom="aviso">Este link está incompleto. Solicite a recuperação de senha novamente.</Aviso>}
