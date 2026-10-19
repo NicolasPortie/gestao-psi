@@ -1,0 +1,90 @@
+# Produção: complementa o docker-compose.yml. Uso (ver docs/05-operacao/IMPLANTACAO.md):
+#   docker compose -f docker-compose.yml -f docker-compose.producao.yml up -d --build
+# Só o Caddy fica exposto (80 e 443, com HTTPS automático). Banco, Redis, API e front-end
+# ficam na rede interna do Compose, e o serviço backup copia banco e chaves de tempos em tempos.
+
+services:
+  sqlserver:
+    environment:
+      # A imagem sobe como Developer, que não pode ser usada em produção. Express é gratuita (sem TDE);
+      # Standard exige licença própria (informe a chave do produto no lugar do nome).
+      MSSQL_PID: "${SQL_EDICAO:?Defina SQL_EDICAO (Express, Standard ou a chave do produto)}"
+      TZ: "America/Sao_Paulo"
+    ports: !reset []
+    volumes:
+      - ${PASTA_BACKUPS:-./backups}:/var/opt/mssql/backup
+    restart: unless-stopped
+
+  redis:
+    ports: !reset []
+    restart: unless-stopped
+
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      Seguranca__MaximoCadastrosPorHora: "5"
+      # As chaves que decifram os dados ficam cifradas por este certificado (gerado por infra/gerar-segredos.sh).
+      Seguranca__CertificadoChavesArquivo: "/run/segredos/chaves-protecao.pfx"
+      Seguranca__CertificadoChavesSenha: "${CERTIFICADO_CHAVES_SENHA:?Defina CERTIFICADO_CHAVES_SENHA}"
+      Frontend__UrlBase: "https://${DOMINIO:?Defina DOMINIO}"
+      Frontend__OrigensPermitidas__0: "https://${DOMINIO}"
+      # Sem e-mail não há confirmação de cadastro nem recuperação de senha.
+      Email__Ativo: "true"
+      Email__ServidorSmtp: "${Email__ServidorSmtp:?Defina Email__ServidorSmtp}"
+      Email__Porta: "${Email__Porta:-587}"
+      Email__UsarSsl: "${Email__UsarSsl:-false}"
+      Email__Usuario: "${Email__Usuario:-}"
+      Email__Senha: "${Email__Senha:-}"
+      Email__EmailRemetente: "${Email__EmailRemetente:?Defina Email__EmailRemetente}"
+      Email__UrlFrontend: "https://${DOMINIO}"
+    volumes:
+      - ./segredos/chaves-protecao.pfx:/run/segredos/chaves-protecao.pfx:ro
+    ports: !reset []
+    restart: unless-stopped
+
+  frontend:
+    ports: !reset []
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      DOMINIO: "${DOMINIO}"
+      EMAIL_ACME: "${EMAIL_ACME:?Defina EMAIL_ACME para os avisos do certificado HTTPS}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - gestaopsi-caddy-dados:/data
+      - gestaopsi-caddy-config:/config
+    depends_on:
+      - api
+      - frontend
+    restart: unless-stopped
+
+  backup:
+    build:
+      context: ./infra/backup
+    environment:
+      MSSQL_SA_PASSWORD: "${SQL_SENHA}"
+      REDIS_SENHA: "${REDIS_SENHA}"
+      TZ: "America/Sao_Paulo"
+      BACKUP_INTERVALO_HORAS: "${BACKUP_INTERVALO_HORAS:-6}"
+      BACKUP_RETENCAO_DIAS: "${BACKUP_RETENCAO_DIAS:-14}"
+    volumes:
+      - ${PASTA_BACKUPS:-./backups}:/backups
+      - gestaopsi-sql:/mssql-dados:ro
+    depends_on:
+      cifra-banco:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  gestaopsi-caddy-dados:
+  gestaopsi-caddy-config:

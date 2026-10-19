@@ -79,7 +79,13 @@ O serviço `migracoes` aplica o bundle EF antes da inicialização da API.
 O frontend fica em `http://localhost:4200`. Portas externas são restritas ao
 localhost e volumes preservam SQL Server e Redis. A persistência do Redis inclui
 o chaveiro de proteção dos dados; perder esse chaveiro compromete a leitura do
-conteúdo criptografado. O Compose fornecido é para demonstração local em HTTP.
+conteúdo criptografado. Este Compose é para uso local em HTTP; para produção, veja abaixo.
+
+## Produção
+
+O [guia de implantação](docs/05-operacao/IMPLANTACAO.md) sobe o sistema num servidor Linux com
+`docker-compose.producao.yml`: HTTPS automático pelo Caddy, e-mail obrigatório, certificado para as
+chaves de cifra e backup periódico do banco e do chaveiro, com script de restauração testado.
 
 ## Verificações
 
@@ -109,7 +115,7 @@ reais de atendimento.
 
 - A API responde com `Cache-Control: no-store`, `nosniff`, `X-Frame-Options: DENY` e uma CSP restritiva.
 - O nginx do front aplica CSP sem scripts embutidos, `frame-ancestors 'none'` e demais cabeçalhos.
-  Em produção com TLS, acrescente `Strict-Transport-Security` no terminador HTTPS; a API já usa HSTS fora de Development.
+  Em produção, o Caddy termina o HTTPS e envia `Strict-Transport-Security`; a API também usa HSTS fora de Development.
 - Endpoints sem sessão (cadastro, login, recuperação e webhook do Bridge) têm limite de 60 requisições por minuto por IP.
 - Atrás de proxy reverso, defina `Rede__ConfiarEmProxyReverso=true` para a API usar o IP real do cliente
   (X-Forwarded-For, aceito só de redes privadas). O `docker-compose` já faz isso. Sem a opção, todos os
@@ -131,13 +137,10 @@ O bot é administrativo e encaminha mensagens sensíveis ao atendimento humano.
 
 Planos comerciais, cobrança SaaS, portal do paciente e integrações financeiras
 pertencem às fases futuras descritas em [MVP e fases](docs/03-modelagem/07-mvp-e-fases.md).
-Publicação em produção exige TLS, gestão de secrets, backups das bases e do
-chaveiro, e validação das integrações externas.
 
 ## Demonstração para portfólio
 
 Use somente dados fictícios. Uma sequência demonstrável é: cadastrar paciente,
 agendar consulta, confirmar e remarcar, registrar sessão, registrar pagamento
 manual e gerar relatório. Demonstre também que uma recepcionista não acessa
-o prontuário. A auditoria de engenharia está sendo acompanhada em
-[tickets locais](.scratch/auditoria-projeto/); sua conclusão ainda está pendente.
+o prontuário.

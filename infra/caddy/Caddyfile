@@ -1,0 +1,22 @@
+# Porta de entrada da produção. O Caddy emite e renova o certificado HTTPS sozinho (Let's Encrypt)
+# e manda /api direto para a API, que recebe o IP real do cliente em X-Forwarded-For.
+{
+	email {$EMAIL_ACME}
+}
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+
+	handle {
+		reverse_proxy frontend:80
+	}
+}

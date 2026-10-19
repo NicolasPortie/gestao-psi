@@ -27,6 +27,9 @@ docs/
   04-ux/
     README.md
 
+  05-operacao/
+    IMPLANTACAO.md
+
   adr/
     0001-reestruturacao-do-frontend.md
 ```
@@ -37,6 +40,7 @@ docs/
 - Arquitetura tecnica: `02-arquitetura/`
 - Modelagem e regras de dominio: `03-modelagem/`
 - Design e telas: `../DESIGN.md` e `04-ux/`
+- Implantacao e backups: `05-operacao/`
 - Decisoes arquiteturais: `adr/`
 
 ## Decisao Atual do Produto

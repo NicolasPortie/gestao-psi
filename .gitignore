@@ -60,3 +60,7 @@ output/
 test-results/
 playwright-report/
 .playwright-cli/
+
+# Produção: segredos e backups ficam só no servidor
+segredos/
+backups/

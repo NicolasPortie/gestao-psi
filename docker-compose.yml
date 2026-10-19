@@ -49,12 +49,16 @@ services:
 
   # Liga o TDE (AES-256) no banco: arquivos de dados, log e backups ficam cifrados em disco.
   # O backup do certificado fica em /var/opt/mssql/chaves-tde; copie-o para um cofre fora do servidor.
+  # A edição Express não tem TDE: nela o job avisa e termina sem erro (use disco cifrado no servidor).
   cifra-banco:
     image: mcr.microsoft.com/mssql/server:2022-latest
     user: root
     entrypoint: ["/bin/bash", "-c"]
     command:
       - >-
+        edicao=$$(/opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -h -1
+        -Q "SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('EngineEdition') AS int)" | tr -d '[:space:]') || exit 1;
+        if [ "$$edicao" = "4" ]; then echo "SQL Server Express: TDE indisponível nesta edição; cifra de coluna segue ativa."; exit 0; fi;
         mkdir -p /var/opt/mssql/chaves-tde && chown mssql /var/opt/mssql/chaves-tde &&
         /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /sql/habilitar-tde.sql
         -v Banco=GestaoPsi "SenhaChaveMestra=$$TDE_SENHA_CHAVE_MESTRA" "SenhaBackupCertificado=$$TDE_SENHA_BACKUP"

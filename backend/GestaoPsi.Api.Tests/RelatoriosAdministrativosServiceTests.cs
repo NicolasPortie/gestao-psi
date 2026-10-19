@@ -50,7 +50,7 @@ public sealed class RelatoriosAdministrativosServiceTests
 
         Assert.Contains("Sessões realizadas", resultado.Titulo);
         Assert.Contains("<!DOCTYPE html>", resultado.Html);
-        Assert.Contains("GestãoPsi", resultado.Html);
+        Assert.Contains("Vínculo", resultado.Html);
         Assert.Contains(cenario.Paciente.NomeCompleto, resultado.Html);
         Assert.DoesNotContain("ObservacoesClinicas", resultado.Html);
     }

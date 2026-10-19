@@ -30,7 +30,7 @@ public sealed class EmailTransacionalService(
         var corpo = $"""
             {saudacao}
 
-            Recebemos uma solicitação para redefinir sua senha no GestãoPsi.
+            Recebemos uma solicitação para redefinir sua senha no {_configuracao.NomeRemetente}.
             Use o link abaixo. Ele expira em poucos minutos e pode ser utilizado uma única vez.
 
             {link}
