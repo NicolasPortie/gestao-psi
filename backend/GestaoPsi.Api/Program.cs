@@ -86,6 +86,21 @@ builder.Services.Configure<EmailConfiguracao>(
 var dataProtection = builder.Services
     .AddDataProtection()
     .SetApplicationName("GestaoPsi");
+
+// As chaves da Data Protection decifram todo dado sensível do banco. Em produção elas próprias ficam cifradas
+// por um certificado (PFX) guardado fora do Redis e do banco; sem ele, quem lê o Redis lê as chaves.
+var certificadoChaves = builder.Configuration["Seguranca:CertificadoChavesArquivo"];
+if (!string.IsNullOrWhiteSpace(certificadoChaves))
+{
+    dataProtection.ProtectKeysWithCertificate(
+        System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(
+            certificadoChaves,
+            builder.Configuration["Seguranca:CertificadoChavesSenha"]));
+}
+else if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
+{
+    throw new InvalidOperationException("Seguranca:CertificadoChavesArquivo não configurado: as chaves de cifra ficariam sem proteção em repouso.");
+}
 var conexaoRedis = builder.Configuration.GetConnectionString("Redis");
 
 if (!string.IsNullOrWhiteSpace(conexaoRedis))
@@ -310,5 +325,26 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Cifra de coluna: configurada antes de qualquer acesso ao banco; depois, protege o que ainda estiver em texto aberto.
+GestaoPsi.Api.Data.Cifra.CifraDeColuna.Configurar(
+    app.Services.GetRequiredService<Microsoft.AspNetCore.DataProtection.IDataProtectionProvider>(),
+    Convert.FromBase64String(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<SegurancaConfiguracao>>().Value.ChaveHashDados));
+using (var escopo = app.Services.CreateScope())
+{
+    var registro = escopo.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CifraDeColuna");
+    try
+    {
+        await GestaoPsi.Api.Data.Cifra.MigracaoCifraColunas.ExecutarAsync(
+            escopo.ServiceProvider.GetRequiredService<AppDbContext>(),
+            registro,
+            escopo.ServiceProvider.GetRequiredService<IProtecaoDadosService>());
+    }
+    catch (Exception erro)
+    {
+        // Banco ainda sem as migrações aplicadas: a API sobe e a migração roda na próxima subida.
+        registro.LogError(erro, "Não foi possível cifrar os dados antigos nesta subida.");
+    }
+}
 
 app.Run();

@@ -15,7 +15,8 @@ public sealed class PagamentosService(AppDbContext db, IAutorizacaoContaService 
         await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
         var (paginaAtual, tamanhoAtual) = ParametrosPaginacao.Normalizar(pagina, tamanhoPagina);
         var hoje = InicioDeHoje();
-        var recorte = AplicarRecorte(db.Pagamentos.AsNoTracking().Where(x => x.ContaPsicologoId == contaId), filtro);
+        var idsDaBusca = await PacientesDaBuscaAsync(contaId, filtro.Busca, ct);
+        var recorte = AplicarRecorte(db.Pagamentos.AsNoTracking().Where(x => x.ContaPsicologoId == contaId), filtro, idsDaBusca);
         var consulta = recorte;
         if (filtro.Status.HasValue)
             consulta = consulta.Where(x => x.Status == filtro.Status.Value);
@@ -30,7 +31,20 @@ public sealed class PagamentosService(AppDbContext db, IAutorizacaoContaService 
     }
 
     /// <summary>Paciente, período e busca valem para a lista e para os totais; o estado filtra só a lista.</summary>
-    private static IQueryable<Pagamento> AplicarRecorte(IQueryable<Pagamento> consulta, ListarPagamentosFiltro filtro)
+    /// <summary>O nome do paciente é cifrado: a busca decifra os nomes da conta e filtra pelos ids.</summary>
+    private async Task<Guid[]?> PacientesDaBuscaAsync(Guid contaId, string? busca, CancellationToken ct)
+    {
+        var termo = busca?.Trim();
+        if (string.IsNullOrWhiteSpace(termo)) return null;
+        var normalizado = Shared.Texto.TextoNormalizado.ParaComparacao(termo);
+        var pacientes = await db.Pacientes.AsNoTracking()
+            .Where(x => x.ContaPsicologoId == contaId)
+            .Select(x => new { x.Id, x.NomeCompleto })
+            .ToListAsync(ct);
+        return pacientes.Where(x => Shared.Texto.TextoNormalizado.ParaComparacao(x.NomeCompleto).Contains(normalizado, StringComparison.Ordinal)).Select(x => x.Id).ToArray();
+    }
+
+    private static IQueryable<Pagamento> AplicarRecorte(IQueryable<Pagamento> consulta, ListarPagamentosFiltro filtro, Guid[]? idsDaBusca)
     {
         if (filtro.PacienteId.HasValue)
             consulta = consulta.Where(x => x.PacienteId == filtro.PacienteId.Value);
@@ -44,9 +58,8 @@ public sealed class PagamentosService(AppDbContext db, IAutorizacaoContaService 
             var ate = new DateTimeOffset(filtro.Ate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue), DateTimeOffset.Now.Offset);
             consulta = consulta.Where(x => (x.VencimentoEm ?? x.PagoEm ?? x.CriadoEm) < ate);
         }
-        var busca = filtro.Busca?.Trim();
-        if (!string.IsNullOrWhiteSpace(busca))
-            consulta = consulta.Where(x => x.Paciente.NomeCompleto.Contains(busca));
+        if (idsDaBusca is not null)
+            consulta = consulta.Where(x => idsDaBusca.Contains(x.PacienteId));
         return consulta;
     }
 

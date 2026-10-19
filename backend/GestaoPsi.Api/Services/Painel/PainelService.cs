@@ -293,7 +293,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
 
     private async Task<PainelPrimeirosPassosResponse> ObterPrimeirosPassosAsync(Guid contaPsicologoId, CancellationToken cancellationToken) =>
         new(
-            await dbContext.DadosProfissionaisPsicologo.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId && item.NomeProfissional != "" && item.Crp != "", cancellationToken),
+            await dbContext.DadosProfissionaisPsicologo.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId && item.Crp != "", cancellationToken),
             await dbContext.HorariosDisponiveis.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId && item.Ativo, cancellationToken),
             await dbContext.TiposAtendimento.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId && item.Ativo, cancellationToken),
             await dbContext.Pacientes.AsNoTracking().AnyAsync(item => item.ContaPsicologoId == contaPsicologoId, cancellationToken),

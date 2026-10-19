@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
@@ -12,6 +13,7 @@ public class AssinaturaConta : EntidadeDaConta
     public DateTimeOffset? TesteAte { get; set; }
     public DateTimeOffset? RenovacaoEm { get; set; }
     public DateTimeOffset? CanceladaEm { get; set; }
+    [Cifrado]
     public string? MotivoCancelamento { get; set; }
     public string? ProvedorPagamento { get; set; }
     public string? AssinaturaExternaId { get; set; }

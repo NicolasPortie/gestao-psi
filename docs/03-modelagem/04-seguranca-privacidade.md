@@ -47,6 +47,63 @@ Regras:
 - nunca registrar senha em log;
 - nunca retornar hash pela API.
 
+## Cifra em camadas
+
+Nenhum dado pessoal, clínico ou administrativo escrito por gente fica legível no banco. São três camadas:
+
+1. **Cifra feita pelos serviços** (`IProtecaoDadosService`, propósito `GestaoPsi.DadosSensiveis.v1`): os campos
+   clínicos e de contato listados em "Campos criptografados" abaixo. O valor gravado começa com `CfDJ8`.
+2. **Cifra de coluna transparente** (`Data/Cifra/CifraDeColuna.cs`): toda propriedade marcada com `[Cifrado]` passa
+   por um conversor do EF Core e vai ao banco como `cf1:` + texto protegido pela Data Protection (AES-256-CBC +
+   HMAC-SHA256, propósito `GestaoPsi.Colunas.v1`). Datas cifradas (ex.: `Pacientes.DataNascimento`) viram texto
+   `yyyy-MM-dd` antes da cifra. Colunas cifradas são `nvarchar(max)`; o limite de tamanho fica na validação do serviço.
+3. **TDE no SQL Server** (`backend/sql/habilitar-tde.sql`): AES-256 sobre os arquivos de dados, log, tempdb e backups.
+   Cobre também o que precisa ficar consultável pelo banco (datas e horários de consulta, valores, estados, ids).
+
+Na subida, `MigracaoCifraColunas` cifra o que ainda estiver em texto aberto nas duas primeiras camadas e preenche
+hashes de busca que faltarem. É idempotente.
+
+Colunas com `[Cifrado]`:
+
+```txt
+Pacientes.NomeCompleto, Pacientes.DataNascimento
+Usuarios.NomeCompleto, Usuarios.Email, Usuarios.Telefone
+ContasPsicologo.NomeConta
+DadosProfissionaisPsicologo.NomeProfissional, Bio, EmailProfissional, TelefoneProfissional
+Consultas.LinkOnline, EnderecoAtendimento, ObservacaoAdministrativa, JustificativaCancelamento
+HistoricosConsulta.Descricao
+Pagamentos.Observacao
+ListaEspera.ObservacaoAdministrativa
+Lembretes.Assunto, Mensagem, ErroEnvio
+Notificacoes.Titulo, Mensagem
+ModelosMensagem.Assunto, Conteudo
+TiposAtendimento.Descricao
+BloqueiosAgenda.Titulo, Descricao
+ConversasWhatsApp.Telefone, NomeContato, MotivoAtendimentoHumano
+MensagensWhatsApp.ErroEnvio
+EventosBridgeWhatsApp.ErroProcessamento
+IntegracoesWhatsApp.NumeroWhatsApp, UrlBaseBridge, UltimoErro
+DocumentosProntuario.Titulo, Finalidade, Solicitante
+VersoesDocumentoProntuario.MotivoAlteracao
+ProtocolosEntregaDocumento.Destinatario, Observacao
+RetificacoesRegistroSessao.ValorAnterior, ValorNovo, Motivo
+LogsAuditoria.Descricao, Ip, UserAgent
+AssinaturasConta.MotivoCancelamento
+```
+
+Ficam em texto (protegidos só pelo TDE), porque o banco precisa filtrar, ordenar ou somar por eles: ids e chaves
+estrangeiras, datas e horários, valores, estados e enums, nomes de tipos de atendimento, de perfis de acesso e de
+modelos de mensagem, ids externos do WhatsApp e hashes.
+
+Consequências no código:
+
+- busca e ordem por nome de paciente ou usuário acontecem na memória da API, depois de decifrar, sempre já restritas
+  a uma `ContaPsicologoId`;
+- e-mail de login e telefone de conversa são localizados pelo hash (`Usuarios.EmailHash`, `ConversasWhatsApp.TelefoneHash`),
+  preenchido pelo `AppDbContext` ao gravar;
+- nunca filtrar com `Contains`, `StartsWith` ou `OrderBy` no SQL sobre coluna cifrada: o resultado sai errado sem erro.
+  Para campo novo com dado de pessoa, marcar com `[Cifrado]` e criar a migração.
+
 ## Campos Criptografados
 
 Clinicos:
@@ -101,6 +158,8 @@ ContatosPaciente.ValorHash
 DadosProfissionaisPsicologo.CrpHash
 EventosBridgeWhatsApp.PayloadHash
 RefreshTokens.TokenHash
+Usuarios.EmailHash
+ConversasWhatsApp.TelefoneHash
 ```
 
 Regras:
@@ -136,6 +195,25 @@ Regras:
 - usar secret manager ou variavel protegida;
 - planejar rotacao futura de chaves;
 - acesso a secrets restrito ao back-end.
+
+Chaves da Data Protection (decifram as camadas 1 e 2):
+
+- ficam no Redis (`GestaoPsi:protecao-dados:chaves`) ou, em Development sem Redis, em `.gestaopsi-dev/`;
+- fora de Development a API não sobe sem `Seguranca:CertificadoChavesArquivo` (PFX) e `Seguranca:CertificadoChavesSenha`:
+  o certificado cifra as próprias chaves, então quem lê o Redis não lê os dados;
+- **perder as chaves é perder os dados**: fazer backup do chaveiro e do PFX junto com cada backup do banco, guardados
+  em cofre separado;
+- chaves antigas expiram para novas cifras, mas continuam no chaveiro para decifrar o que já foi gravado; nunca apagar;
+- `Seguranca:ChaveHashDados` alimenta os hashes de busca; trocá-la exige recalcular todos os hashes.
+
+TDE (camada 3):
+
+- requer SQL Server 2019+ Standard/Enterprise/Developer ou Azure SQL (ligado por padrão); o LocalDB do desenvolvimento
+  é Express e não tem TDE;
+- no Docker Compose, o job `cifra-banco` roda `backend/sql/habilitar-tde.sql` depois das migrações
+  (`TDE_SENHA_CHAVE_MESTRA` e `TDE_SENHA_BACKUP` no `.env`);
+- o script grava `GestaoPsiTde.cer` e `GestaoPsiTde.pvk` na primeira execução: copie-os para o cofre; sem eles nenhum
+  backup é restaurável em outro servidor.
 
 ## Perfis e Permissoes
 
@@ -182,7 +260,7 @@ Logs nao devem registrar:
 
 Regras:
 
-- backups criptografados;
+- backups criptografados (com TDE ligado, todo backup já sai cifrado pelo certificado `GestaoPsiTde`);
 - exportacoes de prontuario/documentos exigem permissao clinica;
 - exportacao registra auditoria;
 - arquivos temporarios expiram;

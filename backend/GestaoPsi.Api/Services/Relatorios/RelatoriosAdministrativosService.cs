@@ -267,9 +267,10 @@ public sealed class RelatoriosAdministrativosService(
     {
         var itens = await dbContext.Pacientes.AsNoTracking()
             .Where(x => x.ContaPsicologoId == contaId)
-            .OrderBy(x => x.NomeCompleto)
             .Select(x => new { x.NomeCompleto, x.Status, x.CriadoEm, x.Email, x.Telefone })
             .ToListAsync(ct);
+        // Nome cifrado no banco: ordena depois de decifrar.
+        itens = itens.OrderBy(x => x.NomeCompleto, StringComparer.Create(Cultura, ignoreCase: true)).ToList();
 
         var ativos = itens.Count(x => x.Status == StatusPaciente.Ativo);
         var inativos = itens.Count(x => x.Status == StatusPaciente.Inativo);

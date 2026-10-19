@@ -663,6 +663,10 @@ Models representam dados internos persistidos pelo EF Core.
 
 Não devem ser usados automaticamente como retorno público da API.
 
+Toda propriedade com texto de pessoa (nome, contato, observação, mensagem) leva `[Cifrado]` e é gravada cifrada pelo
+`AppDbContext`. Não dá para filtrar nem ordenar por ela no SQL; ver "Cifra em camadas" em
+`docs/03-modelagem/04-seguranca-privacidade.md`.
+
 ### DTOs
 
 DTOs representam contratos externos.

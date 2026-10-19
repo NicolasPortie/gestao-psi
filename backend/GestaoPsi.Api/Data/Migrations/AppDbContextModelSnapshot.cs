@@ -53,8 +53,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("MotivoCancelamento")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PlanoSaasId")
                         .HasColumnType("uniqueidentifier");
@@ -109,8 +108,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Descricao")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("DiaInteiro")
                         .HasColumnType("bit");
@@ -123,8 +121,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Titulo")
                         .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("nvarchar(160)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -295,8 +292,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("EnderecoAtendimento")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("FimEm")
                         .HasColumnType("datetimeoffset");
@@ -305,12 +301,10 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("JustificativaCancelamento")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LinkOnline")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Modalidade")
                         .IsRequired()
@@ -318,8 +312,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(80)");
 
                     b.Property<string>("ObservacaoAdministrativa")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Origem")
                         .IsRequired()
@@ -379,8 +372,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("NomeConta")
                         .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("PerfilProfissionalAdiadoEm")
                         .HasColumnType("datetimeoffset");
@@ -469,12 +461,10 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("MotivoAtendimentoHumano")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NomeContato")
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("PacienteId")
                         .HasColumnType("uniqueidentifier");
@@ -486,8 +476,11 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Telefone")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TelefoneHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<DateTimeOffset?>("UltimaMensagemEm")
                         .HasColumnType("datetimeoffset");
@@ -498,7 +491,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasIndex("ContaPsicologoId", "PacienteId");
 
-                    b.HasIndex("ContaPsicologoId", "IntegracaoWhatsAppId", "Telefone");
+                    b.HasIndex("ContaPsicologoId", "IntegracaoWhatsAppId", "TelefoneHash");
 
                     b.HasIndex("ContaPsicologoId", "Status", "UltimaMensagemEm");
 
@@ -515,8 +508,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Bio")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("ContaPsicologoId")
                         .HasColumnType("uniqueidentifier");
@@ -535,13 +527,11 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("EmailProfissional")
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NomeProfissional")
                         .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -549,8 +539,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(80)");
 
                     b.Property<string>("TelefoneProfissional")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("UsuarioId")
                         .HasColumnType("uniqueidentifier");
@@ -599,8 +588,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Finalidade")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("FinalizadoEm")
                         .HasColumnType("datetimeoffset");
@@ -619,8 +607,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Solicitante")
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -634,8 +621,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Titulo")
                         .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -669,8 +655,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ErroProcessamento")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EventoExternoId")
                         .HasMaxLength(180)
@@ -849,8 +834,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Descricao")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("StatusAnterior")
                         .HasMaxLength(80)
@@ -945,8 +929,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("NumeroWhatsApp")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Provedor")
                         .IsRequired()
@@ -971,13 +954,11 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UltimoErro")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UrlBaseBridge")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -1033,8 +1014,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Assunto")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("AtualizadoEm")
                         .HasColumnType("datetimeoffset");
@@ -1057,12 +1037,10 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ErroEnvio")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Mensagem")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("ModeloMensagemId")
                         .HasColumnType("uniqueidentifier");
@@ -1111,8 +1089,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ObservacaoAdministrativa")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Origem")
                         .IsRequired()
@@ -1180,8 +1157,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Descricao")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Entidade")
                         .IsRequired()
@@ -1192,8 +1168,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Ip")
-                        .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TipoAcao")
                         .IsRequired()
@@ -1201,8 +1176,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(120)");
 
                     b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("UsuarioId")
                         .HasColumnType("uniqueidentifier");
@@ -1249,8 +1223,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ErroEnvio")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("LidaEm")
                         .HasColumnType("datetimeoffset");
@@ -1342,8 +1315,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Assunto")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
@@ -1361,8 +1333,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Conteudo")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("CriadoEm")
                         .HasColumnType("datetimeoffset");
@@ -1406,8 +1377,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Mensagem")
                         .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Tipo")
                         .IsRequired()
@@ -1416,8 +1386,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Titulo")
                         .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("nvarchar(160)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("UsuarioId")
                         .HasColumnType("uniqueidentifier");
@@ -1459,8 +1428,8 @@ namespace GestaoPsi.Api.Data.Migrations
                     b.Property<DateTimeOffset>("CriadoEm")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateOnly?>("DataNascimento")
-                        .HasColumnType("date");
+                    b.Property<string>("DataNascimento")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
@@ -1472,8 +1441,7 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("NomeCompleto")
                         .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ObservacaoAdministrativa")
                         .HasColumnType("nvarchar(max)");
@@ -1502,11 +1470,11 @@ namespace GestaoPsi.Api.Data.Migrations
                         .IsUnique()
                         .HasFilter("[CpfHash] IS NOT NULL");
 
+                    b.HasIndex("ContaPsicologoId", "Status");
+
                     b.HasIndex("ContaPsicologoId", "UsuarioId")
                         .IsUnique()
                         .HasFilter("[UsuarioId] IS NOT NULL");
-
-                    b.HasIndex("ContaPsicologoId", "Status", "NomeCompleto");
 
                     b.ToTable("Pacientes", (string)null);
                 });
@@ -1538,8 +1506,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(80)");
 
                     b.Property<string>("Observacao")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PacienteId")
                         .HasColumnType("uniqueidentifier");
@@ -1751,8 +1718,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Destinatario")
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("DocumentoProntuarioId")
                         .HasColumnType("uniqueidentifier");
@@ -1761,8 +1727,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Observacao")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("RegistradoPorUsuarioId")
                         .HasColumnType("uniqueidentifier");
@@ -1934,8 +1899,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Motivo")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("RegistroSessaoId")
                         .HasColumnType("uniqueidentifier");
@@ -2039,8 +2003,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Descricao")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("DuracaoMinutos")
                         .HasColumnType("int");
@@ -2091,13 +2054,15 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmailHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("NomeCompleto")
                         .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("nvarchar(180)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Perfil")
                         .IsRequired()
@@ -2118,8 +2083,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(80)");
 
                     b.Property<string>("Telefone")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("TermosAceitosEm")
                         .HasColumnType("datetimeoffset");
@@ -2138,8 +2102,9 @@ namespace GestaoPsi.Api.Data.Migrations
 
                     b.HasIndex("ContaPsicologoId");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
+                    b.HasIndex("EmailHash")
+                        .IsUnique()
+                        .HasFilter("[EmailHash] IS NOT NULL");
 
                     b.HasIndex("ContaPsicologoId", "PerfilAcessoId");
 
@@ -2176,8 +2141,7 @@ namespace GestaoPsi.Api.Data.Migrations
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("MotivoAlteracao")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("NumeroVersao")
                         .HasColumnType("int");

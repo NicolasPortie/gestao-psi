@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
@@ -6,7 +7,9 @@ public class Paciente : EntidadeDaConta
 {
     public Guid Id { get; set; }
     public Guid? UsuarioId { get; set; }
+    [Cifrado]
     public string NomeCompleto { get; set; } = string.Empty;
+    [Cifrado]
     public DateOnly? DataNascimento { get; set; }
     public string? Cpf { get; set; }
     public string? CpfHash { get; set; }

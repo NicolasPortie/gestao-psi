@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
@@ -12,6 +13,7 @@ public class Pagamento : EntidadeDaConta
     public FormaPagamento FormaPagamento { get; set; } = FormaPagamento.Manual;
     public DateTimeOffset? PagoEm { get; set; }
     public DateTimeOffset? VencimentoEm { get; set; }
+    [Cifrado]
     public string? Observacao { get; set; }
     /// <summary>Mês de referência (dia 1) de uma mensalidade; nulo nas cobranças por sessão e avulsas.</summary>
     public DateOnly? Competencia { get; set; }

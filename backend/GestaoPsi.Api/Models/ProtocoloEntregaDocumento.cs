@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
@@ -10,7 +11,9 @@ public class ProtocoloEntregaDocumento : EntidadeDaConta
     public Guid RegistradoPorUsuarioId { get; set; }
     public TipoEntregaDocumento TipoEntrega { get; set; }
     public StatusEntregaDocumento Status { get; set; } = StatusEntregaDocumento.Registrada;
+    [Cifrado]
     public string? Destinatario { get; set; }
+    [Cifrado]
     public string? Observacao { get; set; }
     public DateTimeOffset EntregueEm { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;

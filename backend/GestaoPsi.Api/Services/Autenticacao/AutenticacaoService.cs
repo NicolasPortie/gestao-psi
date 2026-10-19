@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using System.Security.Cryptography;
 using System.Text;
 using GestaoPsi.Api.Configuracoes;
@@ -54,7 +55,7 @@ public sealed class AutenticacaoService(
         var email = NormalizarEmail(request.Email);
 
         if (await dbContext.Usuarios.AnyAsync(
-                usuario => usuario.Email == email,
+                usuario => usuario.EmailHash == CifraDeColuna.HashEmail(email),
                 cancellationToken))
         {
             throw new RegraNegocioException("Já existe uma conta associada a este e-mail.");
@@ -150,7 +151,7 @@ public sealed class AutenticacaoService(
 
         var usuario = await dbContext.Usuarios
             .Include(item => item.ContaPsicologo)
-            .SingleOrDefaultAsync(item => item.Email == email, cancellationToken);
+            .SingleOrDefaultAsync(item => item.EmailHash == CifraDeColuna.HashEmail(email), cancellationToken);
 
         if (usuario is null)
         {
@@ -234,7 +235,7 @@ public sealed class AutenticacaoService(
 
         var usuario = await dbContext.Usuarios
             .Include(item => item.ContaPsicologo)
-            .SingleOrDefaultAsync(item => item.Email == email, cancellationToken);
+            .SingleOrDefaultAsync(item => item.EmailHash == CifraDeColuna.HashEmail(email), cancellationToken);
 
         if (usuario is null ||
             usuario.Status != StatusUsuario.Ativo ||

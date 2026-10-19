@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
@@ -11,8 +12,11 @@ public class DocumentoProntuario : EntidadeDaConta
     public Guid? FinalizadoPorUsuarioId { get; set; }
     public TipoDocumentoPsicologico Tipo { get; set; }
     public StatusDocumentoProntuario Status { get; set; } = StatusDocumentoProntuario.Rascunho;
+    [Cifrado]
     public string Titulo { get; set; } = string.Empty;
+    [Cifrado]
     public string? Finalidade { get; set; }
+    [Cifrado]
     public string? Solicitante { get; set; }
     public string? ConteudoAtualJson { get; set; }
     public string? HashConteudoFinal { get; set; }

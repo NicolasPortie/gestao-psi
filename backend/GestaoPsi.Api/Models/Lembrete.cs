@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
@@ -13,8 +14,11 @@ public class Lembrete : EntidadeDaConta
     public StatusLembrete Status { get; set; } = StatusLembrete.Agendado;
     public DateTimeOffset AgendadoPara { get; set; }
     public DateTimeOffset? EnviadoEm { get; set; }
+    [Cifrado]
     public string? Assunto { get; set; }
+    [Cifrado]
     public string? Mensagem { get; set; }
+    [Cifrado]
     public string? ErroEnvio { get; set; }
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? AtualizadoEm { get; set; }

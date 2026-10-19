@@ -1,7 +1,7 @@
 import { Dialog } from '@base-ui/react/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarPlus, CornerDownLeft, Search, UserPlus, UserRound, type LucideIcon } from 'lucide-react';
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { usePermissoes } from '../../core/autenticacao/permissoes';
@@ -27,7 +27,7 @@ const semAcento = (texto: string) =>
     .toLocaleLowerCase('pt-BR');
 
 /**
- * Busca de qualquer lugar (Ctrl+K ou ⌘K): pacientes pelo nome, telefone ou e-mail, as áreas do menu e as
+ * Busca de qualquer lugar, aberta pelo botão do topo: pacientes pelo nome, telefone ou e-mail, as áreas do menu e as
  * ações mais comuns. Setas escolhem, Enter abre, Esc fecha.
  */
 export function BuscaGlobal() {
@@ -39,17 +39,6 @@ export function BuscaGlobal() {
   const [ativo, setAtivo] = useState(0);
   const termoAtrasado = useDebounce(termo.trim(), 200);
   const idLista = useId();
-
-  useEffect(() => {
-    function atalho(evento: KeyboardEvent) {
-      if ((evento.ctrlKey || evento.metaKey) && (evento.code === 'KeyK' || evento.key.toLowerCase() === 'k')) {
-        evento.preventDefault();
-        definirBuscaAberta(true);
-      }
-    }
-    window.addEventListener('keydown', atalho);
-    return () => window.removeEventListener('keydown', atalho);
-  }, []);
 
   const filtro = { busca: termoAtrasado, status: 'Ativo' as const, pagina: 1, tamanhoPagina: 6 };
   const pacientesQuery = useQuery({
@@ -169,9 +158,8 @@ export function BuscaGlobal() {
   );
 }
 
-/** Gatilho visível da busca, com a dica do atalho. */
+/** Gatilho da busca: o único jeito de abri-la (não há atalho de teclado). */
 export function BotaoBuscaGlobal({ compacto = false }: { compacto?: boolean }) {
-  const mac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
   if (compacto) {
     return (
       <button
@@ -191,8 +179,7 @@ export function BotaoBuscaGlobal({ compacto = false }: { compacto?: boolean }) {
       className="flex h-9 w-full items-center gap-2 rounded-md border border-line bg-field px-2.5 text-sm text-ink-muted transition-colors duration-150 hover:border-line-strong hover:text-ink"
     >
       <Search size={15} aria-hidden="true" />
-      <span className="flex-1 text-left">Buscar</span>
-      <kbd className="rounded-sm border border-line px-1 text-xs">{mac ? '⌘K' : 'Ctrl K'}</kbd>
+      <span className="flex-1 text-left">Buscar paciente</span>
     </button>
   );
 }

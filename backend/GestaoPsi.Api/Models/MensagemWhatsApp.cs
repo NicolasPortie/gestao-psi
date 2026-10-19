@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
@@ -14,6 +15,7 @@ public class MensagemWhatsApp : EntidadeDaConta
     public DateTimeOffset? EnviadaEm { get; set; }
     public DateTimeOffset? RecebidaEm { get; set; }
     public DateTimeOffset? LidaEm { get; set; }
+    [Cifrado]
     public string? ErroEnvio { get; set; }
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
 

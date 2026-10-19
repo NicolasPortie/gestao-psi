@@ -23,9 +23,9 @@ public sealed class UsuariosService(
         var usuarios = await dbContext.Usuarios.AsNoTracking()
             .Include(x => x.PerfilAcesso)
             .Where(x => x.ContaPsicologoId == contaId)
-            .OrderBy(x => x.NomeCompleto)
             .ToArrayAsync(ct);
-        return usuarios.Select(Mapear).ToArray();
+        // Nome cifrado: a ordem alfabética só existe depois de decifrar.
+        return usuarios.OrderBy(x => x.NomeCompleto, StringComparer.Create(new System.Globalization.CultureInfo("pt-BR"), ignoreCase: true)).Select(Mapear).ToArray();
     }
 
     public async Task<UsuarioResponse> CriarAsync(Guid usuarioId, Guid contaId, CriarUsuarioRequest request, string? ip, string? userAgent, CancellationToken ct)
@@ -33,7 +33,8 @@ public sealed class UsuariosService(
         var ator = await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
         var perfilAcesso = await ValidarPerfilAsync(ator, contaId, request.Perfil, request.PerfilAcessoId, ct);
         var email = request.Email.Trim().ToLowerInvariant();
-        if (await dbContext.Usuarios.AnyAsync(x => x.Email == email, ct))
+        var emailHash = Data.Cifra.CifraDeColuna.HashEmail(email);
+        if (await dbContext.Usuarios.AnyAsync(x => x.EmailHash == emailHash, ct))
             throw new RegraNegocioException("Já existe um usuário com este e-mail.");
 
         var novo = new Usuario

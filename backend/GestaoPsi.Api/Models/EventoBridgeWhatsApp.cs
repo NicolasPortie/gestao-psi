@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 namespace GestaoPsi.Api.Models;
 
 public class EventoBridgeWhatsApp : EntidadeDaConta
@@ -10,6 +11,7 @@ public class EventoBridgeWhatsApp : EntidadeDaConta
     public string PayloadJson { get; set; } = string.Empty;
     public bool Processado { get; set; }
     public DateTimeOffset? ProcessadoEm { get; set; }
+    [Cifrado]
     public string? ErroProcessamento { get; set; }
     public DateTimeOffset CriadoEm { get; set; } = DateTimeOffset.UtcNow;
 

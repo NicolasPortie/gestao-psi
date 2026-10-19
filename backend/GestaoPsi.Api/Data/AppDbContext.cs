@@ -1,5 +1,7 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace GestaoPsi.Api.Data;
 
@@ -48,6 +50,59 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         configurationBuilder.Properties<Enum>().HaveConversion<string>().HaveMaxLength(80);
     }
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        PreencherHashesDeBusca();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        PreencherHashesDeBusca();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    /// <summary>E-mail e telefone são cifrados; o hash ao lado é o que permite localizá-los.</summary>
+    private void PreencherHashesDeBusca()
+    {
+        foreach (var entrada in ChangeTracker.Entries<Usuario>())
+        {
+            if (entrada.State is EntityState.Added || (entrada.State is EntityState.Modified && entrada.Property(usuario => usuario.Email).IsModified))
+                entrada.Entity.EmailHash = string.IsNullOrWhiteSpace(entrada.Entity.Email) ? null : CifraDeColuna.HashEmail(entrada.Entity.Email);
+        }
+        foreach (var entrada in ChangeTracker.Entries<ConversaWhatsApp>())
+        {
+            if (entrada.State is EntityState.Added || (entrada.State is EntityState.Modified && entrada.Property(conversa => conversa.Telefone).IsModified))
+                entrada.Entity.TelefoneHash = string.IsNullOrWhiteSpace(entrada.Entity.Telefone) ? null : CifraDeColuna.HashTelefone(entrada.Entity.Telefone);
+        }
+    }
+
+    /// <summary>
+    /// Toda propriedade com <see cref="CifradoAttribute"/> passa pela cifra de coluna: o banco guarda só o texto
+    /// protegido, em nvarchar(max) (o tamanho cifrado não cabe nos limites do texto aberto; os limites seguem nos DTOs).
+    /// </summary>
+    private static void AplicarCifraDeColuna(ModelBuilder modelBuilder)
+    {
+        var conversorTexto = new ValueConverter<string, string>(valor => CifraDeColuna.Cifrar(valor), valor => CifraDeColuna.Decifrar(valor));
+        var conversorData = new ValueConverter<DateOnly, string>(valor => CifraDeColuna.CifrarData(valor), valor => CifraDeColuna.DecifrarData(valor));
+        foreach (var tipo in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var propriedade in tipo.GetProperties())
+            {
+                if (propriedade.PropertyInfo?.IsDefined(typeof(CifradoAttribute), inherit: true) != true) continue;
+                var clr = Nullable.GetUnderlyingType(propriedade.ClrType) ?? propriedade.ClrType;
+                if (clr == typeof(string)) propriedade.SetValueConverter(conversorTexto);
+                else if (clr == typeof(DateOnly)) propriedade.SetValueConverter(conversorData);
+                else throw new InvalidOperationException($"[Cifrado] não suporta {clr.Name} em {tipo.ClrType.Name}.{propriedade.Name}.");
+                propriedade.SetMaxLength(null);
+                propriedade.SetColumnType("nvarchar(max)");
+            }
+        }
+    }
+
+    /// <summary>Desligado só pelo teste que monta um banco legado, anterior à cifra de colunas.</summary>
+    protected virtual bool CifrarColunas => true;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -67,6 +122,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         ConfigurarWhatsApp(modelBuilder);
         ConfigurarBot(modelBuilder);
         ConfigurarAuditoria(modelBuilder);
+
+        // Por último: vale para todas as entidades já configuradas acima.
+        if (CifrarColunas) AplicarCifraDeColuna(modelBuilder);
     }
 
     private static void ConfigurarContas(ModelBuilder modelBuilder)
@@ -206,7 +264,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(usuario => usuario.Telefone).HasMaxLength(30);
             entity.Property(usuario => usuario.VersaoTermosAceitos).HasMaxLength(40);
 
-            entity.HasIndex(usuario => usuario.Email).IsUnique();
+            // O e-mail é cifrado; a unicidade e a busca usam o hash.
+            entity.Property(usuario => usuario.EmailHash).HasMaxLength(64);
+            entity.HasIndex(usuario => usuario.EmailHash).IsUnique().HasFilter("[EmailHash] IS NOT NULL");
             entity.HasIndex(usuario => new { usuario.ContaPsicologoId, usuario.Perfil, usuario.Status });
 
             entity.HasOne(usuario => usuario.PerfilAcesso)
@@ -281,7 +341,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .IsUnique()
                 .HasFilter("[UsuarioId] IS NOT NULL");
 
-            entity.HasIndex(paciente => new { paciente.ContaPsicologoId, paciente.Status, paciente.NomeCompleto });
+            entity.HasIndex(paciente => new { paciente.ContaPsicologoId, paciente.Status });
 
             entity.HasOne(paciente => paciente.Usuario)
                 .WithOne(usuario => usuario.Paciente)
@@ -843,7 +903,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(conversa => conversa.NomeContato).HasMaxLength(180);
             entity.Property(conversa => conversa.MotivoAtendimentoHumano).HasMaxLength(1000);
 
-            entity.HasIndex(conversa => new { conversa.ContaPsicologoId, conversa.IntegracaoWhatsAppId, conversa.Telefone });
+            entity.Property(conversa => conversa.TelefoneHash).HasMaxLength(64);
+            entity.HasIndex(conversa => new { conversa.ContaPsicologoId, conversa.IntegracaoWhatsAppId, conversa.TelefoneHash });
             entity.HasIndex(conversa => new { conversa.ContaPsicologoId, conversa.Status, conversa.UltimaMensagemEm });
 
             entity.HasOne(conversa => conversa.IntegracaoWhatsApp)

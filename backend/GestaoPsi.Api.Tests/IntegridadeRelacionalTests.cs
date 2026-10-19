@@ -1,4 +1,5 @@
 using GestaoPsi.Api.Data;
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Models;
 using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Configuracoes;
@@ -11,6 +12,7 @@ using GestaoPsi.Api.Services.Pacientes;
 using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Excecoes;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +46,16 @@ public sealed class BancoIntegridadeRelacional : IAsyncLifetime
     public AppDbContext CriarContexto() => new(new DbContextOptionsBuilder<AppDbContext>()
         .UseSqlServer(ConnectionString)
         .Options);
+
+    /// <summary>Modelo sem cifra de coluna: grava cenários num esquema antigo, com colunas de tamanho legado.</summary>
+    public AppDbContext CriarContextoLegado() => new ContextoSemCifra(new DbContextOptionsBuilder<AppDbContext>()
+        .UseSqlServer(ConnectionString)
+        .Options);
+
+    private sealed class ContextoSemCifra(DbContextOptions<AppDbContext> opcoes) : AppDbContext(opcoes)
+    {
+        protected override bool CifrarColunas => false;
+    }
 
     public async Task InitializeAsync()
     {
@@ -245,8 +257,10 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
         var isolado = new BancoIntegridadeRelacional();
         try
         {
-            await using var db = isolado.CriarContexto();
-            var migrator = db.GetService<IMigrator>();
+            // O cenário legado é gravado sem cifra de coluna; as migrações pertencem ao AppDbContext normal.
+            await using var db = isolado.CriarContextoLegado();
+            await using var dbMigracao = isolado.CriarContexto();
+            var migrator = dbMigracao.GetService<IMigrator>();
             await migrator.MigrateAsync("20261004124651_VersionarAutenticacaoUsuario");
             // O cenário é montado com o modelo atual, que já tem colunas criadas por migrações posteriores; elas são simuladas aqui e removidas antes de migrar.
             foreach (var (tabela, coluna, tipo) in ColunasPosteriores)
@@ -282,7 +296,7 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
                 var protocolo = await db.ProtocolosEntregaDocumento.Include(x => x.VersaoDocumentoProntuario).SingleAsync(x => x.Id == protocoloId);
                 Assert.Equal(versao.Id, protocolo.VersaoDocumentoProntuarioId);
                 Assert.Equal("conteudo-legado-protegido", protocolo.VersaoDocumentoProntuario.ConteudoJson);
-                Assert.Equal(17, (await db.Database.GetAppliedMigrationsAsync()).Count());
+                Assert.Equal(19, (await dbMigracao.Database.GetAppliedMigrationsAsync()).Count());
                 Assert.Equal(79, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM sys.foreign_keys").SingleAsync());
                 Assert.Equal(0, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM sys.foreign_keys WHERE is_disabled = 1 OR is_not_trusted = 1").SingleAsync());
             }
@@ -290,7 +304,7 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
             {
                 var erro = await Assert.ThrowsAsync<SqlException>(() => migrator.MigrateAsync());
                 Assert.Equal(caso == "PacienteIncoerente" ? 547 : 51001, erro.Number);
-                Assert.Equal(11, (await db.Database.GetAppliedMigrationsAsync()).Count());
+                Assert.Equal(11, (await dbMigracao.Database.GetAppliedMigrationsAsync()).Count());
                 Assert.Equal(1, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM [ProtocolosEntregaDocumento]").SingleAsync());
                 Assert.Equal(0, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM sys.columns WHERE object_id = OBJECT_ID('ProtocolosEntregaDocumento') AND name = 'VersaoDocumentoProntuarioId'").SingleAsync());
                 Assert.Equal(caso == "SemVersao" ? 0 : caso == "Ambigua" ? 2 : 1, await db.VersoesDocumentoProntuario.CountAsync());
@@ -301,6 +315,64 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
         {
             await isolado.DisposeAsync();
         }
+    }
+
+    [SqlServerFact]
+    public async Task ColunasCifradas_NuncaFicamEmTextoAbertoNoBanco()
+    {
+        await using var db = banco.CriarContexto();
+        await using var transacao = await db.Database.BeginTransactionAsync();
+        var c = await CriarCenarioAsync(db);
+        db.Pacientes.Single(x => x.Id == c.Paciente).DataNascimento = new DateOnly(1990, 5, 17);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+
+        var nome = await db.Database.SqlQuery<string>($"SELECT [NomeCompleto] AS [Value] FROM [Pacientes] WHERE [Id] = {c.Paciente}").SingleAsync();
+        var nascimento = await db.Database.SqlQuery<string>($"SELECT [DataNascimento] AS [Value] FROM [Pacientes] WHERE [Id] = {c.Paciente}").SingleAsync();
+        var email = await db.Database.SqlQuery<string>($"SELECT [Email] AS [Value] FROM [Usuarios] WHERE [Id] = {c.Usuario}").SingleAsync();
+        var conta = await db.Database.SqlQuery<string>($"SELECT [NomeConta] AS [Value] FROM [ContasPsicologo] WHERE [Id] = {c.Conta}").SingleAsync();
+        foreach (var bruto in new[] { nome, nascimento, email, conta })
+        {
+            Assert.StartsWith(CifraDeColuna.Prefixo, bruto);
+            Assert.DoesNotContain("Paciente", bruto);
+            Assert.DoesNotContain("1990", bruto);
+            Assert.DoesNotContain("teste.local", bruto);
+        }
+
+        var paciente = await db.Pacientes.SingleAsync(x => x.Id == c.Paciente);
+        Assert.Equal("Paciente", paciente.NomeCompleto);
+        Assert.Equal(new DateOnly(1990, 5, 17), paciente.DataNascimento);
+        var hashEmail = CifraDeColuna.HashEmail($" {c.Usuario:N}@TESTE.local ");
+        Assert.Equal(c.Usuario, await db.Usuarios.Where(x => x.EmailHash == hashEmail).Select(x => x.Id).SingleAsync());
+    }
+
+    [SqlServerFact]
+    public async Task MigracaoDeCifra_ProtegeTextoAbertoAntigoEPreencheHash()
+    {
+        await using var db = banco.CriarContexto();
+        await using var transacao = await db.Database.BeginTransactionAsync();
+        var c = await CriarCenarioAsync(db);
+        // Simula linhas gravadas antes da cifra: texto aberto e sem hash de busca.
+        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE [Pacientes] SET [NomeCompleto] = N'Nome antigo em texto', [DataNascimento] = N'1985-02-03' WHERE [Id] = {c.Paciente}");
+        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE [Usuarios] SET [Email] = N'antigo@teste.local', [EmailHash] = NULL WHERE [Id] = {c.Usuario}");
+        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE [Pacientes] SET [ObservacaoAdministrativa] = N'Observação antiga em texto' WHERE [Id] = {c.Paciente}");
+        var protecao = CriarProtecao();
+
+        var legado = await db.Pacientes.AsNoTracking().SingleAsync(x => x.Id == c.Paciente);
+        Assert.Equal("Nome antigo em texto", legado.NomeCompleto);
+
+        Assert.True(await MigracaoCifraColunas.ExecutarAsync(db, NullLogger.Instance, protecao) >= 3);
+        Assert.StartsWith(CifraDeColuna.Prefixo, await db.Database.SqlQuery<string>($"SELECT [NomeCompleto] AS [Value] FROM [Pacientes] WHERE [Id] = {c.Paciente}").SingleAsync());
+        Assert.StartsWith(CifraDeColuna.Prefixo, await db.Database.SqlQuery<string>($"SELECT [DataNascimento] AS [Value] FROM [Pacientes] WHERE [Id] = {c.Paciente}").SingleAsync());
+        Assert.StartsWith(CifraDeColuna.Prefixo, await db.Database.SqlQuery<string>($"SELECT [Email] AS [Value] FROM [Usuarios] WHERE [Id] = {c.Usuario}").SingleAsync());
+        Assert.Equal(CifraDeColuna.HashEmail("antigo@teste.local"), await db.Usuarios.Where(x => x.Id == c.Usuario).Select(x => x.EmailHash).SingleAsync());
+        var paciente = await db.Pacientes.AsNoTracking().SingleAsync(x => x.Id == c.Paciente);
+        Assert.Equal("Nome antigo em texto", paciente.NomeCompleto);
+        Assert.Equal(new DateOnly(1985, 2, 3), paciente.DataNascimento);
+        var observacao = await db.Database.SqlQuery<string>($"SELECT [ObservacaoAdministrativa] AS [Value] FROM [Pacientes] WHERE [Id] = {c.Paciente}").SingleAsync();
+        Assert.StartsWith("CfDJ8", observacao);
+        Assert.Equal("Observação antiga em texto", protecao.Desproteger(observacao));
+        Assert.Equal(0, await MigracaoCifraColunas.ExecutarAsync(db, NullLogger.Instance, protecao));
     }
 
     [SqlServerTheory]
@@ -443,6 +515,8 @@ public sealed class IntegridadeRelacionalTests(BancoIntegridadeRelacional banco)
         ("Pacientes", "ModoCobranca", "nvarchar(80)"),
         ("Pacientes", "ConsentimentoRegistradoEm", "datetimeoffset"),
         ("Pagamentos", "Competencia", "date"),
+        ("Usuarios", "EmailHash", "nvarchar(64)"),
+        ("ConversasWhatsApp", "TelefoneHash", "nvarchar(64)"),
     ];
 
     /// <summary>Finalizar documento exige nome e CRP do psicólogo da conta.</summary>

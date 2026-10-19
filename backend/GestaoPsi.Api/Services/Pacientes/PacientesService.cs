@@ -4,6 +4,7 @@ using GestaoPsi.Api.Models;
 using GestaoPsi.Api.Services.Seguranca;
 using GestaoPsi.Api.Shared.Enums;
 using GestaoPsi.Api.Shared.Excecoes;
+using GestaoPsi.Api.Shared.Texto;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestaoPsi.Api.Services.Pacientes;
@@ -52,24 +53,35 @@ public sealed class PacientesService(
                     item.InicioEm >= limite));
         }
 
-        if (!string.IsNullOrWhiteSpace(busca))
-        {
-            consulta = consulta.Where(paciente =>
-                paciente.NomeCompleto.Contains(busca) ||
-                (buscaHash != null &&
-                    (paciente.CpfHash == buscaHash ||
-                     paciente.Contatos.Any(contato => contato.ValorHash == buscaHash))));
-        }
+        // O nome é cifrado no banco: filtro por nome e ordem alfabética acontecem depois de decifrar.
+        // CPF, telefone e e-mail continuam localizáveis no banco pelo hash exato.
+        var candidatos = await consulta
+            .Select(paciente => new
+            {
+                paciente.Id,
+                paciente.NomeCompleto,
+                PorHash = buscaHash != null &&
+                    (paciente.CpfHash == buscaHash || paciente.Contatos.Any(contato => contato.ValorHash == buscaHash)),
+            })
+            .ToListAsync(cancellationToken);
+
+        var termo = string.IsNullOrWhiteSpace(busca) ? null : TextoNormalizado.ParaComparacao(busca);
+        var ordenados = candidatos
+            .Where(item => termo is null || item.PorHash || TextoNormalizado.ParaComparacao(item.NomeCompleto).Contains(termo, StringComparison.Ordinal))
+            .OrderBy(item => item.NomeCompleto, ComparadorNomes)
+            .Select(item => item.Id)
+            .ToList();
 
         var resumo = await ObterResumoAsync(contaPsicologoId, cancellationToken);
-        var total = await consulta.CountAsync(cancellationToken);
+        var total = ordenados.Count;
+        var idsDaPagina = ordenados.Skip((pagina - 1) * tamanhoPagina).Take(tamanhoPagina).ToArray();
 
-        var pacientes = await consulta
-            .OrderBy(paciente => paciente.NomeCompleto)
-            .Skip((pagina - 1) * tamanhoPagina)
-            .Take(tamanhoPagina)
+        var carregados = await dbContext.Pacientes
+            .AsNoTracking()
+            .Where(paciente => paciente.ContaPsicologoId == contaPsicologoId && idsDaPagina.Contains(paciente.Id))
             .Include(paciente => paciente.Contatos)
             .ToListAsync(cancellationToken);
+        var pacientes = idsDaPagina.Select(id => carregados.Single(paciente => paciente.Id == id)).ToList();
 
         var consultasPorPaciente = await ObterConsultasResumoAsync(
             contaPsicologoId,
@@ -755,6 +767,8 @@ public sealed class PacientesService(
         await dbContext.SaveChangesAsync(cancellationToken);
         return new ExportacaoPacienteResponse(DateTimeOffset.UtcNow, cadastro, consultas, pagamentos);
     }
+
+    private static readonly StringComparer ComparadorNomes = StringComparer.Create(new System.Globalization.CultureInfo("pt-BR"), ignoreCase: true);
 
     private static decimal? NormalizarValor(decimal? valor)
     {

@@ -148,11 +148,12 @@ public sealed partial class BridgeWhatsAppService(
                 return Guid.Empty;
         }
 
+        var telefoneHash = Data.Cifra.CifraDeColuna.HashTelefone(telefone);
         var conversa = await dbContext.ConversasWhatsApp
             .FirstOrDefaultAsync(
                 item => item.ContaPsicologoId == integracao.ContaPsicologoId &&
                         item.IntegracaoWhatsAppId == integracao.Id &&
-                        item.Telefone == telefone &&
+                        item.TelefoneHash == telefoneHash &&
                         item.Status != StatusConversaWhatsApp.Finalizada &&
                         item.Status != StatusConversaWhatsApp.Bloqueada,
                 cancellationToken);

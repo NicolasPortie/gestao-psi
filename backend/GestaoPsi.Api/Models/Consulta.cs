@@ -1,3 +1,4 @@
+using GestaoPsi.Api.Data.Cifra;
 using GestaoPsi.Api.Shared.Enums;
 
 namespace GestaoPsi.Api.Models;
@@ -12,9 +13,13 @@ public class Consulta : EntidadeDaConta
     public StatusConsulta Status { get; set; } = StatusConsulta.AguardandoConfirmacao;
     public ModalidadeAtendimento Modalidade { get; set; }
     public OrigemConsulta Origem { get; set; } = OrigemConsulta.Painel;
+    [Cifrado]
     public string? LinkOnline { get; set; }
+    [Cifrado]
     public string? EnderecoAtendimento { get; set; }
+    [Cifrado]
     public string? ObservacaoAdministrativa { get; set; }
+    [Cifrado]
     public string? JustificativaCancelamento { get; set; }
     /// <summary>Consultas criadas juntas como uma série (semanal ou quinzenal) compartilham este identificador.</summary>
     public Guid? SerieId { get; set; }

@@ -47,6 +47,30 @@ services:
       sqlserver:
         condition: service_healthy
 
+  # Liga o TDE (AES-256) no banco: arquivos de dados, log e backups ficam cifrados em disco.
+  # O backup do certificado fica em /var/opt/mssql/chaves-tde; copie-o para um cofre fora do servidor.
+  cifra-banco:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    user: root
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        mkdir -p /var/opt/mssql/chaves-tde && chown mssql /var/opt/mssql/chaves-tde &&
+        /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /sql/habilitar-tde.sql
+        -v Banco=GestaoPsi "SenhaChaveMestra=$$TDE_SENHA_CHAVE_MESTRA" "SenhaBackupCertificado=$$TDE_SENHA_BACKUP"
+        PastaBackupCertificado=/var/opt/mssql/chaves-tde
+    environment:
+      MSSQL_SA_PASSWORD: "${SQL_SENHA}"
+      TDE_SENHA_CHAVE_MESTRA: "${TDE_SENHA_CHAVE_MESTRA:?Defina TDE_SENHA_CHAVE_MESTRA no arquivo .env}"
+      TDE_SENHA_BACKUP: "${TDE_SENHA_BACKUP:?Defina TDE_SENHA_BACKUP no arquivo .env}"
+    volumes:
+      - ./backend/sql:/sql:ro
+      - gestaopsi-sql:/var/opt/mssql
+    restart: "no"
+    depends_on:
+      migracoes:
+        condition: service_completed_successfully
+
   api:
     build:
       context: ./backend/GestaoPsi.Api
@@ -77,6 +101,8 @@ services:
       redis:
         condition: service_healthy
       migracoes:
+        condition: service_completed_successfully
+      cifra-banco:
         condition: service_completed_successfully
 
   frontend:
