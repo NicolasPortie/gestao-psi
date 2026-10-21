@@ -2,6 +2,7 @@ using GestaoPsi.Api.Configuracoes;
 using GestaoPsi.Api.Data;
 using GestaoPsi.Api.DTOs.Consultas;
 using GestaoPsi.Api.Models;
+using GestaoPsi.Api.Services.Agenda;
 using GestaoPsi.Api.Services.Comunicacao;
 using GestaoPsi.Api.Services.Consultas;
 using GestaoPsi.Api.Services.Lembretes;
@@ -355,7 +356,7 @@ public sealed class ConsultasServiceTests
 
     private static DateTimeOffset ProximoDiaLocal(DayOfWeek dia, int hora, int minuto)
     {
-        var fuso = TimeZoneInfo.Local;
+        var fuso = FusoHorarioConta.Resolver(FusoHorarioConta.Padrao);
         var base_ = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow.AddDays(2), fuso);
         while (base_.DayOfWeek != dia) base_ = base_.AddDays(1);
         return new DateTimeOffset(base_.Year, base_.Month, base_.Day, hora, minuto, 0, fuso.GetUtcOffset(base_.DateTime));
@@ -379,7 +380,7 @@ public sealed class ConsultasServiceTests
         await contexto.SaveChangesAsync();
         var service = CriarService(contexto);
 
-        var fuso = TimeZoneInfo.Local;
+        var fuso = FusoHorarioConta.Resolver(FusoHorarioConta.Padrao);
         var dia = DateTimeOffset.UtcNow.AddDays(2);
         while (TimeZoneInfo.ConvertTime(dia, fuso).DayOfWeek != DayOfWeek.Monday) dia = dia.AddDays(1);
         var parede = TimeZoneInfo.ConvertTime(dia, fuso);
