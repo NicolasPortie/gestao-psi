@@ -1,6 +1,6 @@
 # Frontend Vínculo
 
-SPA oficial em React, TypeScript e Vite. O front-end Angular anterior foi removido e não existe modo de compatibilidade.
+SPA em React, TypeScript e Vite.
 
 ## Requisitos
 

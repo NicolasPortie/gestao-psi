@@ -1,8 +1,41 @@
 # Vínculo
 
+[![CI](https://github.com/NicolasPortie/gestao-psi/actions/workflows/ci.yml/badge.svg)](https://github.com/NicolasPortie/gestao-psi/actions/workflows/ci.yml)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-2f5d46.svg)](LICENSE)
+![.NET 10](https://img.shields.io/badge/.NET-10-512bd4)
+![React 19](https://img.shields.io/badge/React-19-149eca)
+
 Aplicação de gestão para consultórios de psicólogos autônomos. Organiza pacientes,
 agenda, consultas, prontuário e pagamentos, com separação entre acesso administrativo
 e clínico e isolamento dos dados por conta.
+
+![Painel do dia no Vínculo](docs/screenshots/painel.png)
+
+## Telas
+
+Todas as telas abaixo usam dados fictícios.
+
+| Agenda semanal | Pacientes |
+| --- | --- |
+| ![Agenda semanal](docs/screenshots/agenda.png) | ![Lista de pacientes](docs/screenshots/pacientes.png) |
+
+| Financeiro | Tema escuro |
+| --- | --- |
+| ![Cobranças e recebimentos](docs/screenshots/financeiro.png) | ![Painel no tema escuro](docs/screenshots/painel-escuro.png) |
+
+| Acesso | Celular |
+| --- | --- |
+| ![Tela de acesso](docs/screenshots/acesso.png) | <img src="docs/screenshots/painel-celular.png" alt="Painel no celular" width="240"> <img src="docs/screenshots/agenda-celular.png" alt="Agenda no celular" width="240"> |
+
+## Destaques técnicos
+
+- **Isolamento por conta:** toda consulta ao banco é escopada pela conta da sessão autenticada; o front-end nunca informa a conta.
+- **Dados pessoais cifrados** no banco, com chaveiro de proteção de dados compartilhado via Redis.
+- **Separação entre dados administrativos e clínicos**, com perfis de acesso e trilha de auditoria.
+- **Sessão segura:** token de acesso só em memória e renovação por cookie protegido.
+- **Agenda sem conflitos:** transação serializável contra marcações concorrentes, fuso horário por conta e regras de antecedência para cancelar e remarcar.
+- **Acessível:** varredura automática WCAG A/AA nos temas claro e escuro, navegação por teclado e respeito a `prefers-reduced-motion`.
+- **Pronto para implantar:** Docker Compose para desenvolvimento e produção (HTTPS automático, e-mail e backup periódico).
 
 > **Nome técnico.** O produto se chama Vínculo. Pastas, projetos, namespaces e o banco continuam como
 > `GestaoPsi` para não quebrar migrações, dados e integrações; o nome visível ao usuário vive em
@@ -138,9 +171,13 @@ O bot é administrativo e encaminha mensagens sensíveis ao atendimento humano.
 Planos comerciais, cobrança SaaS, portal do paciente e integrações financeiras
 pertencem às fases futuras descritas em [MVP e fases](docs/03-modelagem/07-mvp-e-fases.md).
 
-## Demonstração para portfólio
+## Demonstração
 
-Use somente dados fictícios. Uma sequência demonstrável é: cadastrar paciente,
-agendar consulta, confirmar e remarcar, registrar sessão, registrar pagamento
-manual e gerar relatório. Demonstre também que uma recepcionista não acessa
-o prontuário.
+Com a API em execução, `npm run seed:demo` (em `frontend/`) cria uma conta com dados
+fictícios. Um roteiro para explorar: cadastrar paciente, agendar consulta, confirmar e
+remarcar, registrar a sessão, lançar um pagamento e gerar um relatório. Entre também com o
+perfil de recepção para ver que ele não acessa o prontuário.
+
+## Licença
+
+Distribuído sob a licença MIT. Veja [LICENSE](LICENSE).
