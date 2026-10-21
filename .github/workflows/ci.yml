@@ -60,6 +60,8 @@ jobs:
             echo "HASH_CHAVE=$(openssl rand -base64 32)"
             echo "SQL_SENHA=Gp!$(openssl rand -hex 8)Aa1"
             echo "REDIS_SENHA=$(openssl rand -hex 12)"
+            echo "TDE_SENHA_CHAVE_MESTRA=Gp!$(openssl rand -hex 8)Bb2"
+            echo "TDE_SENHA_BACKUP=Gp!$(openssl rand -hex 8)Cc3"
             echo "MAXIMO_CADASTROS_POR_HORA=200"
           } > .env
       - name: Subir a pilha

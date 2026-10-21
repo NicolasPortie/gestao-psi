@@ -93,8 +93,8 @@ preserve essas chaves para conseguir ler dados já criptografados.
 
 Requisitos: Docker com engine Linux ativo e Docker Compose.
 Copie `.env.example` para `.env` e preencha `JWT_CHAVE`, `HASH_CHAVE`,
-`SQL_SENHA` e `REDIS_SENHA`. A senha do SQL Server precisa atender aos requisitos
-de complexidade do servidor. Para gerar as duas chaves em PowerShell:
+`SQL_SENHA`, `REDIS_SENHA`, `TDE_SENHA_CHAVE_MESTRA` e `TDE_SENHA_BACKUP`. As senhas do SQL Server
+precisam atender aos requisitos de complexidade do servidor e não podem ter aspas simples. Para gerar as duas chaves em PowerShell:
 
 ```powershell
 [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
