@@ -13,17 +13,17 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - run: dotnet build backend/GestaoPsi.slnx --nologo
-      - run: dotnet test backend/GestaoPsi.Api.Tests/GestaoPsi.Api.Tests.csproj --no-build --nologo
+      - run: dotnet build backend/Psique.slnx --nologo
+      - run: dotnet test backend/Psique.Api.Tests/Psique.Api.Tests.csproj --no-build --nologo
       - name: Validar migracoes EF (script idempotente)
         run: |
           dotnet tool install --global dotnet-ef --version 10.0.9
           dotnet ef migrations script --idempotent \
-            --project backend/GestaoPsi.Api/GestaoPsi.Api.csproj \
+            --project backend/Psique.Api/Psique.Api.csproj \
             --output /tmp/migracoes.sql
           test -s /tmp/migracoes.sql
           dotnet ef migrations has-pending-model-changes \
-            --project backend/GestaoPsi.Api/GestaoPsi.Api.csproj --no-build
+            --project backend/Psique.Api/Psique.Api.csproj --no-build
 
   frontend:
     runs-on: ubuntu-latest

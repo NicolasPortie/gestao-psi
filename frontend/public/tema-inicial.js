@@ -3,7 +3,7 @@
 // possa proibir scripts embutidos. Mantenha a chave igual à de src/app/core/tema/tema.ts.
 (function () {
   try {
-    var salvo = localStorage.getItem('gestaopsi:tema');
+    var salvo = localStorage.getItem('psique:tema');
     var escuro = salvo === 'escuro' || (salvo !== 'claro' && matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.dataset.tema = escuro ? 'escuro' : 'claro';
   } catch (erro) {

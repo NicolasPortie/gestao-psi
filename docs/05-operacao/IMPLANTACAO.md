@@ -1,6 +1,6 @@
 # Implantação em produção
 
-Este guia sobe o Vínculo num servidor próprio com HTTPS, e-mail e backup automático.
+Este guia sobe a Psique num servidor próprio com HTTPS, e-mail e backup automático.
 Tudo roda em Docker: `docker-compose.yml` define os serviços e `docker-compose.producao.yml`
 ajusta para produção.
 
@@ -55,14 +55,14 @@ armazenamento cifrado), **separados** da cópia dos backups:
 
 - `.env` (senhas, chaves de JWT e de hash, senhas do TDE);
 - `segredos/chaves-protecao.pfx`;
-- `backups/chaves/GestaoPsiTde.cer` e `GestaoPsiTde.pvk`, quando a edição for Standard.
+- `backups/chaves/PsiqueTde.cer` e `PsiqueTde.pvk`, quando a edição for Standard.
 
 ## Backups
 
 O serviço `backup` roda logo ao subir e depois a cada `BACKUP_INTERVALO_HORAS` (padrão 6 h), e guarda
 `BACKUP_RETENCAO_DIAS` dias (padrão 14) em `backups/`:
 
-- `backups/banco/GestaoPsi-AAAAMMDD-HHMM.bak`: banco completo, verificado com `RESTORE VERIFYONLY`;
+- `backups/banco/Psique-AAAAMMDD-HHMM.bak`: banco completo, verificado com `RESTORE VERIFYONLY`;
 - `backups/chaves/protecao-dados-AAAAMMDD-HHMM.txt`: o chaveiro da API no mesmo instante, cifrado pelo PFX.
 
 O banco usa o modelo de recuperação simples, então o ponto de recuperação é o último backup: com o
@@ -72,7 +72,7 @@ Backup que fica só no servidor some junto com ele. Copie a pasta para fora com 
 com `rclone` num agendamento do `cron`:
 
 ```bash
-0 */6 * * * rclone sync /caminho/do/repositorio/backups remoto:vinculo-backups
+0 */6 * * * rclone sync /caminho/do/repositorio/backups remoto:psique-backups
 ```
 
 ## Restaurar
@@ -81,7 +81,7 @@ Coloque o `.bak` e o `.txt` de chaves do mesmo horário em `backups/banco` e `ba
 `.env` e `segredos/chaves-protecao.pfx` são os originais, e rode:
 
 ```bash
-bash infra/restaurar-backup.sh GestaoPsi-AAAAMMDD-HHMM.bak
+bash infra/restaurar-backup.sh Psique-AAAAMMDD-HHMM.bak
 ```
 
 O script para a API, recria o certificado do TDE quando ele existe, restaura o banco e o chaveiro e sobe

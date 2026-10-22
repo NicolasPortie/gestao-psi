@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento define regras de seguranca para dados sensiveis do GestaoPsi.
+Este documento define regras de seguranca para dados sensiveis da Psique.
 
 O sistema lida com dados pessoais, dados de saude, prontuario, documentos psicologicos e conversas administrativas.
 
@@ -51,11 +51,11 @@ Regras:
 
 Nenhum dado pessoal, clínico ou administrativo escrito por gente fica legível no banco. São três camadas:
 
-1. **Cifra feita pelos serviços** (`IProtecaoDadosService`, propósito `GestaoPsi.DadosSensiveis.v1`): os campos
+1. **Cifra feita pelos serviços** (`IProtecaoDadosService`, propósito `Psique.DadosSensiveis.v1`): os campos
    clínicos e de contato listados em "Campos criptografados" abaixo. O valor gravado começa com `CfDJ8`.
 2. **Cifra de coluna transparente** (`Data/Cifra/CifraDeColuna.cs`): toda propriedade marcada com `[Cifrado]` passa
    por um conversor do EF Core e vai ao banco como `cf1:` + texto protegido pela Data Protection (AES-256-CBC +
-   HMAC-SHA256, propósito `GestaoPsi.Colunas.v1`). Datas cifradas (ex.: `Pacientes.DataNascimento`) viram texto
+   HMAC-SHA256, propósito `Psique.Colunas.v1`). Datas cifradas (ex.: `Pacientes.DataNascimento`) viram texto
    `yyyy-MM-dd` antes da cifra. Colunas cifradas são `nvarchar(max)`; o limite de tamanho fica na validação do serviço.
 3. **TDE no SQL Server** (`backend/sql/habilitar-tde.sql`): AES-256 sobre os arquivos de dados, log, tempdb e backups.
    Cobre também o que precisa ficar consultável pelo banco (datas e horários de consulta, valores, estados, ids).
@@ -198,7 +198,7 @@ Regras:
 
 Chaves da Data Protection (decifram as camadas 1 e 2):
 
-- ficam no Redis (`GestaoPsi:protecao-dados:chaves`) ou, em Development sem Redis, em `.gestaopsi-dev/`;
+- ficam no Redis (`Psique:protecao-dados:chaves`) ou, em Development sem Redis, em `.psique-dev/`;
 - fora de Development a API não sobe sem `Seguranca:CertificadoChavesArquivo` (PFX) e `Seguranca:CertificadoChavesSenha`:
   o certificado cifra as próprias chaves, então quem lê o Redis não lê os dados;
 - **perder as chaves é perder os dados**: fazer backup do chaveiro e do PFX junto com cada backup do banco, guardados
@@ -212,7 +212,7 @@ TDE (camada 3):
   é Express e não tem TDE;
 - no Docker Compose, o job `cifra-banco` roda `backend/sql/habilitar-tde.sql` depois das migrações
   (`TDE_SENHA_CHAVE_MESTRA` e `TDE_SENHA_BACKUP` no `.env`);
-- o script grava `GestaoPsiTde.cer` e `GestaoPsiTde.pvk` na primeira execução: copie-os para o cofre; sem eles nenhum
+- o script grava `PsiqueTde.cer` e `PsiqueTde.pvk` na primeira execução: copie-os para o cofre; sem eles nenhum
   backup é restaurável em outro servidor.
 
 ## Perfis e Permissoes
@@ -260,7 +260,7 @@ Logs nao devem registrar:
 
 Regras:
 
-- backups criptografados (com TDE ligado, todo backup já sai cifrado pelo certificado `GestaoPsiTde`);
+- backups criptografados (com TDE ligado, todo backup já sai cifrado pelo certificado `PsiqueTde`);
 - exportacoes de prontuario/documentos exigem permissao clinica;
 - exportacao registra auditoria;
 - arquivos temporarios expiram;

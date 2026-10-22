@@ -42,7 +42,7 @@ export default function LoginPage() {
     <div className="acesso-formulario grid gap-6 sm:gap-9">
       <header className="grid gap-3">
         <h1 className="max-w-80 text-balance font-display text-[2rem] font-medium leading-[1.1] tracking-[-0.025em] sm:text-[2.5rem]">Acessar meu consultório</h1>
-        <p className="text-base text-ink-muted">Entre com o e-mail cadastrado no {MARCA.nome}.</p>
+        <p className="text-base text-ink-muted">Entre com o e-mail cadastrado na {MARCA.nome}.</p>
       </header>
 
       <form className="grid gap-5" onSubmit={(evento) => void handleSubmit(enviar)(evento)} noValidate>

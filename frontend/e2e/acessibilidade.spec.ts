@@ -6,7 +6,7 @@ import { preencherAcessoCadastro, simularEmailCadastro } from './cadastro-apoio'
 
 const conta = {
   nomeCompleto: 'Psicologo E2E Acessibilidade',
-  email: process.env.E2E_A11Y_EMAIL ?? 'e2e.acessibilidade@gestaopsi.local',
+  email: process.env.E2E_A11Y_EMAIL ?? 'e2e.acessibilidade@psique.local',
   crp: '06/777777',
   senha: process.env.E2E_A11Y_SENHA ?? senhaPadrao,
 };
@@ -60,7 +60,7 @@ for (const tema of ['light', 'dark'] as const) {
         expect(await violacoes(page), rota).toEqual([]);
         if (rota === '/cadastro') {
           await page.screenshot({ path: `../output/playwright/cadastro-${tema}-${testInfo.project.name}.png`, fullPage: true });
-          await preencherAcessoCadastro(page, 'rascunho.acessibilidade@gestaopsi.local');
+          await preencherAcessoCadastro(page, 'rascunho.acessibilidade@psique.local');
           expect(await violacoes(page), 'cadastro · código do e-mail').toEqual([]);
           await page.screenshot({ path: `../output/playwright/cadastro-codigo-${tema}-${testInfo.project.name}.png`, fullPage: true });
         }

@@ -9,8 +9,8 @@ import { MenuAcoes } from '../ui/menu';
 import { Marca } from './marca';
 
 /**
- * Foto de ambiente: uma sala de atendimento com duas poltronas frente a frente, o vínculo em forma de
- * mobília. Decorativa, por isso sem texto alternativo. Origem e licença em docs/04-ux/imagens.md.
+ * Foto de ambiente: uma sala de atendimento com duas poltronas frente a frente, o encontro entre duas pessoas
+ * em forma de mobília. Decorativa, por isso sem texto alternativo. Origem e licença em docs/04-ux/imagens.md.
  */
 const FOTO = {
   caminho: '/imagens/consultorio-poltronas',

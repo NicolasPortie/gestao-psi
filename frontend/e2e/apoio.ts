@@ -15,9 +15,26 @@ export async function chamarApi(request: APIRequestContext, metodo: string, cami
   });
 }
 
-/** Cria a conta de teste. Conta já existente (400/409/422) ou limite horário (429) são aceitos: o login seguinte confirma. */
+/**
+ * Cria a conta de teste pelo mesmo fluxo do cadastro: código por e-mail, comprovante e criação. Com a API em
+ * Development e sem SMTP, o código é sempre 123456. Conta já existente (400/409/422) ou limite horário (429)
+ * são aceitos: o login seguinte confirma.
+ */
 export async function garantirConta(request: APIRequestContext, conta: { nomeCompleto: string; email: string; crp: string; senha: string }) {
-  const resposta = await chamarApi(request, 'POST', '/autenticacao/cadastro', undefined, { ...conta, aceitouTermos: true });
+  const solicitacao = await chamarApi(request, 'POST', '/autenticacao/cadastro/codigo', undefined, { email: conta.email });
+  if (!solicitacao.ok()) {
+    if ([400, 409, 422, 429].includes(solicitacao.status())) return;
+    throw new Error(`Pedido de código de teste falhou (${solicitacao.status()}): ${await solicitacao.text()}`);
+  }
+  const { identificador } = (await solicitacao.json()).dados as { identificador: string };
+  const confirmacao = await chamarApi(request, 'POST', '/autenticacao/cadastro/confirmar-email', undefined, {
+    email: conta.email,
+    identificador,
+    codigo: '123456',
+  });
+  if (!confirmacao.ok()) throw new Error(`Confirmação de e-mail de teste falhou (${confirmacao.status()}): ${await confirmacao.text()}`);
+  const { tokenEmail } = (await confirmacao.json()).dados as { tokenEmail: string };
+  const resposta = await chamarApi(request, 'POST', '/autenticacao/cadastro', undefined, { ...conta, aceitouTermos: true, tokenEmail });
   if (!resposta.ok() && ![400, 409, 422, 429].includes(resposta.status())) {
     throw new Error(`Cadastro de teste falhou (${resposta.status()}): ${await resposta.text()}`);
   }

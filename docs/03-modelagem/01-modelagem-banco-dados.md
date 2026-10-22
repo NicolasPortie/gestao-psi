@@ -2,13 +2,13 @@
 
 ## Objetivo
 
-Este documento descreve a modelagem principal do banco de dados do GestaoPsi.
+Este documento descreve a modelagem principal do banco de dados da Psique.
 
 O foco e organizar entidades, relacionamentos e cardinalidades do dominio.
 
 ## Decisao Principal
 
-O Vínculo e um SaaS multi-conta.
+A Psique e um SaaS multi-conta.
 
 Cada psicologo possui uma `ContaPsicologo`.
 

@@ -58,7 +58,7 @@ test.describe('Conta e documentos legais', () => {
         await acao.scrollIntoViewIfNeeded();
         await expect(acao).toBeInViewport();
         if (rota === '/cadastro') {
-          await preencherAcessoCadastro(page, 'rascunho.mobile@gestaopsi.local');
+          await preencherAcessoCadastro(page, 'rascunho.mobile@psique.local');
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
           ).toBeTruthy();
@@ -79,7 +79,7 @@ test.describe('Conta e documentos legais', () => {
         json: { sucesso: false, mensagem: 'Já existe uma conta associada a este e-mail.' },
       }),
     );
-    const email = `e2e.cadastro.${testInfo.project.name}.${Date.now()}@gestaopsi.local`;
+    const email = `e2e.cadastro.${testInfo.project.name}.${Date.now()}@psique.local`;
     const cadastros: string[] = [];
     const errosConsole: string[] = [];
     observarConsole(page, errosConsole);
@@ -124,7 +124,7 @@ test.describe('Conta e documentos legais', () => {
     // (o cadastro tem limite por hora) nem invalida as credenciais das demais suítes.
     const conta = {
       nomeCompleto: 'Psicologo E2E Senha',
-      email: `e2e.senha.${test.info().project.name}@gestaopsi.local`,
+      email: `e2e.senha.${test.info().project.name}@psique.local`,
       crp: '06/888888',
       senha: senhaPadrao,
     };

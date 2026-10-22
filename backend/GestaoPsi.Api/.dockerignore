@@ -1,6 +1,0 @@
-bin/
-obj/
-.gestaopsi-dev/
-*.log
-appsettings.Local.json
-appsettings.Development.local.json

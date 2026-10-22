@@ -14,7 +14,7 @@ import {
 
 const conta = {
   nomeCompleto: 'Psicologo QA Consultorio',
-  email: process.env.E2E_QA_EMAIL ?? 'qa.consultorio@gestaopsi.local',
+  email: process.env.E2E_QA_EMAIL ?? 'qa.consultorio@psique.local',
   crp: '06/123456',
   senha: process.env.E2E_QA_SENHA ?? senhaPadrao,
 };
@@ -164,7 +164,7 @@ test.describe('Jornada do consultório', () => {
     const errosConsole: string[] = [];
     observarConsole(page, errosConsole);
     const tokenPsicologo = await loginApi(request, conta.email, conta.senha);
-    const emailRecepcao = `recep.${Date.now()}@gestaopsi.local`;
+    const emailRecepcao = `recep.${Date.now()}@psique.local`;
     const criar = await chamarApi(request, 'POST', '/usuarios', tokenPsicologo, {
       nomeCompleto: 'Recepcionista QA',
       email: emailRecepcao,
@@ -201,7 +201,7 @@ test.describe('Jornada do consultório', () => {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'X-GestaoPsi-Bridge-Token': bridgeToken,
+          'X-Psique-Bridge-Token': bridgeToken,
         },
         data: {
           eventoExternoId: `qa-${Date.now()}-${sufixo}`,

@@ -1,4 +1,4 @@
-# Documentação do Vínculo
+# Documentação da Psique
 
 Esta pasta organiza a documentação do projeto por responsabilidade.
 
@@ -36,6 +36,7 @@ docs/
     0001-reestruturacao-do-frontend.md
     0002-identidade-visual.md
     0003-cantos-macios-e-paineis.md
+    0004-renomear-para-psique.md
 
   screenshots/
 ```
@@ -51,7 +52,7 @@ docs/
 
 ## Decisão atual do produto
 
-O Vínculo é um SaaS multi-conta para psicólogos autônomos.
+A Psique é um SaaS multi-conta para psicólogos autônomos.
 
 Cada psicólogo possui uma `ContaPsicologo`. Todos os dados do consultório, como pacientes, agenda, prontuário, documentos, pagamentos e WhatsApp, devem ser escopados por `ContaPsicologoId`.
 

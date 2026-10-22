@@ -8,7 +8,7 @@ interface SimboloProps {
 
 /**
  * Simbolo: um azulejo cobalto com duas metades de um semicirculo, porcelana e acafrao, que se
- * encontram no meio. E o vinculo entre duas pessoas e, ao mesmo tempo, o modulo que o produto
+ * encontram no meio. E o encontro entre duas pessoas e, ao mesmo tempo, o modulo que o produto
  * preenche para mostrar o estado de cada coisa. As cores vem dos tokens, entao acompanham o tema.
  */
 export function SimboloMarca({ tamanho = 28, className }: SimboloProps) {

@@ -6,7 +6,7 @@ import { Botao } from '../../../components/ui/botao';
 import { cn } from '../../../components/ui/cn';
 import type { PainelPrimeirosPassos } from '../painel.types';
 
-const CHAVE_DISPENSA = 'gestaopsi:primeiros-passos-dispensado';
+const CHAVE_DISPENSA = 'psique:primeiros-passos-dispensado';
 
 const passos: Array<{ chave: keyof PainelPrimeirosPassos; titulo: string; rota: string; opcional?: boolean }> = [
   { chave: 'dadosProfissionais', titulo: 'Preencher nome e CRP', rota: '/configuracoes/profissional' },

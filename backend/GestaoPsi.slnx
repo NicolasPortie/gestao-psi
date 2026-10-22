@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="GestaoPsi.Api/GestaoPsi.Api.csproj" />
-  <Project Path="GestaoPsi.Api.Tests/GestaoPsi.Api.Tests.csproj" />
-</Solution>

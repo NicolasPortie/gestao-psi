@@ -1,5 +1,5 @@
 ---
-name: Vínculo
+name: Psique
 description: Ferramenta de trabalho calma para o psicólogo e a equipe do consultório, em verde-musgo sobre linho, com painéis claros e cantos macios.
 colors:
   paper: "#faf8f3"
@@ -86,7 +86,7 @@ components:
     height: "36px"
 ---
 
-# Design System: Vínculo
+# Design System: Psique
 
 ## Overview
 
@@ -94,7 +94,7 @@ components:
 
 Uma ferramenta de trabalho para o psicólogo e para quem trabalha com ele, aberta o dia inteiro. Por isso é calma: fundo de porcelana branca, texto em grafite quente, um único verde-musgo para o que é ação, e nenhuma decoração que dispute atenção com a rotina. A marca tem origem nos painéis de azulejo modulares (Athos Bulcão): um módulo simples, repetido e combinado. Aqui o módulo vive só onde tem função, na marca e nas marcas de estado, em que cada coisa é o mesmo azulejo em um ponto do preenchimento.
 
-O nome, **Vínculo**, é o conceito central da clínica. O símbolo é um azulejo com duas metades de um semicírculo, porcelana e ocre, que se encontram no meio: o vínculo entre duas pessoas.
+O nome, **Psique**, vem da palavra grega para mente e alma, o objeto de trabalho do psicólogo. O símbolo é um azulejo com duas metades de um semicírculo, porcelana e ocre, que se encontram no meio: o encontro entre duas pessoas, psicólogo e paciente.
 
 A interface é tipográfica, macia e moderadamente densa. O fundo é linho (branco quente) e os blocos que importam moram em painéis claros de cantos macios, separados por régua fina e sem sombra. Estados e filtros são pílulas. Não há grade de cartões iguais, métricas gigantes, faixas laterais coloridas, ilustrações nem padrões decorativos (ver `docs/adr/0003-cantos-macios-e-paineis.md`). A única imagem é uma fotografia de ambiente de consultório (duas poltronas frente a frente, luz natural) na tela de acesso, sem pessoas e sem texto por cima; ver `docs/04-ux/imagens.md`.
 
@@ -173,7 +173,7 @@ Oito formas SVG, todas o mesmo círculo de 16 px em um ponto do preenchimento: c
 
 ### Marca (`Marca`, `SimboloMarca`)
 
-Azulejo musgo com semicírculo em duas metades (porcelana e ocre) e a palavra "vínculo" em Jost. As cores vêm dos tokens `--marca-*`, então a marca acompanha o tema. A fonte da verdade do símbolo é `frontend/public/favicon.svg`; os ícones raster saem dele.
+Azulejo musgo com semicírculo em duas metades (porcelana e ocre) e a palavra "psique" em Jost. As cores vêm dos tokens `--marca-*`, então a marca acompanha o tema. A fonte da verdade do símbolo é `frontend/public/favicon.svg`; os ícones raster saem dele.
 
 ### Acesso ao consultório
 

@@ -242,7 +242,7 @@
   animation-delay: calc(var(--ordem, 0) * 100ms);
 }
 
-/* No acesso, as duas metades do vínculo se encontram uma única vez. */
+/* No acesso, as duas metades do símbolo se encontram uma única vez. */
 .marca-acesso svg path {
   animation: vinculo-encontrar 280ms var(--ease-out);
 }

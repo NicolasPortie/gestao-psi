@@ -1,6 +1,6 @@
 # 0002. Identidade visual: nome Vínculo, verde-musgo sobre porcelana e o azulejo como módulo
 
-- Estado: aceita
+- Estado: aceita (a decisão de nome foi substituída pela [ADR 0004](0004-renomear-para-psique.md))
 - Data: 12 de outubro de 2026
 - Substitui: a direção visual inicial da [ADR 0001](0001-reestruturacao-do-frontend.md)
 

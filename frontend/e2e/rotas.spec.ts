@@ -4,7 +4,7 @@ import { chamarApi, entrar, garantirConta, horarioLivre, loginApi, observarConso
 
 const conta = {
   nomeCompleto: 'Psicologo E2E Rotas',
-  email: process.env.E2E_EMAIL ?? 'e2e.rotas@gestaopsi.local',
+  email: process.env.E2E_EMAIL ?? 'e2e.rotas@psique.local',
   crp: '06/654321',
   senha: process.env.E2E_SENHA ?? senhaPadrao,
 };

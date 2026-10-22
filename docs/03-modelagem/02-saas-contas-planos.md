@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento descreve a parte SaaS do GestaoPsi.
+Este documento descreve a parte SaaS da Psique.
 
 O produto sera multi-conta. Cada psicologo tera sua propria `ContaPsicologo`.
 
@@ -137,7 +137,7 @@ AssinaturaSaaS 1 -> N HistoricosAssinaturaSaaS
 
 ## FaturasSaaS
 
-Representa cobrancas da assinatura do GestaoPsi.
+Representa cobrancas da assinatura da Psique.
 
 Nao confundir com `Pagamentos`, que pertence ao financeiro do consultorio.
 

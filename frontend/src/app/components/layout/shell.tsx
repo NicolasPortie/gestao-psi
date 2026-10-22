@@ -8,7 +8,7 @@ import { CortinaPrivacidade } from './cortina-privacidade';
 import { NavegacaoMovel } from './navegacao-movel';
 import { Trilho } from './trilho';
 
-const CHAVE_TRILHO = 'gestaopsi:trilho-recolhido';
+const CHAVE_TRILHO = 'psique:trilho-recolhido';
 
 function lerTrilhoRecolhido() {
   try {

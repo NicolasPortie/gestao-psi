@@ -1,6 +1,6 @@
-# Vínculo
+# Psique
 
-[![CI](https://github.com/NicolasPortie/gestao-psi/actions/workflows/ci.yml/badge.svg)](https://github.com/NicolasPortie/gestao-psi/actions/workflows/ci.yml)
+[![CI](https://github.com/NicolasPortie/psique/actions/workflows/ci.yml/badge.svg)](https://github.com/NicolasPortie/psique/actions/workflows/ci.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-2f5d46.svg)](LICENSE)
 ![.NET 10](https://img.shields.io/badge/.NET-10-512bd4)
 ![React 19](https://img.shields.io/badge/React-19-149eca)
@@ -9,7 +9,7 @@ Aplicação de gestão para consultórios de psicólogos autônomos. Organiza pa
 agenda, consultas, prontuário e pagamentos, com separação entre acesso administrativo
 e clínico e isolamento dos dados por conta.
 
-![Painel do dia no Vínculo](docs/screenshots/painel.png)
+![Painel do dia na Psique](docs/screenshots/painel.png)
 
 ## Telas
 
@@ -37,10 +37,6 @@ Todas as telas abaixo usam dados fictícios.
 - **Acessível:** varredura automática WCAG A/AA nos temas claro e escuro, navegação por teclado e respeito a `prefers-reduced-motion`.
 - **Pronto para implantar:** Docker Compose para desenvolvimento e produção (HTTPS automático, e-mail e backup periódico).
 
-> **Nome técnico.** O produto se chama Vínculo. Pastas, projetos, namespaces e o banco continuam como
-> `GestaoPsi` para não quebrar migrações, dados e integrações; o nome visível ao usuário vive em
-> `frontend/src/app/core/marca.ts` e no `appsettings.json` (remetente de e-mail).
-
 ## Stack e organização
 
 - Frontend: React, TypeScript estrito, Vite, React Router em Data Mode,
@@ -65,8 +61,8 @@ Na raiz do repositório:
 
 ```powershell
 dotnet tool install --global dotnet-ef --version 10.0.9
-dotnet ef database update --project backend/GestaoPsi.Api
-dotnet run --project backend/GestaoPsi.Api --launch-profile http
+dotnet ef database update --project backend/Psique.Api
+dotnet run --project backend/Psique.Api --launch-profile http
 ```
 
 Em outro terminal:
@@ -78,17 +74,18 @@ npm run dev
 ```
 
 Abra `http://localhost:4200` e crie uma conta pela tela de cadastro. O cadastro confirma o
-e-mail por um código de 6 dígitos, então a API precisa de um servidor SMTP configurado
-(`Email__Ativo=true` e as demais variáveis `Email__*`); sem ele, o cadastro responde 503.
-Com a conta criada, `npm run seed:demo` em `frontend/` preenche pacientes, agenda e
-cobranças fictícios (use `DEMO_EMAIL` e `DEMO_SENHA` para apontar para a sua conta).
+e-mail por um código de 6 dígitos. Em Development, sem SMTP configurado, o envio é dispensado e o
+código é sempre `123456` (a API avisa no log); fora de Development o código só chega por e-mail e,
+sem SMTP, o cadastro responde 503. Para explorar com dados fictícios, deixe a API rodando e execute
+`npm run seed:demo` em `frontend/`: ele cria a conta de demonstração, com pacientes, agenda e
+cobranças (credenciais no próprio script; `DEMO_EMAIL` e `DEMO_SENHA` trocam a conta).
 A API usa `http://localhost:5178`; seu documento OpenAPI em Development está em
 `/openapi/v1.json`, e a saúde das dependências em `/api/v1/saude`.
 
 Para outro SQL Server, defina `ConnectionStrings__DefaultConnection` no ambiente
 antes dos comandos .NET. Em Development, a ausência de `ConnectionStrings__Redis`
 ativa estado de autenticação em memória. Esse estado se perde no reinício.
-As chaves locais de Data Protection ficam em `.gestaopsi-dev`, ignorada pelo Git;
+As chaves locais de Data Protection ficam em `.psique-dev`, ignorada pelo Git;
 preserve essas chaves para conseguir ler dados já criptografados.
 
 ## Ambiente Docker local
@@ -125,8 +122,8 @@ chaves de cifra e backup periódico do banco e do chaveiro, com script de restau
 ## Verificações
 
 ```powershell
-dotnet build backend/GestaoPsi.slnx --nologo
-dotnet test backend/GestaoPsi.Api.Tests/GestaoPsi.Api.Tests.csproj --nologo
+dotnet build backend/Psique.slnx --nologo
+dotnet test backend/Psique.Api.Tests/Psique.Api.Tests.csproj --nologo
 cd frontend
 npm run lint
 npm run typecheck

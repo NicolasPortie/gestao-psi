@@ -14,7 +14,7 @@ Oferecer um sistema individual, privado e configuravel que substitua planilhas, 
 
 ## Brand Personality
 
-Confiavel, sereno e preciso. A voz e profissional, humana e direta, sem infantilizar o trabalho clinico nem transformar a interface em material promocional. O produto se chama Vínculo, o conceito central da clinica: o vínculo entre duas pessoas. A interface e uma ferramenta de trabalho aberta o dia inteiro, entao e calma.
+Confiavel, sereno e preciso. A voz e profissional, humana e direta, sem infantilizar o trabalho clinico nem transformar a interface em material promocional. O produto se chama Psique, palavra grega para mente e alma, o que o psicologo cuida no trabalho: o encontro entre duas pessoas. A interface e uma ferramenta de trabalho aberta o dia inteiro, entao e calma.
 
 ## Anti-references
 

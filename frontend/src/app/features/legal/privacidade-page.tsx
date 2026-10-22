@@ -7,16 +7,16 @@ export default function PrivacidadePage() {
   return (
     <DocumentoLegal
       titulo="Política de privacidade"
-      resumo={`Quais dados o ${MARCA.nome} trata, para quê, como são protegidos e quais são os seus direitos, segundo a Lei Geral de Proteção de Dados (LGPD).`}
+      resumo={`Quais dados a ${MARCA.nome} trata, para quê, como são protegidos e quais são os seus direitos, segundo a Lei Geral de Proteção de Dados (LGPD).`}
     >
       <SecaoLegal numero={1} titulo="Papéis no tratamento">
         <ul>
           <li>
-            <strong>Dados dos pacientes e do consultório:</strong> o psicólogo titular da conta é o controlador. O {MARCA.nome} atua como operador, tratando
+            <strong>Dados dos pacientes e do consultório:</strong> o psicólogo titular da conta é o controlador. A {MARCA.nome} atua como operadora, tratando
             os dados apenas para prestar o serviço.
           </li>
           <li>
-            <strong>Dados de acesso do próprio usuário</strong> (nome, e-mail, perfil, CRP e registros de acesso): o {MARCA.nome} é o controlador, para
+            <strong>Dados de acesso do próprio usuário</strong> (nome, e-mail, perfil, CRP e registros de acesso): a {MARCA.nome} é a controladora, para
             autenticar, proteger a conta e cumprir obrigações legais.
           </li>
         </ul>

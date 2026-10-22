@@ -5,7 +5,7 @@ import { chamarApi, entrar, garantirConta, horarioLivre, loginApi, observarConso
 // O cadastro novo exige confirmar o e-mail; os testes reaproveitam a conta da jornada, criada antes dessa regra.
 const conta = {
   nomeCompleto: 'Psicologo QA Consultorio',
-  email: process.env.E2E_QA_EMAIL ?? 'qa.consultorio@gestaopsi.local',
+  email: process.env.E2E_QA_EMAIL ?? 'qa.consultorio@psique.local',
   crp: '06/123456',
   senha: process.env.E2E_QA_SENHA ?? senhaPadrao,
 };

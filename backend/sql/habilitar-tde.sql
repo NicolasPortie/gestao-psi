@@ -10,9 +10,9 @@
 
   Uso (sqlcmd, idempotente):
     sqlcmd -S <servidor> -U sa -P <senha> -C -b -i habilitar-tde.sql ^
-      -v Banco=GestaoPsi SenhaChaveMestra=<forte> SenhaBackupCertificado=<forte> PastaBackupCertificado=/var/opt/mssql/chaves-tde
+      -v Banco=Psique SenhaChaveMestra=<forte> SenhaBackupCertificado=<forte> PastaBackupCertificado=/var/opt/mssql/chaves-tde
 
-  OBRIGATÓRIO depois da primeira execução: copiar GestaoPsiTde.cer e GestaoPsiTde.pvk (e a senha do backup)
+  OBRIGATÓRIO depois da primeira execução: copiar PsiqueTde.cer e PsiqueTde.pvk (e a senha do backup)
   para um cofre fora do servidor. Sem eles, nenhum backup pode ser restaurado em outra máquina.
 */
 SET NOCOUNT ON;
@@ -24,14 +24,14 @@ BEGIN
     PRINT 'Chave mestra criada.';
 END
 
-IF NOT EXISTS (SELECT 1 FROM sys.certificates WHERE name = 'GestaoPsiTde')
+IF NOT EXISTS (SELECT 1 FROM sys.certificates WHERE name = 'PsiqueTde')
 BEGIN
-    CREATE CERTIFICATE GestaoPsiTde WITH SUBJECT = 'Vinculo - TDE do banco $(Banco)';
+    CREATE CERTIFICATE PsiqueTde WITH SUBJECT = 'Psique - TDE do banco $(Banco)';
     -- O backup do certificado só é gerado na criação: ele é o que permite restaurar o banco em outro servidor.
-    BACKUP CERTIFICATE GestaoPsiTde
-        TO FILE = '$(PastaBackupCertificado)/GestaoPsiTde.cer'
+    BACKUP CERTIFICATE PsiqueTde
+        TO FILE = '$(PastaBackupCertificado)/PsiqueTde.cer'
         WITH PRIVATE KEY (
-            FILE = '$(PastaBackupCertificado)/GestaoPsiTde.pvk',
+            FILE = '$(PastaBackupCertificado)/PsiqueTde.pvk',
             ENCRYPTION BY PASSWORD = '$(SenhaBackupCertificado)');
     PRINT 'Certificado criado e copiado para $(PastaBackupCertificado). Guarde os dois arquivos fora do servidor.';
 END
@@ -43,7 +43,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.dm_database_encryption_keys WHERE database_id =
 BEGIN
     CREATE DATABASE ENCRYPTION KEY
         WITH ALGORITHM = AES_256
-        ENCRYPTION BY SERVER CERTIFICATE GestaoPsiTde;
+        ENCRYPTION BY SERVER CERTIFICATE PsiqueTde;
     PRINT 'Chave de cifra do banco criada.';
 END
 GO

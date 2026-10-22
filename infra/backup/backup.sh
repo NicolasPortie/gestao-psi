@@ -6,8 +6,8 @@ set -uo pipefail
 PASTA=/backups
 INTERVALO_HORAS=${BACKUP_INTERVALO_HORAS:-6}
 RETENCAO_DIAS=${BACKUP_RETENCAO_DIAS:-14}
-BANCO=GestaoPsi
-CHAVE_REDIS="GestaoPsi:protecao-dados:chaves"
+BANCO=Psique
+CHAVE_REDIS="Psique:protecao-dados:chaves"
 SQLCMD=/opt/mssql-tools18/bin/sqlcmd
 
 registrar() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*"; }

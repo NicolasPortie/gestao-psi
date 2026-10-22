@@ -37,7 +37,7 @@ for (const tema of ['light', 'dark'] as const) {
           },
         });
       });
-      await entrar(page, 'e2e.acessibilidade@gestaopsi.local', senhaPadrao);
+      await entrar(page, 'e2e.acessibilidade@psique.local', senhaPadrao);
       const dialogo = page.getByRole('dialog', { name: 'Complete seu perfil profissional' });
       await expect(dialogo).toBeVisible();
       for (const largura of testInfo.project.name === 'mobile' ? [320, 390] : [1440]) {

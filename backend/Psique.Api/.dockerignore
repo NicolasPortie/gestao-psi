@@ -1,0 +1,6 @@
+bin/
+obj/
+.psique-dev/
+*.log
+appsettings.Local.json
+appsettings.Development.local.json

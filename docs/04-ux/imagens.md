@@ -1,6 +1,6 @@
 # Imagens do produto
 
-O Vínculo é uma ferramenta de trabalho, então quase não tem imagem. A regra é simples:
+A Psique é uma ferramenta de trabalho, então quase não tem imagem. A regra é simples:
 
 - **Não há ilustração, padrão nem arte decorativa.** A única arte do produto é a marca (`frontend/public/favicon.svg`) e as marcas de estado.
 - **Fotografia só na tela de acesso**, e só de **ambiente de consultório**: sala, poltronas, luz natural. Sem pessoas, para não depender de autorização de imagem nem sugerir pacientes reais.
@@ -12,7 +12,7 @@ O Vínculo é uma ferramenta de trabalho, então quase não tem imagem. A regra 
 | --- | --- |
 | Arquivos | `frontend/public/imagens/consultorio-poltronas-960.webp` (127 KiB) e `consultorio-poltronas-1440.webp` (214 KiB) |
 | Cena | Consultório de psicologia com duas poltronas voltadas uma para a outra, em verde-musgo e linho claro, mesa de apoio, plantas e luz natural |
-| Origem | Imagem criada para o Vínculo a partir da direção de arte abaixo; não retrata um consultório real |
+| Origem | Imagem criada para a Psique a partir da direção de arte abaixo; não retrata um consultório real |
 | Direitos | Do autor do projeto, com uso comercial permitido |
 | Criada em | 14 de outubro de 2026 |
 | Alterações | Original de 1024 × 1536 px convertido para WebP com FFmpeg, qualidade 82, nas larguras 960 e 1440 px. A versão 1440 é ampliada. Sem alterações de cor |

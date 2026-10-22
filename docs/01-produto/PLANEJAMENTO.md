@@ -2,11 +2,11 @@
 
 ## Decisao de Produto: SaaS Multi-Conta
 
-O Vínculo sera desenvolvido como um produto SaaS para psicologos, com foco inicial em consultorios individuais.
+A Psique será desenvolvida como um produto SaaS para psicologos, com foco inicial em consultorios individuais.
 
 O produto sera comercializado como assinatura, mas cada psicologo tera uma conta propria no sistema, funcionando como o ERP/gestor do seu consultorio.
 
-Na pratica, o Vínculo une duas ideias:
+Na pratica, a Psique une duas ideias:
 
 * Produto SaaS: codigo-base unico, atualizacoes centralizadas, possibilidade de planos, modulos, assinaturas e provisionamento futuro.
 * Sistema individual por conta: cada psicologo usa uma conta propria, com seus pacientes, agenda, registros clinicos, pagamentos, configuracoes e integracoes isoladas.
@@ -46,7 +46,7 @@ O projeto será pensado para um psicólogo autônomo por conta.
 
 O cliente ideal inicial é o psicólogo autônomo que quer um sistema próprio para organizar sua rotina, sem depender de planilhas, agenda manual ou ferramentas soltas.
 
-O Vínculo deve ser tratado como um SaaS de nicho:
+A Psique deve ser tratada como um SaaS de nicho:
 
 * Assinatura recorrente.
 * Planos comerciais futuros.
@@ -63,7 +63,7 @@ O sistema poderá ter usuários auxiliares, como recepcionista e administrador, 
 
 O psicólogo acessa o sistema por meio de login e tem acesso ao seu painel principal.
 
-Em produção, esse painel pertence à conta daquele psicólogo. Outros psicólogos que contratarem o Vínculo usarão suas próprias contas, com dados, configurações e integrações separados.
+Em produção, esse painel pertence à conta daquele psicólogo. Outros psicólogos que contratarem a Psique usarão suas próprias contas, com dados, configurações e integrações separados.
 
 Nesse painel, ele poderá visualizar sua agenda, cadastrar pacientes, registrar sessões realizadas, consultar históricos, controlar atendimentos, acompanhar pagamentos e visualizar relatórios.
 
@@ -441,7 +441,7 @@ Essa flexibilidade torna o sistema mais útil, pois cada profissional pode adapt
 
 ### 6.15 Modelo SaaS e Contas
 
-O Vínculo deve ser preparado para crescer como produto SaaS.
+A Psique deve ser preparada para crescer como produto SaaS.
 
 Regras iniciais:
 

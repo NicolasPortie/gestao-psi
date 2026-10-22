@@ -12,9 +12,9 @@
 const API = process.env.API_URL ?? 'http://localhost:5178/api/v1';
 const CONTA = {
   nomeCompleto: 'Helena Duarte',
-  email: process.env.DEMO_EMAIL ?? 'helena.duarte@demo.gestaopsi.local',
+  email: process.env.DEMO_EMAIL ?? 'helena.duarte@demo.psique.local',
   crp: '06/184392',
-  senha: process.env.DEMO_SENHA ?? 'DemoGestaoPsi#2026',
+  senha: process.env.DEMO_SENHA ?? 'DemoPsique#2026',
 };
 
 if (!/localhost|127\.0\.0\.1/.test(API)) {
@@ -44,10 +44,26 @@ async function chamar(metodo, caminho, corpo, { tolerar = false } = {}) {
   return json?.dados ?? json;
 }
 
+/**
+ * O cadastro confirma o e-mail por código. Com a API em Development e sem SMTP configurado, o código
+ * é sempre 123456; com SMTP real, informe o código recebido em DEMO_CODIGO.
+ */
+async function cadastrar() {
+  const codigo = await chamar('POST', '/autenticacao/cadastro/codigo', { email: CONTA.email }, { tolerar: true });
+  if (codigo.erro) return;
+  const comprovante = await chamar('POST', '/autenticacao/cadastro/confirmar-email', {
+    email: CONTA.email,
+    identificador: codigo.identificador,
+    codigo: process.env.DEMO_CODIGO ?? '123456',
+  });
+  await chamar('POST', '/autenticacao/cadastro', { ...CONTA, aceitouTermos: true, tokenEmail: comprovante.tokenEmail }, { tolerar: true });
+}
+
 async function autenticar() {
-  await chamar('POST', '/autenticacao/cadastro', { ...CONTA, aceitouTermos: true }, { tolerar: true });
+  await cadastrar();
   const sessao = await chamar('POST', '/autenticacao/login', { email: CONTA.email, senha: CONTA.senha });
   token = sessao.accessToken;
+  await chamar('PUT', '/dados-profissionais', { nomeProfissional: CONTA.nomeCompleto, crp: CONTA.crp });
 }
 
 const dia = (deslocamento, hora, minuto = 0) => {

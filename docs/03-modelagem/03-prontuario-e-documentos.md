@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento define a modelagem e as regras de negocio do modulo clinico do GestaoPsi.
+Este documento define a modelagem e as regras de negocio do modulo clinico da Psique.
 
 Este modulo e central para o produto.
 

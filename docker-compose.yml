@@ -1,8 +1,8 @@
-# Ambiente local completo do GestaoPsi (API + SQL Server + Redis + frontend).
+# Ambiente local completo da Psique (API + SQL Server + Redis + frontend).
 # Uso: copie .env.example para .env, preencha os valores e execute
 # docker compose up --build. O job migracoes prepara o banco antes da API.
 # Ambiente de demonstracao local via HTTP; producao exige TLS e configuracao propria.
-name: gestaopsi
+name: psique
 
 services:
   sqlserver:
@@ -13,7 +13,7 @@ services:
     ports:
       - "127.0.0.1:14333:1433"
     volumes:
-      - gestaopsi-sql:/var/opt/mssql
+      - psique-sql:/var/opt/mssql
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\""]
       interval: 10s
@@ -28,7 +28,7 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
-      - gestaopsi-redis:/data
+      - psique-redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -37,11 +37,11 @@ services:
 
   migracoes:
     build:
-      context: ./backend/GestaoPsi.Api
+      context: ./backend/Psique.Api
       target: migracoes
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
-      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=GestaoPsi;User Id=sa;Password=${SQL_SENHA};TrustServerCertificate=True"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=Psique;User Id=sa;Password=${SQL_SENHA};TrustServerCertificate=True"
     restart: "no"
     depends_on:
       sqlserver:
@@ -61,7 +61,7 @@ services:
         if [ "$$edicao" = "4" ]; then echo "SQL Server Express: TDE indisponível nesta edição; cifra de coluna segue ativa."; exit 0; fi;
         mkdir -p /var/opt/mssql/chaves-tde && chown mssql /var/opt/mssql/chaves-tde &&
         /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /sql/habilitar-tde.sql
-        -v Banco=GestaoPsi "SenhaChaveMestra=$$TDE_SENHA_CHAVE_MESTRA" "SenhaBackupCertificado=$$TDE_SENHA_BACKUP"
+        -v Banco=Psique "SenhaChaveMestra=$$TDE_SENHA_CHAVE_MESTRA" "SenhaBackupCertificado=$$TDE_SENHA_BACKUP"
         PastaBackupCertificado=/var/opt/mssql/chaves-tde
     environment:
       MSSQL_SA_PASSWORD: "${SQL_SENHA}"
@@ -69,7 +69,7 @@ services:
       TDE_SENHA_BACKUP: "${TDE_SENHA_BACKUP:?Defina TDE_SENHA_BACKUP no arquivo .env}"
     volumes:
       - ./backend/sql:/sql:ro
-      - gestaopsi-sql:/var/opt/mssql
+      - psique-sql:/var/opt/mssql
     restart: "no"
     depends_on:
       migracoes:
@@ -77,7 +77,7 @@ services:
 
   api:
     build:
-      context: ./backend/GestaoPsi.Api
+      context: ./backend/Psique.Api
       dockerfile: Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
@@ -86,11 +86,11 @@ services:
       Rede__ConfiarEmProxyReverso: "true"
       # Limite de contas novas por hora e por IP. A suite E2E cria contas de teste e eleva este valor.
       Seguranca__MaximoCadastrosPorHora: "${MAXIMO_CADASTROS_POR_HORA:-5}"
-      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=GestaoPsi;User Id=sa;Password=${SQL_SENHA};TrustServerCertificate=True"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=Psique;User Id=sa;Password=${SQL_SENHA};TrustServerCertificate=True"
       ConnectionStrings__Redis: "redis:6379,password=${REDIS_SENHA}"
       Jwt__Chave: "${JWT_CHAVE:?Defina JWT_CHAVE com ao menos 32 caracteres}"
-      Jwt__Emissor: "GestaoPsi.Api"
-      Jwt__Audiencia: "GestaoPsi.Web"
+      Jwt__Emissor: "Psique.Api"
+      Jwt__Audiencia: "Psique.Web"
       Seguranca__ChaveHashDados: "${HASH_CHAVE:?Defina HASH_CHAVE em Base64 com ao menos 32 bytes}"
       Email__Ativo: "${Email__Ativo:-false}"
       Email__ServidorSmtp: "${Email__ServidorSmtp:-}"
@@ -119,5 +119,5 @@ services:
       - api
 
 volumes:
-  gestaopsi-sql:
-  gestaopsi-redis:
+  psique-sql:
+  psique-redis:

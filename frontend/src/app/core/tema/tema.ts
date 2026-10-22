@@ -5,7 +5,7 @@ export type PreferenciaTema = 'sistema' | 'claro' | 'escuro';
 export type TemaAplicado = 'claro' | 'escuro';
 
 /** Preferência visual não sensível; por isso pode viver em localStorage. */
-const CHAVE = 'gestaopsi:tema';
+const CHAVE = 'psique:tema';
 const consultaEscuro = '(prefers-color-scheme: dark)';
 const ouvintes = new Set<() => void>();
 

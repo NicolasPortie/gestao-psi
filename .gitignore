@@ -23,7 +23,7 @@ TestResults/
 # ASP.NET
 appsettings.Development.local.json
 appsettings.Local.json
-backend/GestaoPsi.Api/.gestaopsi-dev/
+backend/Psique.Api/.psique-dev/
 
 # Node
 node_modules/

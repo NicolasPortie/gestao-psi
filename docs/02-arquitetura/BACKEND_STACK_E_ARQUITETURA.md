@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento define a stack inicial e a arquitetura do back-end do projeto Vínculo.
+Este documento define a stack inicial e a arquitetura do back-end do projeto Psique.
 
 O objetivo é criar uma API profissional, organizada e fácil de evoluir, sem usar Clean Architecture neste momento.
 
@@ -12,7 +12,7 @@ As regras de nomenclatura do projeto estão definidas em `CONVENCOES_NOMENCLATUR
 
 No back-end, nomes relacionados ao domínio do sistema devem ser escritos em português do Brasil. Inglês deve ser usado apenas quando for padrão técnico do ASP.NET Core, C#, EF Core, bibliotecas ou arquivos de configuração.
 
-O Vínculo sera desenvolvido como um produto SaaS multi-conta.
+A Psique será desenvolvida como um produto SaaS multi-conta.
 
 Na pratica:
 
@@ -139,7 +139,7 @@ Estrutura sugerida:
 
 ```txt
 backend/
-  GestaoPsi.Api/
+  Psique.Api/
     Controllers/
       AutenticacaoController.cs
       PacientesController.cs
@@ -698,7 +698,7 @@ Event Sourcing
 DDD pesado
 ```
 
-Esses padrões podem ser úteis em alguns cenários, mas não são necessários para a primeira fase do Vínculo.
+Esses padrões podem ser úteis em alguns cenários, mas não são necessários para a primeira fase da Psique.
 
 ## Redis e Estado Temporario Distribuido
 
@@ -737,7 +737,7 @@ O front-end nao deve simular sucesso para operacoes que dependem da API.
 
 ## Decisao Atual
 
-A stack oficial do back-end do Vínculo será:
+A stack oficial do back-end da Psique será:
 
 ```txt
 ASP.NET Core Web API + Controllers + EF Core + SQL Server

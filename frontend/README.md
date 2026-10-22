@@ -1,4 +1,4 @@
-# Frontend Vínculo
+# Frontend Psique
 
 SPA em React, TypeScript e Vite.
 
@@ -6,7 +6,7 @@ SPA em React, TypeScript e Vite.
 
 - Node.js 22.12 ou superior;
 - npm 11;
-- API Vínculo disponível em `http://127.0.0.1:5178` durante o desenvolvimento.
+- API Psique disponível em `http://127.0.0.1:5178` durante o desenvolvimento.
 
 ## Comandos
 

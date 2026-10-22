@@ -2,7 +2,7 @@
 
 ## Decisão
 
-O front-end oficial do Vínculo é uma SPA em React, TypeScript e Vite. A aplicação Angular anterior foi descontinuada sem camada de compatibilidade, execução paralela ou adaptadores entre frameworks.
+O front-end oficial da Psique é uma SPA em React, TypeScript e Vite. A aplicação Angular anterior foi descontinuada sem camada de compatibilidade, execução paralela ou adaptadores entre frameworks.
 
 A decisão prioriza domínio da stack pelo mantenedor, simplicidade operacional e uma base moderna para um produto administrativo sensível. O backend e os contratos HTTP permanecem independentes do framework de interface.
 

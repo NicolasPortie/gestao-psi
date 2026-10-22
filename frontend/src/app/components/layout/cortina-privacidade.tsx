@@ -63,7 +63,7 @@ export function CortinaPrivacidade() {
               </Dialog.Description>
             </div>
             <Botao variante="primario" tamanho="grande" onClick={liberarTela} autoFocus>
-              Voltar ao {MARCA.nome}
+              Voltar à {MARCA.nome}
             </Botao>
           </div>
         </Dialog.Popup>

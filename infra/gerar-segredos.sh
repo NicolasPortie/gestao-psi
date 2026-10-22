@@ -25,7 +25,7 @@ senha_certificado=$(aleatorio 24)
 
 umask 077
 mkdir -p segredos backups
-openssl req -x509 -newkey rsa:3072 -sha256 -days 3650 -nodes -subj "/CN=Vinculo chaves de dados" \
+openssl req -x509 -newkey rsa:3072 -sha256 -days 3650 -nodes -subj "/CN=Psique chaves de dados" \
   -keyout segredos/chave.pem -out segredos/certificado.pem
 openssl pkcs12 -export -inkey segredos/chave.pem -in segredos/certificado.pem \
   -out segredos/chaves-protecao.pfx -passout "pass:$senha_certificado"

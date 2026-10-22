@@ -5,7 +5,7 @@ import { preencherAcessoCadastro, simularEmailCadastro } from './cadastro-apoio'
 
 const conta = {
   nomeCompleto: 'Psicologo E2E Acessibilidade',
-  email: process.env.E2E_A11Y_EMAIL ?? 'e2e.acessibilidade@gestaopsi.local',
+  email: process.env.E2E_A11Y_EMAIL ?? 'e2e.acessibilidade@psique.local',
   crp: '06/777777',
   senha: process.env.E2E_A11Y_SENHA ?? senhaPadrao,
 };
@@ -52,7 +52,7 @@ test.describe('Movimento', () => {
     // A criação da conta fica pendente para o estado "confirmado" poder ser observado.
     await page.route('**/autenticacao/cadastro', () => undefined);
     await page.goto('/cadastro');
-    await preencherAcessoCadastro(page, 'movimento.e2e@gestaopsi.local');
+    await preencherAcessoCadastro(page, 'movimento.e2e@psique.local');
 
     const codigo = page.getByLabel('Código de confirmação');
     const casas = page.locator('.casa-codigo');

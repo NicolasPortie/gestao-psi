@@ -5,7 +5,7 @@ import { API, chamarApi, garantirConta, loginApi, senhaPadrao } from './apoio';
 test.describe('Limite de requisições sem sessão', () => {
   test('inundar a recuperação de senha devolve 429 sem travar o login', async ({ request }) => {
     test.skip(test.info().project.name !== 'desktop', 'A cota é por IP; um projeto basta.');
-    const conta = { nomeCompleto: 'Psicologo E2E Limite', email: 'e2e.limite@gestaopsi.local', crp: '06/999999', senha: senhaPadrao };
+    const conta = { nomeCompleto: 'Psicologo E2E Limite', email: 'e2e.limite@psique.local', crp: '06/999999', senha: senhaPadrao };
     await garantirConta(request, conta);
 
     // Uma execução anterior pode ter esgotado a cota deste minuto: espera a janela virar.

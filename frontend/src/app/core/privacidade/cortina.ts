@@ -34,7 +34,7 @@ export function useTelaProtegida() {
   );
 }
 
-const CHAVE_MINUTOS = 'gestaopsi:cortina-minutos';
+const CHAVE_MINUTOS = 'psique:cortina-minutos';
 /** Minutos sem uso até a tela se proteger sozinha; 0 desliga. */
 export const MINUTOS_PADRAO = 10;
 

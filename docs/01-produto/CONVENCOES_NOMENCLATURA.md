@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento define o padrão de nomenclatura do projeto Vínculo.
+Este documento define o padrão de nomenclatura do projeto Psique.
 
 A regra principal é: nomes do domínio do sistema devem ser escritos em português do Brasil.
 
@@ -40,7 +40,7 @@ ClinicalRecord
 
 ## Regra Para o Modelo SaaS
 
-O Vínculo sera operado como SaaS multi-conta.
+A Psique será operada como SaaS multi-conta.
 
 O dominio principal do consultorio continua sendo escrito em portugues e pensado para uma conta de psicologo autonomo.
 
@@ -431,7 +431,7 @@ Essa distinção poderá ser refinada na modelagem do banco de dados.
 
 ## Decisao Atual
 
-O Vínculo usará português do Brasil para nomes ligados ao domínio do sistema.
+A Psique usará português do Brasil para nomes ligados ao domínio do sistema.
 
 Inglês será mantido apenas quando for padrão técnico natural do framework, linguagem, biblioteca ou arquivo de configuração.
 
