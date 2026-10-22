@@ -1,0 +1,62 @@
+name: e2e
+
+# Execução manual (Actions > e2e > Run workflow). A suíte cria contas pela API e precisa ser
+# adaptada ao cadastro com código de confirmação por e-mail antes de voltar a rodar em todo push.
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    # Fluxos críticos em Chromium (desktop e mobile) contra a pilha real do docker-compose:
+    # nginx com a CSP de produção, API, SQL Server e Redis. Serve também de teste de fumaça das imagens.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gerar .env efêmero (valores aleatórios, descartados com o runner)
+        run: |
+          {
+            echo "JWT_CHAVE=$(openssl rand -hex 32)"
+            echo "HASH_CHAVE=$(openssl rand -base64 32)"
+            echo "SQL_SENHA=Gp!$(openssl rand -hex 8)Aa1"
+            echo "REDIS_SENHA=$(openssl rand -hex 12)"
+            echo "TDE_SENHA_CHAVE_MESTRA=Gp!$(openssl rand -hex 8)Bb2"
+            echo "TDE_SENHA_BACKUP=Gp!$(openssl rand -hex 8)Cc3"
+            echo "MAXIMO_CADASTROS_POR_HORA=200"
+          } > .env
+      - name: Subir a pilha
+        run: docker compose up --build -d
+      - name: Aguardar a API
+        run: |
+          for tentativa in $(seq 1 90); do
+            if curl -fsS http://localhost:5178/api/v1/saude > /dev/null; then exit 0; fi
+            sleep 3
+          done
+          docker compose logs --tail=200
+          exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependências e o Chromium
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Executar os testes de ponta a ponta
+        working-directory: frontend
+        run: npm run test:e2e
+      - name: Anexar relatório de falhas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-falhas
+          path: frontend/test-results
+          if-no-files-found: ignore
+      - name: Logs da pilha em caso de falha
+        if: failure()
+        run: docker compose logs --tail=300
+      - name: Encerrar a pilha
+        if: always()
+        run: docker compose down -v

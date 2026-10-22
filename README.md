@@ -77,9 +77,11 @@ npm ci
 npm run dev
 ```
 
-Abra `http://localhost:4200` e crie uma conta pela tela de cadastro. Para
-explorar com dados fictícios, deixe a API rodando e execute `npm run seed:demo`
-em `frontend/`; ele cria uma conta de demonstração (credenciais no próprio script).
+Abra `http://localhost:4200` e crie uma conta pela tela de cadastro. O cadastro confirma o
+e-mail por um código de 6 dígitos, então a API precisa de um servidor SMTP configurado
+(`Email__Ativo=true` e as demais variáveis `Email__*`); sem ele, o cadastro responde 503.
+Com a conta criada, `npm run seed:demo` em `frontend/` preenche pacientes, agenda e
+cobranças fictícios (use `DEMO_EMAIL` e `DEMO_SENHA` para apontar para a sua conta).
 A API usa `http://localhost:5178`; seu documento OpenAPI em Development está em
 `/openapi/v1.json`, e a saúde das dependências em `/api/v1/saude`.
 
