@@ -9,23 +9,29 @@ Aplicação de gestão para consultórios de psicólogos autônomos. Organiza pa
 agenda, consultas, prontuário e pagamentos, com separação entre acesso administrativo
 e clínico e isolamento dos dados por conta.
 
-![Painel do dia na Psique](docs/screenshots/painel.png)
+![Percurso pela Psique: painel do dia, agenda, ficha de paciente, financeiro e tema escuro](docs/screenshots/demo.gif)
 
 ## Telas
 
 Todas as telas abaixo usam dados fictícios.
 
-| Agenda semanal | Pacientes |
+| Painel do dia | Agenda semanal |
 | --- | --- |
-| ![Agenda semanal](docs/screenshots/agenda.png) | ![Lista de pacientes](docs/screenshots/pacientes.png) |
+| ![Painel do dia](docs/screenshots/painel.png) | ![Agenda semanal](docs/screenshots/agenda.png) |
 
-| Financeiro | Tema escuro |
+| Pacientes | Financeiro |
 | --- | --- |
-| ![Cobranças e recebimentos](docs/screenshots/financeiro.png) | ![Painel no tema escuro](docs/screenshots/painel-escuro.png) |
+| ![Lista de pacientes](docs/screenshots/pacientes.png) | ![Cobranças e recebimentos](docs/screenshots/financeiro.png) |
 
-| Acesso | Celular |
+| Tema escuro | Acesso |
 | --- | --- |
-| ![Tela de acesso](docs/screenshots/acesso.png) | <img src="docs/screenshots/painel-celular.png" alt="Painel no celular" width="240"> <img src="docs/screenshots/agenda-celular.png" alt="Agenda no celular" width="240"> |
+| ![Painel no tema escuro](docs/screenshots/painel-escuro.png) | ![Tela de acesso](docs/screenshots/acesso.png) |
+
+### Celular
+
+| Painel | Agenda |
+| :---: | :---: |
+| <img src="docs/screenshots/painel-celular.png" alt="Painel no celular" width="260"> | <img src="docs/screenshots/agenda-celular.png" alt="Agenda no celular" width="260"> |
 
 ## Destaques técnicos
 
@@ -176,6 +182,9 @@ Com a API em execução, `npm run seed:demo` (em `frontend/`) cria uma conta com
 fictícios. Um roteiro para explorar: cadastrar paciente, agendar consulta, confirmar e
 remarcar, registrar a sessão, lançar um pagamento e gerar um relatório. Entre também com o
 perfil de recepção para ver que ele não acessa o prontuário.
+
+O GIF do início deste arquivo sai de `npm run gravar:demo` (em `frontend/`, com API, front e a conta
+de demonstração ativos e o `ffmpeg` no PATH), que percorre as telas e grava `docs/screenshots/demo.gif`.
 
 ## Licença
 
