@@ -16,6 +16,12 @@ const CONTA = {
   crp: '06/184392',
   senha: process.env.DEMO_SENHA ?? 'DemoPsique#2026',
 };
+/** Recepção da mesma conta: mostra que a equipe administrativa não abre o prontuário. */
+const RECEPCAO = {
+  nomeCompleto: 'Marina Prado',
+  email: process.env.DEMO_RECEPCAO_EMAIL ?? 'marina.prado@demo.psique.local',
+  senha: process.env.DEMO_RECEPCAO_SENHA ?? 'DemoRecepcao#2026',
+};
 
 if (!/localhost|127\.0\.0\.1/.test(API)) {
   console.error(`Recusado: ${API} não é um endereço local.`);
@@ -144,6 +150,31 @@ async function agendarGrade(idsPaciente, tipos) {
 
 const renovar = process.argv.includes('--renovar') || process.env.RENOVAR === '1';
 
+/** Valor por sessão: com ele, marcar uma sessão como realizada já gera a cobrança. */
+const VALOR_SESSAO = 180;
+
+/** Contas criadas antes do valor por sessão: completa só quem está sem valor, preservando o resto do cadastro. */
+async function completarValorSessao() {
+  const listagem = await chamar('GET', '/pacientes?pagina=1&tamanhoPagina=50&status=Ativo');
+  for (const { id } of listagem.itens) {
+    const paciente = await chamar('GET', `/pacientes/${id}`);
+    if (paciente.valorSessao != null) continue;
+    await chamar('PUT', `/pacientes/${id}`, {
+      nomeCompleto: paciente.nomeCompleto,
+      dataNascimento: paciente.dataNascimento,
+      cpf: paciente.cpf,
+      telefone: paciente.telefone,
+      whatsApp: paciente.whatsApp,
+      email: paciente.email,
+      observacaoAdministrativa: paciente.observacaoAdministrativa,
+      status: paciente.status,
+      contatosAdicionais: paciente.contatosAdicionais.map(({ tipoContato, valor, principal, nome }) => ({ tipoContato, valor, principal, nome })),
+      valorSessao: VALOR_SESSAO,
+      modoCobranca: paciente.modoCobranca,
+    });
+  }
+}
+
 /**
  * A demonstração envelhece: as consultas foram marcadas em relação ao dia em que o seed rodou.
  * Renovar agenda de novo a grade a partir de hoje; horários já ocupados ficam como estão.
@@ -163,8 +194,11 @@ async function renovarAgenda() {
 
 async function main() {
   await autenticar();
+  // Idempotente: se a recepção já existe, a API recusa o e-mail repetido e seguimos.
+  await chamar('POST', '/usuarios', { ...RECEPCAO, perfil: 'Recepcionista' }, { tolerar: true });
   const existentes = await chamar('GET', '/pacientes?pagina=1&tamanhoPagina=1');
   if ((existentes?.total ?? 0) > 0) {
+    await completarValorSessao();
     if (renovar) await renovarAgenda();
     else console.log('A conta de demonstração já tem dados. Use --renovar para agendar a semana a partir de hoje.');
     return;
@@ -221,6 +255,7 @@ async function main() {
       email,
       observacaoAdministrativa: null,
       contatosAdicionais: [],
+      valorSessao: VALOR_SESSAO,
     });
     idsPaciente.push(paciente.id);
   }

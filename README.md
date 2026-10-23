@@ -9,7 +9,26 @@ Aplicação de gestão para consultórios de psicólogos autônomos. Organiza pa
 agenda, consultas, prontuário e pagamentos, com separação entre acesso administrativo
 e clínico e isolamento dos dados por conta.
 
-![Percurso pela Psique: painel do dia, agenda, ficha de paciente, financeiro e tema escuro](docs/screenshots/demo.gif)
+![Agendar uma consulta num horário livre, marcar uma sessão como realizada e receber a cobrança no financeiro](docs/screenshots/demo.gif)
+
+Agendar uma consulta num horário livre, marcar a sessão que já aconteceu como realizada e receber
+a cobrança. Tudo com dados fictícios.
+
+## Em ação
+
+### Prontuário
+
+A sessão realizada vai para o prontuário com um roteiro de tópicos. O conteúdo clínico fica
+cifrado no banco e só o psicólogo responsável o vê.
+
+![Registrar a sessão no prontuário com o roteiro estruturado](docs/screenshots/prontuario.gif)
+
+### Acesso da recepção
+
+A recepção cuida da agenda, dos pacientes e do financeiro, mas não abre o prontuário, nem pelo
+endereço direto: quem decide é a API, não a tela.
+
+![A recepção entra, abre a ficha de uma paciente e não consegue abrir o prontuário](docs/screenshots/recepcao.gif)
 
 ## Telas
 
@@ -29,9 +48,9 @@ Todas as telas abaixo usam dados fictícios.
 
 ### Celular
 
-| Painel | Agenda |
-| :---: | :---: |
-| <img src="docs/screenshots/painel-celular.png" alt="Painel no celular" width="260"> | <img src="docs/screenshots/agenda-celular.png" alt="Agenda no celular" width="260"> |
+| Em uso | Painel | Agenda |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/celular.gif" alt="Navegação no celular: painel, agenda, consulta e pacientes" width="260"> | <img src="docs/screenshots/painel-celular.png" alt="Painel no celular" width="260"> | <img src="docs/screenshots/agenda-celular.png" alt="Agenda no celular" width="260"> |
 
 ## Destaques técnicos
 
@@ -180,11 +199,13 @@ pertencem às fases futuras descritas em [MVP e fases](docs/03-modelagem/07-mvp-
 
 Com a API em execução, `npm run seed:demo` (em `frontend/`) cria uma conta com dados
 fictícios. Um roteiro para explorar: cadastrar paciente, agendar consulta, confirmar e
-remarcar, registrar a sessão, lançar um pagamento e gerar um relatório. Entre também com o
-perfil de recepção para ver que ele não acessa o prontuário.
+remarcar, registrar a sessão, lançar um pagamento e gerar um relatório. O mesmo script cria a
+recepcionista da conta (credenciais nele): entre com ela para ver que a recepção não acessa o prontuário.
 
-O GIF do início deste arquivo sai de `npm run gravar:demo` (em `frontend/`, com API, front e a conta
-de demonstração ativos e o `ffmpeg` no PATH), que percorre as telas e grava `docs/screenshots/demo.gif`.
+Os GIFs deste arquivo saem de `npm run gravar:demo` (em `frontend/`, com API, front e a conta de
+demonstração ativos e o `ffmpeg` no PATH); `npm run gravar:demo -- prontuario` grava só um deles.
+Os roteiros fazem ações de verdade na conta de demonstração e consomem sessões já passadas;
+`npm run seed:demo -- --renovar` repõe a agenda.
 
 ## Licença
 
