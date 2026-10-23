@@ -36,7 +36,7 @@ interface TabelaPagamentosProps {
 
 /**
  * Pagamentos com as ações do dia a dia: receber (escolhendo a forma), emitir recibo, reembolsar e cancelar.
- * O vencido é derivado na tela e aparece em tijolo.
+ * O vencido vem marcado pela API e aparece em tijolo.
  */
 export function TabelaPagamentos({ pagamentos, mostrarPaciente = true, rotulo = 'Pagamentos' }: TabelaPagamentosProps) {
   const queryClient = useQueryClient();
@@ -44,7 +44,6 @@ export function TabelaPagamentos({ pagamentos, mostrarPaciente = true, rotulo = 
   const [recebendo, setRecebendo] = useState<Pagamento | null>(null);
   const [forma, setForma] = useState<FormaPagamento>('Pix');
   const [pendente, setPendente] = useState<{ pagamento: Pagamento; status: 'Reembolsado' | 'Cancelado' } | null>(null);
-  const hoje = new Date();
 
   const alterarStatus = useMutation({
     mutationFn: ({ id, novoStatus, formaPagamento }: { id: string; novoStatus: StatusPagamento; formaPagamento?: FormaPagamento }) =>
@@ -88,7 +87,7 @@ export function TabelaPagamentos({ pagamentos, mostrarPaciente = true, rotulo = 
         </CabecalhoTabela>
         <tbody>
           {pagamentos.map((pagamento) => {
-            const estado = estadoDoPagamento(pagamento, hoje);
+            const estado = estadoDoPagamento(pagamento);
             const emAberto = pagamentoEmAberto(pagamento.status);
             const referencia = pagamento.sessaoEm ? `Sessão de ${formatarData(pagamento.sessaoEm)}` : (pagamento.observacao ?? 'Cobrança avulsa');
             const itensMenu: ItemMenu[] = [

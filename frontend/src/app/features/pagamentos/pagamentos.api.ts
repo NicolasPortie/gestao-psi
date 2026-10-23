@@ -20,6 +20,8 @@ export interface Pagamento {
   sessaoEm?: string | null;
   /** Mês de referência de uma mensalidade ("AAAA-MM-01"). */
   competencia?: string | null;
+  /** Em aberto com vencimento já passado; decidido pela API. */
+  vencido?: boolean;
 }
 
 export interface Recibo {

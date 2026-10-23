@@ -85,8 +85,8 @@ describe('PagamentosPage', () => {
     expect(screen.queryByRole('button', { name: /Receber/ })).not.toBeInTheDocument();
   });
 
-  it('mostra como vencido o pendente com vencimento passado', async () => {
-    responder(listagem([pagamento({ vencimentoEm: '2020-01-10T12:00:00Z' })]));
+  it('mostra como vencido o pendente que a API marca como vencido', async () => {
+    responder(listagem([pagamento({ vencimentoEm: '2020-01-10T12:00:00Z', vencido: true })]));
     renderPagamentos('/pagamentos?mes=todos');
 
     const lista = within(await screen.findByRole('table', { name: 'Pagamentos' }));

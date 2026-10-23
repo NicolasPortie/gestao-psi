@@ -114,6 +114,67 @@ public sealed class RelatoriosAdministrativosServiceTests
         Assert.Equal(StatusCodes.Status400BadRequest, excecao.StatusCode);
     }
 
+    [Fact]
+    public async Task MesEmNumeros_ContaNoFusoDaContaESomaPagamentosDoMes()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var brasilia = TimeSpan.FromHours(-3);
+        Consulta Em(DateTimeOffset inicio, StatusConsulta status) => new()
+        {
+            Id = Guid.NewGuid(), ContaPsicologoId = cenario.ContaId, PacienteId = cenario.Paciente.Id, TipoAtendimentoId = cenario.TipoId,
+            InicioEm = inicio, FimEm = inicio.AddMinutes(50), Status = status, Modalidade = ModalidadeAtendimento.Presencial
+        };
+        Pagamento Pagamento(decimal valor, StatusPagamento status, DateTimeOffset vencimento) => new()
+        {
+            Id = Guid.NewGuid(), ContaPsicologoId = cenario.ContaId, PacienteId = cenario.Paciente.Id, Valor = valor, Status = status,
+            VencimentoEm = vencimento, PagoEm = status == StatusPagamento.Pago ? vencimento : null
+        };
+        contexto.AddRange(
+            Em(new DateTimeOffset(2026, 3, 10, 9, 0, 0, brasilia), StatusConsulta.Realizada),
+            // 23h30 de 31/03 em Brasília já é 1º de abril em UTC: continua sendo março para o consultório.
+            Em(new DateTimeOffset(2026, 3, 31, 23, 30, 0, brasilia), StatusConsulta.Realizada),
+            Em(new DateTimeOffset(2026, 3, 12, 9, 0, 0, brasilia), StatusConsulta.NaoCompareceu),
+            Em(new DateTimeOffset(2026, 3, 13, 9, 0, 0, brasilia), StatusConsulta.Cancelada),
+            Em(new DateTimeOffset(2026, 4, 1, 9, 0, 0, brasilia), StatusConsulta.Realizada),
+            Pagamento(200, StatusPagamento.Pago, new DateTimeOffset(2026, 3, 10, 12, 0, 0, brasilia)),
+            Pagamento(150, StatusPagamento.Pendente, new DateTimeOffset(2026, 3, 15, 12, 0, 0, brasilia)),
+            Pagamento(90, StatusPagamento.Cancelado, new DateTimeOffset(2026, 3, 16, 12, 0, 0, brasilia)));
+        await contexto.SaveChangesAsync();
+
+        var numeros = await CriarService(contexto).ObterMesEmNumerosAsync(cenario.UsuarioId, cenario.ContaId, 2026, 3, CancellationToken.None);
+
+        Assert.Equal(2, numeros.SessoesRealizadas);
+        Assert.Equal(1, numeros.PacientesAtendidos);
+        Assert.Equal(1, numeros.Faltas);
+        Assert.Equal(33, numeros.PercentualFaltas);
+        Assert.Equal(1, numeros.Cancelamentos);
+        Assert.Equal(200, numeros.Recebido);
+        Assert.Equal(150, numeros.AReceber);
+        Assert.Equal(150, numeros.Vencido);
+    }
+
+    [Fact]
+    public async Task MesEmNumeros_SemPermissaoFinanceiro_NaoTrazValores()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var perfil = new PerfilAcesso { Id = Guid.NewGuid(), ContaPsicologoId = cenario.ContaId, Nome = "Agenda e relatórios", Permissoes = "Agenda,Relatorios" };
+        var usuario = await contexto.Usuarios.SingleAsync(x => x.Id == cenario.UsuarioId);
+        usuario.Perfil = PerfilUsuario.Personalizado;
+        usuario.PerfilAcessoId = perfil.Id;
+        contexto.Add(perfil);
+        await contexto.SaveChangesAsync();
+
+        var hoje = DateTimeOffset.UtcNow;
+        var numeros = await CriarService(contexto).ObterMesEmNumerosAsync(cenario.UsuarioId, cenario.ContaId, hoje.Year, hoje.Month, CancellationToken.None);
+
+        Assert.NotNull(numeros.SessoesRealizadas);
+        Assert.Null(numeros.Recebido);
+        Assert.Null(numeros.AReceber);
+        Assert.Null(numeros.Vencido);
+    }
+
     private static RelatoriosAdministrativosService CriarService(AppDbContext contexto) =>
         new(
             contexto,

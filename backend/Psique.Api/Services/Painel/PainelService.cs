@@ -70,6 +70,22 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
                 consulta.Status == StatusConsulta.Realizada))
             .ToListAsync(cancellationToken);
 
+        // "Ainda por vir": em aberto e sem ter terminado. Só o status não basta: à noite, a consulta da manhã
+        // que ninguém marcou como realizada continuaria contando como futura.
+        var consultasRestantesHoje = await dbContext.Consultas
+            .AsNoTracking()
+            .CountAsync(
+                consulta =>
+                    podeAgenda &&
+                    consulta.ContaPsicologoId == contaPsicologoId &&
+                    consulta.InicioEm >= inicioHoje &&
+                    consulta.InicioEm < fimHoje &&
+                    consulta.FimEm > agora &&
+                    (consulta.Status == StatusConsulta.Agendada ||
+                     consulta.Status == StatusConsulta.Confirmada ||
+                     consulta.Status == StatusConsulta.AguardandoConfirmacao),
+                cancellationToken);
+
         var pacientesAtivos = await dbContext.Pacientes
             .AsNoTracking()
             .CountAsync(
@@ -219,10 +235,7 @@ public sealed class PainelService(AppDbContext dbContext) : IPainelService
                 usuario.Perfil.ToString()),
             new PainelIndicadoresResponse(
                 consultasHoje.Count,
-                consultasHoje.Count(consulta =>
-                    consulta.Status is nameof(StatusConsulta.Agendada) or
-                        nameof(StatusConsulta.Confirmada) or
-                        nameof(StatusConsulta.AguardandoConfirmacao)),
+                consultasRestantesHoje,
                 consultasAguardando,
                 pacientesAtivos,
                 pagamentosPendentes,

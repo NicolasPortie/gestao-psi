@@ -3,7 +3,8 @@ using Psique.Api.Shared.Enums;
 
 namespace Psique.Api.DTOs.Pagamentos;
 
-public sealed record PagamentoResponse(Guid Id, Guid PacienteId, string Paciente, Guid? ConsultaId, decimal Valor, StatusPagamento Status, FormaPagamento FormaPagamento, DateTimeOffset? VencimentoEm, DateTimeOffset? PagoEm, string? Observacao, DateTimeOffset? SessaoEm = null, DateOnly? Competencia = null);
+/// <summary><c>Vencido</c>: ainda em aberto e com vencimento anterior a hoje. Decidido aqui, com a mesma regra do resumo.</summary>
+public sealed record PagamentoResponse(Guid Id, Guid PacienteId, string Paciente, Guid? ConsultaId, decimal Valor, StatusPagamento Status, FormaPagamento FormaPagamento, DateTimeOffset? VencimentoEm, DateTimeOffset? PagoEm, string? Observacao, DateTimeOffset? SessaoEm = null, DateOnly? Competencia = null, bool Vencido = false);
 /// <summary>Totais do recorte filtrado (paciente, período e busca); <c>Vencido</c> é a parte do pendente com vencimento anterior a hoje.</summary>
 public sealed record PagamentosResumoResponse(decimal Recebido, decimal Pendente, decimal Reembolsado, int Quantidade, decimal Vencido = 0);
 public sealed record PagamentosListagemResponse(IReadOnlyCollection<PagamentoResponse> Itens, PagamentosResumoResponse Resumo, int Total, int Pagina, int TamanhoPagina);

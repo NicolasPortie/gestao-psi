@@ -297,7 +297,8 @@ public sealed class ConsultasService(
     {
         await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, ct);
         var consulta = await dbContext.Consultas.Include(x => x.Paciente).Include(x => x.TipoAtendimento).SingleOrDefaultAsync(x => x.Id == id && x.ContaPsicologoId == contaId, ct) ?? throw new RegraNegocioException("Consulta não encontrada.", StatusCodes.Status404NotFound);
-        if (consulta.Status is StatusConsulta.Cancelada or StatusConsulta.Remarcada or StatusConsulta.Realizada) throw new RegraNegocioException("Esta consulta não pode mais ter o status alterado.");
+        // Falta também encerra a consulta: ela já pode ter gerado cobrança, e a tela não oferece desfazer.
+        if (consulta.Status is StatusConsulta.Cancelada or StatusConsulta.Remarcada or StatusConsulta.Realizada or StatusConsulta.NaoCompareceu) throw new RegraNegocioException("Esta consulta não pode mais ter o status alterado.");
         if (request.Status is not (StatusConsulta.Confirmada or StatusConsulta.Cancelada or StatusConsulta.NaoCompareceu or StatusConsulta.Realizada)) throw new RegraNegocioException("Transição de status inválida.");
         var configuracao = await dbContext.ConfiguracoesAtendimento.AsNoTracking().SingleAsync(x => x.ContaPsicologoId == contaId && x.Ativo, ct);
         if (request.Status == StatusConsulta.Cancelada)

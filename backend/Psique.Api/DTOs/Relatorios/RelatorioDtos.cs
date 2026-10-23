@@ -25,3 +25,19 @@ public sealed class GerarRelatorioRequest
     [StringLength(40)]
     public string? Status { get; init; }
 }
+
+/// <summary>
+/// O mês num relance, calculado no fuso da conta. Campos de agenda ficam nulos sem a permissão Agenda;
+/// os de dinheiro, sem a permissão Financeiro.
+/// </summary>
+public sealed record MesEmNumerosResponse(
+    int Ano,
+    int Mes,
+    int? SessoesRealizadas,
+    int? PacientesAtendidos,
+    int? Faltas,
+    int? PercentualFaltas,
+    int? Cancelamentos,
+    decimal? Recebido,
+    decimal? AReceber,
+    decimal? Vencido);

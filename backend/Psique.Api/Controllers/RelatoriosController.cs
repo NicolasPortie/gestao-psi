@@ -17,6 +17,11 @@ public sealed class RelatoriosController(IRelatoriosAdministrativosService relat
         Ok(RespostaApi<IReadOnlyCollection<RelatorioCatalogoItemResponse>>.ComSucesso(
             await relatoriosService.ListarCatalogoAsync(ObterUsuarioId(), ObterContaPsicologoId(), cancellationToken)));
 
+    [HttpGet("mes-em-numeros")]
+    public async Task<IActionResult> MesEmNumeros([FromQuery] int ano, [FromQuery] int mes, CancellationToken cancellationToken) =>
+        Ok(RespostaApi<MesEmNumerosResponse>.ComSucesso(
+            await relatoriosService.ObterMesEmNumerosAsync(ObterUsuarioId(), ObterContaPsicologoId(), ano, mes, cancellationToken)));
+
     [HttpPost("{codigo}/gerar")]
     public async Task<IActionResult> Gerar(string codigo, GerarRelatorioRequest request, CancellationToken cancellationToken) =>
         Ok(RespostaApi<RelatorioGeradoResponse>.ComSucesso(

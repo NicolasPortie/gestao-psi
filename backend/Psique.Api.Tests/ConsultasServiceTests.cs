@@ -76,6 +76,20 @@ public sealed class ConsultasServiceTests
     }
 
     [Fact]
+    public async Task Falta_EncerraAConsulta()
+    {
+        await using var contexto = CriarContexto();
+        var cenario = await CriarCenarioAsync(contexto);
+        var consulta = await ConsultaPassadaAsync(contexto, cenario);
+        var service = CriarService(contexto);
+        await service.AlterarStatusAsync(cenario.UsuarioId, cenario.ContaId, consulta.Id, new AlterarStatusConsultaRequest { Status = StatusConsulta.NaoCompareceu }, null, null, CancellationToken.None);
+
+        await Assert.ThrowsAsync<RegraNegocioException>(() => service.AlterarStatusAsync(
+            cenario.UsuarioId, cenario.ContaId, consulta.Id, new AlterarStatusConsultaRequest { Status = StatusConsulta.Realizada }, null, null, CancellationToken.None));
+        Assert.Equal(StatusConsulta.NaoCompareceu, (await contexto.Consultas.SingleAsync(x => x.Id == consulta.Id)).Status);
+    }
+
+    [Fact]
     public async Task GerarMensalidades_CriaUmaPorMensalistaENaoDuplica()
     {
         await using var contexto = CriarContexto();

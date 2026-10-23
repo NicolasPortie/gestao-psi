@@ -270,5 +270,6 @@ public sealed class PagamentosService(AppDbContext db, IAutorizacaoContaService 
     }
 
     private static string? Limpar(string? valor) => string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
-    private static PagamentoResponse Mapear(Pagamento x) => new(x.Id, x.PacienteId, x.Paciente.NomeCompleto, x.ConsultaId, x.Valor, x.Status, x.FormaPagamento, x.VencimentoEm, x.PagoEm, x.Observacao, x.Consulta?.InicioEm, x.Competencia);
+    private static PagamentoResponse Mapear(Pagamento x) => new(x.Id, x.PacienteId, x.Paciente.NomeCompleto, x.ConsultaId, x.Valor, x.Status, x.FormaPagamento, x.VencimentoEm, x.PagoEm, x.Observacao, x.Consulta?.InicioEm, x.Competencia,
+        x.Status is StatusPagamento.Pendente or StatusPagamento.AguardandoConfirmacao && x.VencimentoEm is { } vencimento && vencimento < InicioDeHoje());
 }

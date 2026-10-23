@@ -24,10 +24,30 @@ export interface GerarRelatorioRequest {
   status?: string | null;
 }
 
+/** Indicadores do mês calculados pela API; nulos quando a pessoa não tem a permissão da área. */
+export interface MesEmNumeros {
+  ano: number;
+  mes: number;
+  sessoesRealizadas: number | null;
+  pacientesAtendidos: number | null;
+  faltas: number | null;
+  percentualFaltas: number | null;
+  cancelamentos: number | null;
+  recebido: number | null;
+  aReceber: number | null;
+  vencido: number | null;
+}
+
 export const relatoriosKeys = {
   todos: ['relatorios'] as const,
   catalogo: () => [...relatoriosKeys.todos, 'catalogo'] as const,
+  mes: (ano: number, mes: number) => [...relatoriosKeys.todos, 'mes', ano, mes] as const,
 };
+
+export async function obterMesEmNumeros(ano: number, mes: number, { signal }: { signal?: AbortSignal } = {}) {
+  const resposta = await requisicaoApi<RespostaApi<MesEmNumeros>>(`/relatorios/mes-em-numeros?ano=${ano}&mes=${mes}`, { signal });
+  return extrairDados(resposta, 'Não foi possível carregar os números do mês.');
+}
 
 export async function listarCatalogoRelatorios({ signal }: { signal?: AbortSignal } = {}) {
   const resposta = await requisicaoApi<RespostaApi<RelatorioCatalogoItem[]>>('/relatorios/catalogo', { signal });

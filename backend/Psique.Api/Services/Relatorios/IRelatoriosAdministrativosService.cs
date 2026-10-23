@@ -17,4 +17,11 @@ public interface IRelatoriosAdministrativosService
         string? ip,
         string? userAgent,
         CancellationToken cancellationToken);
+
+    Task<MesEmNumerosResponse> ObterMesEmNumerosAsync(
+        Guid usuarioId,
+        Guid contaId,
+        int ano,
+        int mes,
+        CancellationToken cancellationToken);
 }

@@ -31,6 +31,23 @@ public sealed class AutenticacaoServiceTests
     }
 
     [Fact]
+    public async Task CriarConta_SemComprovante_NaoRevelaQueOEmailJaTemConta()
+    {
+        await using var contexto = CriarContexto();
+        var passwordHasher = new PasswordHasher<Usuario>();
+        var existente = await AdicionarUsuarioAsync(contexto, passwordHasher, "correta-123");
+        var service = CriarService(contexto, new EstadoAutenticacaoFake(), new ProtecaoDadosFake(), passwordHasher);
+
+        var erro = await Assert.ThrowsAsync<RegraNegocioException>(() => service.CriarContaAsync(new()
+        {
+            Email = existente.Email, Senha = "senha-segura", AceitouTermos = true,
+        }, "127.0.0.1", CancellationToken.None));
+
+        Assert.Equal(422, erro.StatusCode);
+        Assert.DoesNotContain("Já existe", erro.Message);
+    }
+
+    [Fact]
     public async Task CriarConta_DevePersistirEstruturaEProtegerCredenciais()
     {
         await using var contexto = CriarContexto();

@@ -23,14 +23,7 @@ export const pagamentoEmAberto = (status: StatusPagamento) => status === 'Penden
 
 export const estadoVencido: DescricaoEstado = { rotulo: 'Vencido', tom: 'perigo', marca: 'meio' };
 
-/** Pendente cujo vencimento ficou para trás. Derivado na tela: o servidor guarda só "Pendente". */
-export function pagamentoVencido(pagamento: Pick<Pagamento, 'status' | 'vencimentoEm'>, hoje = new Date()) {
-  if (!pagamentoEmAberto(pagamento.status) || !pagamento.vencimentoEm) return false;
-  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  return new Date(pagamento.vencimentoEm) < inicioHoje;
-}
-
-/** Estado exibido: o vencido aparece em tijolo, os demais seguem o status do servidor. */
-export function estadoDoPagamento(pagamento: Pick<Pagamento, 'status' | 'vencimentoEm'>, hoje = new Date()): DescricaoEstado {
-  return pagamentoVencido(pagamento, hoje) ? estadoVencido : estadosPagamento[pagamento.status];
+/** Estado exibido: o vencido (decidido pela API) aparece em tijolo, os demais seguem o status. */
+export function estadoDoPagamento(pagamento: Pick<Pagamento, 'status' | 'vencido'>): DescricaoEstado {
+  return pagamento.vencido ? estadoVencido : estadosPagamento[pagamento.status];
 }

@@ -54,14 +54,16 @@ public sealed class AutenticacaoService(
 
         var email = NormalizarEmail(request.Email);
 
+        // O comprovante vem antes: só quem provou ser dono do e-mail descobre se ele já tem conta.
+        // Na ordem inversa, o cadastro viraria um oráculo de e-mails cadastrados.
+        await confirmacaoEmail.ConsumirComprovanteAsync(email, request.TokenEmail, cancellationToken);
+
         if (await dbContext.Usuarios.AnyAsync(
                 usuario => usuario.EmailHash == CifraDeColuna.HashEmail(email),
                 cancellationToken))
         {
             throw new RegraNegocioException("Já existe uma conta associada a este e-mail.");
         }
-
-        await confirmacaoEmail.ConsumirComprovanteAsync(email, request.TokenEmail, cancellationToken);
 
         var contaId = Guid.NewGuid();
         var usuarioId = Guid.NewGuid();

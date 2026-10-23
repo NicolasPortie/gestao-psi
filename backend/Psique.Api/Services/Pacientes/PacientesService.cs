@@ -752,14 +752,19 @@ public sealed class PacientesService(
         CancellationToken cancellationToken)
     {
         await ValidarUsuarioDaContaAsync(usuarioId, contaPsicologoId, cancellationToken);
+        // A exportação não pode abrir o que a tela esconde: agenda e financeiro só saem para quem tem essas permissões.
+        var ator = await dbContext.Usuarios.AsNoTracking().Include(item => item.PerfilAcesso)
+            .SingleAsync(item => item.Id == usuarioId && item.ContaPsicologoId == contaPsicologoId, cancellationToken);
+        var podeAgenda = PermissoesEfetivas.Tem(ator, PermissaoAcesso.Agenda);
+        var podeFinanceiro = PermissoesEfetivas.Tem(ator, PermissaoAcesso.Financeiro);
         var cadastro = await ObterPorIdAsync(contaPsicologoId, pacienteId, cancellationToken);
         var consultas = await dbContext.Consultas.AsNoTracking()
-            .Where(item => item.ContaPsicologoId == contaPsicologoId && item.PacienteId == pacienteId)
+            .Where(item => podeAgenda && item.ContaPsicologoId == contaPsicologoId && item.PacienteId == pacienteId)
             .OrderBy(item => item.InicioEm)
             .Select(item => new ExportacaoConsultaItem(item.InicioEm, item.FimEm, item.TipoAtendimento.Nome, item.Modalidade.ToString(), item.Status.ToString()))
             .ToListAsync(cancellationToken);
         var pagamentos = await dbContext.Pagamentos.AsNoTracking()
-            .Where(item => item.ContaPsicologoId == contaPsicologoId && item.PacienteId == pacienteId)
+            .Where(item => podeFinanceiro && item.ContaPsicologoId == contaPsicologoId && item.PacienteId == pacienteId)
             .OrderBy(item => item.CriadoEm)
             .Select(item => new ExportacaoPagamentoItem(item.Valor, item.Status.ToString(), item.FormaPagamento.ToString(), item.VencimentoEm, item.PagoEm))
             .ToListAsync(cancellationToken);

@@ -39,6 +39,63 @@ public sealed class RelatoriosAdministrativosService(
         return Catalogo;
     }
 
+    public async Task<MesEmNumerosResponse> ObterMesEmNumerosAsync(
+        Guid usuarioId,
+        Guid contaId,
+        int ano,
+        int mes,
+        CancellationToken cancellationToken)
+    {
+        var usuario = await autorizacao.ObterUsuarioAtivoAsync(usuarioId, contaId, cancellationToken);
+        if (ano is < 2000 or > 2100 || mes is < 1 or > 12)
+            throw new RegraNegocioException("Informe um mês válido.");
+
+        // O mês começa e termina no relógio do consultório, não no do servidor nem no do navegador.
+        var fusoConta = await dbContext.ConfiguracoesAtendimento.AsNoTracking()
+            .Where(item => item.ContaPsicologoId == contaId && item.Ativo)
+            .Select(item => item.FusoHorario)
+            .FirstOrDefaultAsync(cancellationToken);
+        var fuso = Agenda.FusoHorarioConta.Resolver(fusoConta);
+        DateTimeOffset NoFuso(DateTime data) => new(data, fuso.GetUtcOffset(data));
+        var inicio = NoFuso(new DateTime(ano, mes, 1));
+        var fim = NoFuso(new DateTime(ano, mes, 1).AddMonths(1));
+
+        int? realizadas = null, pacientes = null, faltas = null, percentualFaltas = null, cancelamentos = null;
+        if (PermissoesEfetivas.Tem(usuario, PermissaoAcesso.Agenda))
+        {
+            var doMes = await dbContext.Consultas.AsNoTracking()
+                .Where(item => item.ContaPsicologoId == contaId && item.InicioEm >= inicio && item.InicioEm < fim)
+                .Select(item => new { item.Status, item.PacienteId })
+                .ToListAsync(cancellationToken);
+            realizadas = doMes.Count(item => item.Status == StatusConsulta.Realizada);
+            pacientes = doMes.Where(item => item.Status == StatusConsulta.Realizada).Select(item => item.PacienteId).Distinct().Count();
+            faltas = doMes.Count(item => item.Status == StatusConsulta.NaoCompareceu);
+            cancelamentos = doMes.Count(item => item.Status == StatusConsulta.Cancelada);
+            var encerradas = realizadas.Value + faltas.Value;
+            percentualFaltas = encerradas > 0 ? (int)Math.Round(faltas.Value * 100m / encerradas, MidpointRounding.AwayFromZero) : null;
+        }
+
+        decimal? recebido = null, aReceber = null, vencido = null;
+        if (PermissoesEfetivas.Tem(usuario, PermissaoAcesso.Financeiro))
+        {
+            var agora = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, fuso);
+            var inicioHoje = NoFuso(agora.Date);
+            // Mesmo recorte da tela de Financeiro: a data de referência é o vencimento, o pagamento ou a criação.
+            var pagamentos = await dbContext.Pagamentos.AsNoTracking()
+                .Where(item => item.ContaPsicologoId == contaId &&
+                               (item.VencimentoEm ?? item.PagoEm ?? item.CriadoEm) >= inicio &&
+                               (item.VencimentoEm ?? item.PagoEm ?? item.CriadoEm) < fim)
+                .Select(item => new { item.Status, item.Valor, item.VencimentoEm })
+                .ToListAsync(cancellationToken);
+            var emAberto = pagamentos.Where(item => item.Status is StatusPagamento.Pendente or StatusPagamento.AguardandoConfirmacao).ToList();
+            recebido = pagamentos.Where(item => item.Status == StatusPagamento.Pago).Sum(item => item.Valor);
+            aReceber = emAberto.Sum(item => item.Valor);
+            vencido = emAberto.Where(item => item.VencimentoEm < inicioHoje).Sum(item => item.Valor);
+        }
+
+        return new MesEmNumerosResponse(ano, mes, realizadas, pacientes, faltas, percentualFaltas, cancelamentos, recebido, aReceber, vencido);
+    }
+
     public async Task<RelatorioGeradoResponse> GerarAsync(
         Guid usuarioId,
         Guid contaId,

@@ -27,8 +27,9 @@ O sistema lida com dados pessoais, dados de saude, prontuario, documentos psicol
 - Intervalo mínimo de 60 segundos; no máximo cinco envios por endereço/hora e vinte por IP/hora, além do limitador de rotas públicas.
 - Guardar somente HMAC do código com identificador aleatório, em Redis com expiração; fallback em memória apenas em Development sem Redis. Comparação, desconto de tentativa e consumo são atômicos.
 - O comprovante dura 30 minutos, vincula-se ao e-mail e é consumido uma única vez no serviço de criação de conta. Solicitar diretamente o cadastro sem comprovante válido não cria dados duráveis.
+- O comprovante é conferido antes de verificar se o e-mail já tem conta: sem ele, o cadastro responde o mesmo erro para e-mail novo ou existente e não serve para descobrir quem usa o sistema.
 - Senhas e confirmação de senha não entram no estado temporário da verificação. A confirmação de senha é uma prevenção de erro de preenchimento no cliente; a política de senha permanece no servidor.
-- SMTP desativado ou falha de entrega retorna erro, sem anunciar envio. A aplicação não fornece código fixo nem atalho de confirmação em Development.
+- SMTP desativado ou falha de entrega retorna erro, sem anunciar envio. A única exceção é o ambiente Development: sem SMTP, o código passa a ser `123456` e a API avisa no log, para o cadastro poder ser exercitado localmente. Fora de Development nunca há código fixo.
 
 Configuração do transporte: `Email:Ativo`, `ServidorSmtp`, `Porta`, `UsarSsl`, `Usuario`, `Senha`, `EmailRemetente` e `NomeRemetente`. Credenciais devem vir de secrets ou variáveis de ambiente, nunca de arquivos versionados. Não habilitar `Ativo` antes de configurar o transporte.
 
