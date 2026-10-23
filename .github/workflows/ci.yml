@@ -8,13 +8,40 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    # SQL Server só para os testes de integridade relacional (restrições, isolamento entre contas no banco,
+    # migrações e cifra de colunas). Sem ele, esses testes são pulados. Container efêmero, sem dados reais:
+    # a senha só vale dentro deste runner.
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "Ci!Psique-efemero-2026"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' -b"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
       - run: dotnet build backend/Psique.slnx --nologo
-      - run: dotnet test backend/Psique.Api.Tests/Psique.Api.Tests.csproj --no-build --nologo
+      - name: Testes (inclusive os de banco)
+        # Falha também se algum teste de integridade relacional for pulado: sem esta checagem, perder o
+        # SQL Server do workflow faria esses testes sumirem em silêncio.
+        run: |
+          dotnet test backend/Psique.Api.Tests/Psique.Api.Tests.csproj --no-build --nologo \
+            --logger "trx;LogFileName=testes.trx" --results-directory /tmp/testes
+          if grep -E 'testName="Psique\.Api\.Tests\.IntegridadeRelacionalTests[^"]*"[^>]*outcome="NotExecuted"' /tmp/testes/testes.trx; then
+            echo "Testes de banco foram pulados: o SQL Server do CI não está acessível." >&2
+            exit 1
+          fi
+        env:
+          PSIQUE_TEST_SQLSERVER: "Server=localhost,1433;User Id=sa;Password=Ci!Psique-efemero-2026;TrustServerCertificate=true"
       - name: Validar migracoes EF (script idempotente)
         run: |
           dotnet tool install --global dotnet-ef --version 10.0.9
